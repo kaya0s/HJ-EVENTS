@@ -184,7 +184,7 @@ This project is currently in development. The following features are implemented
 
 ## 📝 License
 
-This project is licensed under the ISC License.
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.   
 
 ## 📞 Support
 
