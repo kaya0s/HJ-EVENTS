@@ -11,7 +11,7 @@ interface AuthenticatedRequest extends Request {
 // JWT Authentication Middleware
 export const authenticateToken = async (req: AuthenticatedRequest, res: Response, next: NextFunction): Promise<void> => {
     try {
-        // Get token from cookie or Authorization header
+        
         let token = req.cookies?.token || req.headers.authorization?.split(' ')[1];
         
         if (!token) {
