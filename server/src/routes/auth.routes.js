@@ -6,7 +6,6 @@ import { sendPasswordResetEmail, sendWelcomeEmail } from '../utils/email.js';
 import { generateResetCode, generateResetToken, hashResetToken, verifyResetToken,} from '../utils/passwordReset.js';
 import passport from 'passport';
 import { Strategy as GoogleStrategy } from 'passport-google-oauth20';
-import { verify } from 'crypto';
 
 const router = express.Router()
 
@@ -286,19 +285,6 @@ router.get('/google/callback',
 router.post('/logout', (req, res) => {
   res.clearCookie('jwt');
   res.status(200).json({ message: 'Logged out successfully' });
-});
-
-// PUT update user
-router.put('/:id', async (req, res) => {
-  try {
-    const user = await User.findByIdAndUpdate(req.params.id, req.body, { new: true });
-    if (!user) {
-      return res.status(404).json({ message: 'User not found' });
-    }
-    res.json(user);
-  } catch (error) {
-    res.status(400).json({ message: error.message });
-  }
 });
 
 
