@@ -1,6 +1,11 @@
 import React, { useEffect, useRef } from 'react';
 import * as THREE from 'three';
 
+// Type definitions for missing THREE.js types
+type ShaderMaterialParameters = THREE.ShaderMaterialParameters;
+type WebGLRenderTarget<T extends THREE.Texture = THREE.Texture> = THREE.WebGLRenderTarget<T>;
+type Texture = THREE.Texture;
+
 export interface LiquidEtherProps {
   mouseForce?: number;
   cursorSize?: number;
@@ -35,6 +40,25 @@ interface SimOptions {
   isViscous: boolean;
   BFECC: boolean;
 }
+
+interface FBOProps {
+  cellScale: THREE.Vector2;
+  fboSize: THREE.Vector2;
+  boundarySpace: THREE.Vector2;
+  cursor_size?: number;
+  mouse_force?: number;
+  viscous?: number;
+  dt: number;
+  src: THREE.WebGLRenderTarget | null;
+  dst: THREE.WebGLRenderTarget | null;
+  dst_?: THREE.WebGLRenderTarget | null;
+  src_p?: THREE.WebGLRenderTarget | null;
+  src_v?: THREE.WebGLRenderTarget | null;
+}
+
+// Forward declarations for classes defined later in the file
+
+// WebGLManager interface removed as it's not used
 
 interface LiquidEtherWebGL {
   output?: { simulation?: { options: SimOptions; resize: () => void } };
@@ -544,9 +568,9 @@ export default function LiquidEther({
       plane: THREE.Mesh | null = null;
       constructor(props: Record<string, unknown>) {
         this.props = props || {};
-        this.uniforms = this.props.material?.uniforms;
+        this.uniforms = (this.props.material as { uniforms?: Uniforms })?.uniforms;
       }
-      init(..._args: Record<string, unknown>[]) {
+      init() {
         this.scene = new THREE.Scene();
         this.camera = new THREE.Camera();
         if (this.uniforms) {
@@ -556,9 +580,9 @@ export default function LiquidEther({
           this.scene.add(this.plane);
         }
       }
-      update(..._args: Record<string, unknown>[]) {
+      update() {
         if (!Common.renderer || !this.scene || !this.camera) return;
-        Common.renderer.setRenderTarget(this.props.output as WebGLRenderTarget<Texture> | WebGLRenderTarget<Texture[]> | null);
+        Common.renderer.setRenderTarget(this.props.output as WebGLRenderTarget<Texture> | null);
         Common.renderer.render(this.scene, this.camera);
         Common.renderer.setRenderTarget(null);
       }
@@ -566,7 +590,7 @@ export default function LiquidEther({
 
     class Advection extends ShaderPass {
       line!: THREE.LineSegments;
-      constructor(simProps: Record<string, unknown>) {
+      constructor(simProps: FBOProps) {
         super({
           material: {
             vertexShader: face_vert,
@@ -575,14 +599,14 @@ export default function LiquidEther({
               boundarySpace: { value: simProps.cellScale },
               px: { value: simProps.cellScale },
               fboSize: { value: simProps.fboSize },
-              velocity: { value: simProps.src.texture as Texture },
+              velocity: { value: simProps.src?.texture as Texture },
               dt: { value: simProps.dt },
               isBFECC: { value: true }
             }
           },
           output: simProps.dst
         });
-        this.uniforms = this.props.material.uniforms as Record<string, { value: Record<string, unknown> }>;
+        this.uniforms = (this.props.material as { uniforms: Record<string, { value: Record<string, unknown> }> }).uniforms;
         this.init();
       }
       init() {
@@ -603,23 +627,23 @@ export default function LiquidEther({
         this.line = new THREE.LineSegments(boundaryG, boundaryM);
         this.scene!.add(this.line);
       }
-      update(...args: Record<string, unknown>[]) {
-        const { dt, isBounce, BFECC } = (args[0] || {}) as { dt?: number; isBounce?: boolean; BFECC?: boolean };
+      update(args: { dt?: number; isBounce?: boolean; BFECC?: boolean } = {}) {
+        const { dt, isBounce, BFECC } = args;
         if (!this.uniforms) return;
-        if (typeof dt === 'number') this.uniforms.dt.value = dt;
+        if (typeof dt === 'number') (this.uniforms.dt.value as unknown) = dt;
         if (typeof isBounce === 'boolean') this.line.visible = isBounce;
-        if (typeof BFECC === 'boolean') this.uniforms.isBFECC.value = BFECC;
+        if (typeof BFECC === 'boolean') (this.uniforms.isBFECC.value as unknown) = BFECC;
         super.update();
       }
     }
 
     class ExternalForce extends ShaderPass {
       mouse!: THREE.Mesh;
-      constructor(simProps: Record<string, unknown>) {
+      constructor(simProps: FBOProps) {
         super({ output: simProps.dst });
-        this.init(simProps);
+        this.initExternalForce(simProps);
       }
-      init(simProps: Record<string, unknown>) {
+      initExternalForce(simProps: FBOProps) {
         super.init();
         const mouseG = new THREE.PlaneGeometry(1, 1);
         const mouseM = new THREE.RawShaderMaterial({
@@ -631,17 +655,17 @@ export default function LiquidEther({
             px: { value: simProps.cellScale },
             force: { value: new THREE.Vector2(0, 0) },
             center: { value: new THREE.Vector2(0, 0) },
-            scale: { value: new THREE.Vector2(simProps.cursor_size, simProps.cursor_size) }
+            scale: { value: new THREE.Vector2(simProps.cursor_size || 0, simProps.cursor_size || 0) }
           }
         });
         this.mouse = new THREE.Mesh(mouseG, mouseM);
         this.scene!.add(this.mouse);
       }
-      update(...args: Record<string, unknown>[]) {
-        const props = args[0] || {};
+      update(args: { cursor_size?: number; mouse_force?: number; cellScale?: THREE.Vector2 } = {}) {
+        const props = args;
         const forceX = (Mouse.diff.x / 2) * (props.mouse_force || 0);
         const forceY = (Mouse.diff.y / 2) * (props.mouse_force || 0);
-        const cellScale = props.cellScale || { x: 1, y: 1 };
+        const cellScale = props.cellScale || new THREE.Vector2(1, 1);
         const cursorSize = props.cursor_size || 0;
         const cursorSizeX = cursorSize * cellScale.x;
         const cursorSizeY = cursorSize * cellScale.y;
@@ -662,15 +686,15 @@ export default function LiquidEther({
     }
 
     class Viscous extends ShaderPass {
-      constructor(simProps: Record<string, unknown>) {
+      constructor(simProps: FBOProps) {
         super({
           material: {
             vertexShader: face_vert,
             fragmentShader: viscous_frag,
             uniforms: {
               boundarySpace: { value: simProps.boundarySpace },
-              velocity: { value: simProps.src.texture as Texture },
-              velocity_new: { value: simProps.dst_.texture },
+              velocity: { value: simProps.src?.texture as Texture },
+              velocity_new: { value: simProps.dst_?.texture },
               v: { value: simProps.viscous },
               px: { value: simProps.cellScale },
               dt: { value: simProps.dt }
@@ -682,23 +706,24 @@ export default function LiquidEther({
         });
         this.init();
       }
-      update(...args: Record<string, unknown>[]) {
-        const { viscous, iterations, dt } = (args[0] || {}) as { viscous?: number; iterations?: number; dt?: number };
+      update(args: { viscous?: number; iterations?: number; dt?: number } = {}) {
+        const { viscous, iterations, dt } = args;
         if (!this.uniforms) return;
-        let fbo_in: Record<string, unknown>, fbo_out: Record<string, unknown>;
-        if (typeof viscous === 'number') this.uniforms.v.value = viscous;
+        let fbo_in: THREE.WebGLRenderTarget | null;
+        if (typeof viscous === 'number') (this.uniforms.v.value as unknown) = viscous;
         const iter = iterations ?? 0;
+        let fbo_out: THREE.WebGLRenderTarget | null = null;
         for (let i = 0; i < iter; i++) {
           if (i % 2 === 0) {
-            fbo_in = this.props.output0 as Record<string, unknown>;
-            fbo_out = this.props.output1;
+            fbo_in = this.props.output0 as THREE.WebGLRenderTarget | null;
+            fbo_out = this.props.output1 as THREE.WebGLRenderTarget | null;
           } else {
-            fbo_in = this.props.output1;
-            fbo_out = this.props.output0 as Record<string, unknown>;
+            fbo_in = this.props.output1 as THREE.WebGLRenderTarget | null;
+            fbo_out = this.props.output0 as THREE.WebGLRenderTarget | null;
           }
-          this.uniforms.velocity_new.value = fbo_in.texture;
+          (this.uniforms.velocity_new.value as any) = fbo_in?.texture;
           this.props.output = fbo_out;
-          if (typeof dt === 'number') this.uniforms.dt.value = dt;
+          if (typeof dt === 'number') (this.uniforms.dt.value as unknown) = dt;
           super.update();
         }
         return fbo_out;
@@ -706,14 +731,14 @@ export default function LiquidEther({
     }
 
     class Divergence extends ShaderPass {
-      constructor(simProps: Record<string, unknown>) {
+      constructor(simProps: FBOProps) {
         super({
           material: {
             vertexShader: face_vert,
             fragmentShader: divergence_frag,
             uniforms: {
               boundarySpace: { value: simProps.boundarySpace },
-              velocity: { value: simProps.src.texture },
+              velocity: { value: simProps.src?.texture },
               px: { value: simProps.cellScale },
               dt: { value: simProps.dt }
             }
@@ -722,25 +747,25 @@ export default function LiquidEther({
         });
         this.init();
       }
-      update(...args: Record<string, unknown>[]) {
-        const { vel } = (args[0] || {}) as { vel?: Record<string, unknown> };
+      update(args: { vel?: THREE.WebGLRenderTarget | null } = {}) {
+        const { vel } = args;
         if (this.uniforms && vel) {
-          this.uniforms.velocity.value = vel.texture;
+          (this.uniforms.velocity.value as any) = vel.texture;
         }
         super.update();
       }
     }
 
     class Poisson extends ShaderPass {
-      constructor(simProps: Record<string, unknown>) {
+      constructor(simProps: FBOProps) {
         super({
           material: {
             vertexShader: face_vert,
             fragmentShader: poisson_frag,
             uniforms: {
               boundarySpace: { value: simProps.boundarySpace },
-              pressure: { value: simProps.dst_.texture },
-              divergence: { value: simProps.src.texture },
+              pressure: { value: simProps.dst_?.texture },
+              divergence: { value: simProps.src?.texture },
               px: { value: simProps.cellScale }
             }
           },
@@ -750,19 +775,20 @@ export default function LiquidEther({
         });
         this.init();
       }
-        update(...args: Record<string, unknown>[]) {
-        const { iterations } = (args[0] || {}) as { iterations?: number };
-        let p_in: Record<string, unknown>, p_out: Record<string, unknown>;
+      update(args: { iterations?: number } = {}) {
+        const { iterations } = args;
+        let p_in: THREE.WebGLRenderTarget | null;
         const iter = iterations ?? 0;
+        let p_out: THREE.WebGLRenderTarget | null = null;
         for (let i = 0; i < iter; i++) {
           if (i % 2 === 0) {
-            p_in = this.props.output0;
-            p_out = this.props.output1;
+            p_in = this.props.output0 as THREE.WebGLRenderTarget | null;
+            p_out = this.props.output1 as THREE.WebGLRenderTarget | null;
           } else {
-            p_in = this.props.output1;
-            p_out = this.props.output0;
+            p_in = this.props.output1 as THREE.WebGLRenderTarget | null;
+            p_out = this.props.output0 as THREE.WebGLRenderTarget | null;
           }
-          if (this.uniforms) this.uniforms.pressure.value = p_in.texture;
+          if (this.uniforms) (this.uniforms.pressure.value as any) = p_in?.texture;
           this.props.output = p_out;
           super.update();
         }
@@ -771,15 +797,15 @@ export default function LiquidEther({
     }
 
     class Pressure extends ShaderPass {
-      constructor(simProps: Record<string, unknown>) {
+      constructor(simProps: FBOProps) {
         super({
           material: {
             vertexShader: face_vert,
             fragmentShader: pressure_frag,
             uniforms: {
               boundarySpace: { value: simProps.boundarySpace },
-              pressure: { value: simProps.src_p.texture },
-              velocity: { value: simProps.src_v.texture },
+              pressure: { value: simProps.src_p?.texture },
+              velocity: { value: simProps.src_v?.texture },
               px: { value: simProps.cellScale },
               dt: { value: simProps.dt }
             }
@@ -788,11 +814,11 @@ export default function LiquidEther({
         });
         this.init();
       }
-      update(...args: Record<string, unknown>[]) {
-        const { vel, pressure } = (args[0] || {}) as { vel?: Record<string, unknown>; pressure?: Record<string, unknown> };
+      update(args: { vel?: THREE.WebGLRenderTarget | null; pressure?: THREE.WebGLRenderTarget | null } = {}) {
+        const { vel, pressure } = args;
         if (this.uniforms && vel && pressure) {
-          this.uniforms.velocity.value = vel.texture;
-          this.uniforms.pressure.value = pressure.texture;
+          (this.uniforms.velocity.value as any) = vel.texture;
+          (this.uniforms.pressure.value as any) = pressure.texture;
         }
         super.update();
       }
@@ -862,17 +888,25 @@ export default function LiquidEther({
         this.advection = new Advection({
           cellScale: this.cellScale,
           fboSize: this.fboSize,
+          boundarySpace: this.boundarySpace,
           dt: this.options.dt,
           src: this.fbos.vel_0,
           dst: this.fbos.vel_1
         });
         this.externalForce = new ExternalForce({
           cellScale: this.cellScale,
+          fboSize: this.fboSize,
+          boundarySpace: this.boundarySpace,
           cursor_size: this.options.cursor_size,
+          mouse_force: this.options.mouse_force,
+          viscous: this.options.viscous,
+          dt: this.options.dt,
+          src: this.fbos.vel_1,
           dst: this.fbos.vel_1
         });
         this.viscous = new Viscous({
           cellScale: this.cellScale,
+          fboSize: this.fboSize,
           boundarySpace: this.boundarySpace,
           viscous: this.options.viscous,
           src: this.fbos.vel_1,
@@ -882,6 +916,7 @@ export default function LiquidEther({
         });
         this.divergence = new Divergence({
           cellScale: this.cellScale,
+          fboSize: this.fboSize,
           boundarySpace: this.boundarySpace,
           src: this.fbos.vel_viscous0,
           dst: this.fbos.div,
@@ -889,14 +924,18 @@ export default function LiquidEther({
         });
         this.poisson = new Poisson({
           cellScale: this.cellScale,
+          fboSize: this.fboSize,
           boundarySpace: this.boundarySpace,
+          dt: this.options.dt,
           src: this.fbos.div,
           dst: this.fbos.pressure_1,
           dst_: this.fbos.pressure_0
         });
         this.pressure = new Pressure({
           cellScale: this.cellScale,
+          fboSize: this.fboSize,
           boundarySpace: this.boundarySpace,
+          src: this.fbos.vel_viscous0,
           src_p: this.fbos.pressure_0,
           src_v: this.fbos.vel_viscous0,
           dst: this.fbos.vel_0,
@@ -924,16 +963,16 @@ export default function LiquidEther({
           mouse_force: this.options.mouse_force,
           cellScale: this.cellScale
         });
-        let vel: Record<string, unknown> = this.fbos.vel_1;
+        let vel: THREE.WebGLRenderTarget | null = this.fbos.vel_1 || null;
         if (this.options.isViscous) {
           vel = this.viscous.update({
             viscous: this.options.viscous,
             iterations: this.options.iterations_viscous,
             dt: this.options.dt
-          });
+          }) || null;
         }
         this.divergence.update({ vel });
-        const pressure = this.poisson.update({ iterations: this.options.iterations_poisson });
+        const pressure = this.poisson.update({ iterations: this.options.iterations_poisson }) || null;
         this.pressure.update({ vel, pressure });
       }
     }
@@ -989,19 +1028,19 @@ export default function LiquidEther({
       private _onVisibility?: () => void;
       constructor(props: Record<string, unknown>) {
         this.props = props;
-        Common.init(props.$wrapper);
-        Mouse.init(props.$wrapper);
-        Mouse.autoIntensity = props.autoIntensity;
-        Mouse.takeoverDuration = props.takeoverDuration;
+        Common.init(props.$wrapper as HTMLElement);
+        Mouse.init(props.$wrapper as HTMLElement);
+        Mouse.autoIntensity = props.autoIntensity as number;
+        Mouse.takeoverDuration = props.takeoverDuration as number;
         Mouse.onInteract = () => {
           this.lastUserInteraction = performance.now();
           if (this.autoDriver) this.autoDriver.forceStop();
         };
-        this.autoDriver = new AutoDriver(Mouse, this as Record<string, unknown>, {
-          enabled: props.autoDemo,
-          speed: props.autoSpeed,
-          resumeDelay: props.autoResumeDelay,
-          rampDuration: props.autoRampDuration
+        this.autoDriver = new AutoDriver(Mouse, this as WebGLManager, {
+          enabled: props.autoDemo as boolean,
+          speed: props.autoSpeed as number,
+          resumeDelay: props.autoResumeDelay as number,
+          rampDuration: props.autoRampDuration as number
         });
         this.init();
         window.addEventListener('resize', this._resize);
@@ -1017,8 +1056,8 @@ export default function LiquidEther({
       }
       init() {
         if (!Common.renderer) return;
-        this.props.$wrapper.prepend(Common.renderer.domElement);
-        this.output = new Output();
+        (this.props.$wrapper as HTMLElement).prepend(Common.renderer.domElement);
+        this.output = new Output() as any;
       }
       resize() {
         Common.resize();
