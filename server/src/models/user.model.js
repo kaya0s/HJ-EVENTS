@@ -8,7 +8,10 @@ const userSchema = new Schema({
   },
   password: {
     type: String,
-    required: true,
+    required: function() {
+      return !this.googleId; // Password required only if not OAuth user
+    },
+    default: null,
     trim: true
   },
   email: {
@@ -27,6 +30,40 @@ const userSchema = new Schema({
     type: String,
     enum: ['user', 'admin'],
     default: 'user'
+  },
+  // OAuth fields
+  googleId: {
+    type: String,
+    sparse: true, // Allows multiple null values
+    unique: true
+  },
+  profilePic: {
+    type: String,
+    default: ''
+  },
+  // Password reset fields
+  resetPasswordToken: {
+    type: String,
+    default: null
+  },
+  resetCode: {
+    type: String,
+    default: null,
+    minlength: 6,
+    maxlength: 6
+  },
+  resetPasswordExpires: {
+    type: Date,
+    default: null
+  },
+  // Email verification
+  isEmailVerified: {
+    type: Boolean,
+    default: false
+  },
+  emailVerificationToken: {
+    type: String,
+    default: null
   }
 }, {
   timestamps: true
