@@ -1,23 +1,78 @@
 import React, { useState } from 'react'
-import { Link } from 'react-router-dom'
+import axios from 'axios'
+import { Link, useNavigate } from 'react-router-dom'
 import { Eye, EyeOff } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { HJLogo } from '@/components/hj-logo'
 import LiquidEther from '@/components/ui/LiquidEther'
 import { useTheme } from '@/components/theme-provider'
 
 export default function SignupPage() {
   const [showPassword, setShowPassword] = useState(false)
   const [showConfirmPassword, setShowConfirmPassword] = useState(false)
+  const [formData, setFormData] = useState({
+    firstName: '',
+    lastName: '',
+    email: '',
+    password: '',
+    confirmPassword: ''
+  })
+  const [isLoading, setIsLoading] = useState(false)
+  const [error, setError] = useState('')
   const { theme } = useTheme()
+  const navigate = useNavigate()
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, value } = e.target
+    setFormData(prev => ({ ...prev, [name]: value }))
+    if (error) setError('')
+  }
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    // Handle signup logic here
-    console.log('Signup submitted')
+    setIsLoading(true)
+    setError('')
+
+    // Validate passwords match
+    if (formData.password !== formData.confirmPassword) {
+      setError('Passwords do not match')
+      setIsLoading(false)
+      return
+    }
+
+    try {
+      const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:3000'
+
+      const res = await axios.post(
+        `${apiUrl}/api/auth/register`,
+        {
+          firstName: formData.firstName,
+          lastName: formData.lastName,
+          email: formData.email,
+          password: formData.password,
+        },
+        { withCredentials: true }
+      )
+
+      const data = res.data
+      // Store user data and redirect
+      localStorage.setItem('user', JSON.stringify(data.user))
+      navigate('/dashboard')
+    } catch (err) {
+      if (axios.isAxiosError(err) && err.response) {
+        setError(err.response.data?.message || 'Signup failed')
+      } else {
+        setError('Network error. Please try again.')
+      }
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
+  const handleGoogleSignup = () => {
+    window.location.href = `${import.meta.env.VITE_API_URL || 'http://localhost:3000'}/api/auth/google`
   }
 
   // Theme-based colors for LiquidEther
@@ -51,21 +106,29 @@ export default function SignupPage() {
       {/* Signup Card */}
       <Card className="w-full max-w-md shadow-lg border-border relative z-10 bg-background/70 backdrop-blur-md">
         <CardHeader className="space-y-6 pb-8">
-          <HJLogo />
           <CardTitle className="text-center text-xl font-medium text-foreground">
-            Create Account
+            Create an Account
           </CardTitle>
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-6">
+            {error && (
+              <div className="p-3 text-sm text-red-600 bg-red-50 dark:bg-red-900/20 dark:text-red-400 rounded-md">
+                {error}
+              </div>
+            )}
+
             {/* Group first and last name side by side on larger screens */}
             <div className="flex flex-col gap-4 sm:flex-row">
               <div className="flex-1 space-y-2">
                 <Label htmlFor="firstName" className="text-sm font-medium text-foreground">First Name</Label>
                 <Input
                   id="firstName"
+                  name="firstName"
                   type="text"
                   placeholder="Enter your first name"
+                  value={formData.firstName}
+                  onChange={handleInputChange}
                   required
                   className="w-full"
                 />
@@ -74,8 +137,11 @@ export default function SignupPage() {
                 <Label htmlFor="lastName" className="text-sm font-medium text-foreground">Last Name</Label>
                 <Input
                   id="lastName"
+                  name="lastName"
                   type="text"
                   placeholder="Enter your last name"
+                  value={formData.lastName}
+                  onChange={handleInputChange}
                   required
                   className="w-full"
                 />
@@ -88,8 +154,11 @@ export default function SignupPage() {
                 <Label htmlFor="email" className="text-sm font-medium text-foreground">Email</Label>
                 <Input
                   id="email"
+                  name="email"
                   type="email"
                   placeholder="Example@gmail.com"
+                  value={formData.email}
+                  onChange={handleInputChange}
                   required
                   className="w-full"
                 />
@@ -99,8 +168,11 @@ export default function SignupPage() {
                 <div className="relative">
                   <Input
                     id="password"
+                    name="password"
                     type={showPassword ? "text" : "password"}
                     placeholder="Create a password"
+                    value={formData.password}
+                    onChange={handleInputChange}
                     required
                     className="w-full pr-10"
                   />
@@ -127,8 +199,11 @@ export default function SignupPage() {
               <div className="relative">
                 <Input
                   id="confirmPassword"
+                  name="confirmPassword"
                   type={showConfirmPassword ? "text" : "password"}
                   placeholder="Confirm your password"
+                  value={formData.confirmPassword}
+                  onChange={handleInputChange}
                   required
                   className="w-full pr-10"
                 />
@@ -152,8 +227,9 @@ export default function SignupPage() {
               type="submit" 
               className="w-full"
               size="lg"
+              disabled={isLoading}
             >
-              Create Account
+              {isLoading ? 'Creating Account...' : 'Create Account'}
             </Button>
           </form>
 
@@ -172,6 +248,8 @@ export default function SignupPage() {
             variant="outline" 
             className="w-full"
             size="lg"
+            onClick={handleGoogleSignup}
+            type="button"
           >
             <svg className="w-4 h-4 mr-2" viewBox="0 0 24 24">
               <path
