@@ -1,4 +1,5 @@
 import React, { useState } from 'react'
+import axios from 'axios'
 import { Link, useNavigate } from 'react-router-dom'
 import { Eye, EyeOff } from 'lucide-react'
 import { Button } from '@/components/ui/button'
@@ -42,31 +43,29 @@ export default function SignupPage() {
     }
 
     try {
-      const response = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:3000'}/api/auth/register`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        credentials: 'include',
-        body: JSON.stringify({
+      const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:3000'
+
+      const res = await axios.post(
+        `${apiUrl}/api/auth/register`,
+        {
           firstName: formData.firstName,
           lastName: formData.lastName,
           email: formData.email,
-          password: formData.password
-        })
-      })
+          password: formData.password,
+        },
+        { withCredentials: true }
+      )
 
-      const data = await response.json()
-
-      if (response.ok) {
-        // Store user data and redirect
-        localStorage.setItem('user', JSON.stringify(data.user))
-        navigate('/dashboard')
+      const data = res.data
+      // Store user data and redirect
+      localStorage.setItem('user', JSON.stringify(data.user))
+      navigate('/dashboard')
+    } catch (err) {
+      if (axios.isAxiosError(err) && err.response) {
+        setError(err.response.data?.message || 'Signup failed')
       } else {
-        setError(data.message || 'Signup failed')
+        setError('Network error. Please try again.')
       }
-    } catch{
-      setError('Network error. Please try again.')
     } finally {
       setIsLoading(false)
     }

@@ -8,6 +8,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { HJLogo } from '@/components/hj-logo'
 import LiquidEther from '@/components/ui/LiquidEther'
 import { useTheme } from '@/components/theme-provider'
+import axios from 'axios'
 
 export default function ResetPasswordPage() {
   const [searchParams] = useSearchParams()
@@ -66,7 +67,7 @@ export default function ResetPasswordPage() {
     return Object.keys(newErrors).length === 0
   }
 
-  const handleSubmit = async (e: React.FormEvent) => {
+   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     
     if (!validateForm()) return
@@ -74,36 +75,35 @@ export default function ResetPasswordPage() {
     setIsLoading(true)
     
     try {
-      const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:3000'
+      const apiUrl = import.meta.env.VITE_API_URL
       const body = {
         resetToken: resetToken,
         code: formData.code,
         newPassword: formData.password
       }
 
-      const res = await fetch(`${apiUrl}/api/auth/reset-password`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
-        body: JSON.stringify(body)
-      })
+      const res = await axios.post(
+        `${apiUrl}/api/auth/reset-password`,
+        body,
+        { withCredentials: true }
+      )
 
-      const data = await res.json().catch(() => ({}))
+      const data = res.data || {}
 
-      if (res.ok) {
-        setServerMessage(data.message || 'Password reset successful.')
-        // clear stored token since it's single-use
-  try { window.sessionStorage.removeItem('resetToken') } catch { /* ignore */ }
-        setIsSuccess(true)
-      } else {
-        const msg = data?.message || 'Failed to reset password. Please try again.'
+      setServerMessage(data.message || 'Password reset successful.')
+      // clear stored token since it's single-use
+      try { window.sessionStorage.removeItem('resetToken') } catch { /* ignore */ }
+      setIsSuccess(true)
+    } catch (err) {
+      console.error('Error resetting password:', err)
+      if (axios.isAxiosError(err) && err.response) {
+        const msg = err.response.data?.message || 'Failed to reset password. Please try again.'
         setErrors({ general: msg })
         setServerMessage(msg)
+      } else {
+        setErrors({ general: 'Network error. Please try again.' })
+        setServerMessage('Network error. Please try again.')
       }
-    } catch (error) {
-      console.error('Error resetting password:', error)
-      setErrors({ general: 'Network error. Please try again.' })
-      setServerMessage('Network error. Please try again.')
     } finally {
       setIsLoading(false)
     }

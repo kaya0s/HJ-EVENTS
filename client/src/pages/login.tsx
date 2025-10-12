@@ -34,7 +34,7 @@ export default function LoginPage() {
     setError('')
 
     try {
-      const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:3000'
+      const apiUrl = import.meta.env.VITE_API_URL
       const res = await axios.post(
         `${apiUrl}/api/auth/login`,
         formData,

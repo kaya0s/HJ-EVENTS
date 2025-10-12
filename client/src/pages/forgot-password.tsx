@@ -1,4 +1,5 @@
-import React, { useState } from 'react'
+import { useState } from 'react'
+import axios from 'axios'
 import { Link } from 'react-router-dom'
 import { ArrowLeft, Mail } from 'lucide-react'
 import { Button } from '@/components/ui/button'
@@ -13,22 +14,34 @@ export default function ForgotPasswordPage() {
   const [email, setEmail] = useState('')
   const [isLoading, setIsLoading] = useState(false)
   const [isSubmitted, setIsSubmitted] = useState(false)
+  const [error, setError] = useState('')
   const { theme } = useTheme()
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setIsLoading(true)
-    
+    setError('')
     try {
-      // TODO: Implement API call to send reset code
-      console.log('Sending reset code to:', email)
-      
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 2000))
-      
+      const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:3000'
+
+      const res = await axios.post(
+        `${apiUrl}/api/auth/forgot-password`,
+        { email },
+        { withCredentials: true }
+      )
+
+      const data = res.data
+      // API returns a resetToken that we'll store temporarily for the reset flow
+      const resetToken = data?.resetToken || null
+      try { if (resetToken) window.sessionStorage.setItem('resetToken', resetToken) } catch (e) { console.warn('Could not store resetToken in sessionStorage', e) }
       setIsSubmitted(true)
-    } catch (error) {
-      console.error('Error sending reset code:', error)
+    } catch (err) {
+      console.error('Error sending reset code:', err)
+      if (axios.isAxiosError(err) && err.response) {
+        setError(err.response.data?.message || 'Failed to send reset email. Please try again.')
+      } else {
+        setError('Network error. Please try again.')
+      }
     } finally {
       setIsLoading(false)
     }
@@ -162,6 +175,11 @@ export default function ForgotPasswordPage() {
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-6">
+            {error && (
+              <div className="p-3 text-sm text-red-600 bg-red-50 dark:bg-red-900/20 dark:text-red-400 rounded-md">
+                {error}
+              </div>
+            )}
             <div className="space-y-2">
               <Label htmlFor="email" className="text-sm font-medium text-foreground">
                 Email Address
