@@ -2,7 +2,8 @@ import LiquidEther from '@/components/ui/LiquidEther';
 import { useTheme } from '@/components/theme-provider'
 
 import React, { useState } from 'react'
-import { Link } from 'react-router-dom'
+import axios from 'axios'
+import { Link, useNavigate } from 'react-router-dom'
 import { Eye, EyeOff } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -12,12 +13,53 @@ import { HJLogo } from '@/components/hj-logo'
 
 export default function LoginPage() {
   const [showPassword, setShowPassword] = useState(false)
+  const [formData, setFormData] = useState({
+    email: '',
+    password: ''
+  })
+  const [isLoading, setIsLoading] = useState(false)
+  const [error, setError] = useState('')
   const { theme } = useTheme()
+  const navigate = useNavigate()
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, value } = e.target
+    setFormData(prev => ({ ...prev, [name]: value }))
+    if (error) setError('')
+  }
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    // Handle login logic here
-    console.log('Login submitted')
+    setIsLoading(true)
+    setError('')
+
+    try {
+      const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:3000'
+      const res = await axios.post(
+        `${apiUrl}/api/auth/login`,
+        formData,
+        { withCredentials: true }
+      )
+
+      const data = res.data
+      // Store user data and redirect
+      localStorage.setItem('user', JSON.stringify(data.user))
+      navigate('/dashboard')
+    } catch (err) {
+      // axios error handling (narrow unknown)
+      const e = err as { response?: { data?: { message?: string } } }
+      if (e && e.response && e.response.data && e.response.data.message) {
+        setError(e.response.data.message as string)
+      } else {
+        setError('Network error. Please try again.')
+      }
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
+  const handleGoogleLogin = () => {
+    window.location.href = `${import.meta.env.VITE_API_URL || 'http://localhost:3000'}/api/auth/google`
   }
 
   // Theme-based colors for LiquidEther
@@ -59,12 +101,21 @@ export default function LoginPage() {
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-6">
+            {error && (
+              <div className="p-3 text-sm text-red-600 bg-red-50 dark:bg-red-900/20 dark:text-red-400 rounded-md">
+                {error}
+              </div>
+            )}
+
             <div className="space-y-2">
               <Label htmlFor="email" className="text-sm font-medium text-foreground">Email</Label>
               <Input
                 id="email"
+                name="email"
                 type="email"
                 placeholder="Example@gmail.com"
+                value={formData.email}
+                onChange={handleInputChange}
                 required
                 className="w-full"
               />
@@ -75,8 +126,11 @@ export default function LoginPage() {
               <div className="relative">
                 <Input
                   id="password"
+                  name="password"
                   type={showPassword ? "text" : "password"}
                   placeholder="Password"
+                  value={formData.password}
+                  onChange={handleInputChange}
                   required
                   className="w-full pr-10"
                 />
@@ -96,12 +150,22 @@ export default function LoginPage() {
               </div>
             </div>
 
+            <div className="text-right">
+              <Link 
+                to="/forgot-password" 
+                className="text-sm text-primary hover:text-primary/80 transition-colors"
+              >
+                Forgot password?
+              </Link>
+            </div>
+
             <Button 
               type="submit" 
               className="w-full"
               size="lg"
+              disabled={isLoading}
             >
-              Login now
+              {isLoading ? 'Logging in...' : 'Login now'}
             </Button>
           </form>
 
@@ -120,6 +184,8 @@ export default function LoginPage() {
             variant="outline" 
             className="w-full"
             size="lg"
+            onClick={handleGoogleLogin}
+            type="button"
           >
             <svg className="w-4 h-4 mr-2" viewBox="0 0 24 24">
               <path

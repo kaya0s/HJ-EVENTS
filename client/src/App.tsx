@@ -4,6 +4,10 @@ import { ThemeProvider } from '@/components/theme-provider'
 import { ThemeToggle } from '@/components/theme-toggle'
 import LoginPage from '@/pages/login'
 import SignupPage from '@/pages/signup'
+import ForgotPasswordPage from '@/pages/forgot-password'
+import ResetPasswordPage from '@/pages/reset-password'
+import AuthSuccessPage from '@/pages/auth-success'
+import DashboardPage from '@/pages/dashboard'
 
 function App() {
   return (
@@ -18,6 +22,10 @@ function App() {
               <Route path="/" element={<Navigate to="/login" replace />} />
               <Route path="/login" element={<LoginPage />} />
               <Route path="/signup" element={<SignupPage />} />
+              <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+              <Route path="/reset-password" element={<ResetPasswordPage />} />
+              <Route path="/auth/success" element={<AuthSuccessPage />} />
+              <Route path="/dashboard" element={<DashboardPage />} />
             </Routes>
           </div>
         </Router>
