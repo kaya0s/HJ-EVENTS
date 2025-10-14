@@ -1,7 +1,11 @@
+#test file
+test.js
+
 node_modules/
 .env
 .env.locals
 .env.*.local
+
 
 # Logs
 logs
