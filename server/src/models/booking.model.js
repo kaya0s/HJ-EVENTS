@@ -1,41 +1,32 @@
-import mongoose, { Schema, model } from 'mongoose';
-
-const BookingSchema = new Schema({
-  couple: {
-    type: Schema.Types.ObjectId,
-    ref: 'Couple',
-    required: true,
-    index: true
+const bookingSchema = new Schema({
+  couple: { 
+    type: Schema.Types.ObjectId, 
+    ref: 'User', 
+    required: true 
   },
-  eventType: {
-    type: String,
-    enum: ['wedding', 'prenup'],
-    default: 'wedding'
+  package: { 
+    type: Schema.Types.ObjectId, 
+    ref: 'Package', 
+    required: true 
   },
-  eventDate: {
-    type: Date,
-    required: true
+  eventDate: { 
+    type: Date, 
+    required: true 
   },
-  notes: {
-    type: String,
-    default: ''
+  status: { 
+    type: String, 
+    enum: ['Pending', 'Approved', 'Rejected', 'Completed'], 
+    default: 'Pending' 
   },
-  price: {
-    type: Number,
-    default: 0
+  paymentStatus: { 
+    type: String, 
+    enum: ['Unpaid', 'Reserved', 'Paid'], 
+    default: 'Unpaid' 
   },
-  status: {
-    type: String,
-    enum: ['pending', 'confirmed', 'cancelled'],
-    default: 'pending'
-  },
-  createdBy: { type: Schema.Types.ObjectId, ref: 'User' }
-}, {
-  timestamps: true
+  createdAt: { 
+    type: Date, 
+    default: Date.now 
+  }
 });
 
-// helpful compound index for queries by couple + date
-BookingSchema.index({ couple: 1, eventDate: 1 });
-
-const Booking = model('Booking', BookingSchema);
-export default Booking;
+module.exports = model('Booking', bookingSchema);
