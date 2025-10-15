@@ -1,3 +1,6 @@
+#test file for server
+test.js
+
 node_modules/
 .env
 .env.locals
