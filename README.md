@@ -148,5 +148,3 @@ Booking endpoints (example):
 
 Note: client uses axios with `withCredentials` where needed.
 
-## License
-
