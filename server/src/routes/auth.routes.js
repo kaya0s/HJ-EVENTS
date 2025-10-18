@@ -13,7 +13,7 @@ const router = express.Router()
 passport.use(new GoogleStrategy({
   clientID: process.env.GOOGLE_CLIENT_ID,
   clientSecret: process.env.GOOGLE_CLIENT_SECRET,
-  callbackURL: `${process.env.SERVER_URL || 'http://localhost:3000'}/api/auth/google/callback`
+  callbackURL: `${process.env.SERVER_URL}/api/auth/google/callback`
 }, async (accessToken, refreshToken, profile, done) => {
   try {
     console.log('Google OAuth Profile:', profile);
@@ -76,7 +76,7 @@ router.post('/login', async (req, res) => {
     const { email, password } = req.body;
     
     if(!email||!password) return res.status(400).json({message:"Invalid Credentials"})
-
+      console.log(email,password)
     try {
       
         // Find user by email
@@ -136,7 +136,9 @@ router.post("/register",async (req, res) => {
       // generate jwt token here
       generateToken(newUser._id, res);
       await newUser.save();
-
+     
+      //send welcome email
+      await sendWelcomeEmail(email,firstName+" "+lastName);
 
       res.status(201).json({message:"Successfully created an account",user:{
         _id: newUser._id,
@@ -283,7 +285,7 @@ router.get('/google/callback',
 
 // Logout
 router.post('/logout', (req, res) => {
-  res.clearCookie('jwt');
+  res.cookie('jwt', '', { maxAge: 0 });
   res.status(200).json({ message: 'Logged out successfully' });
 });
 
