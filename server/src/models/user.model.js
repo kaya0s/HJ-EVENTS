@@ -64,6 +64,16 @@ const userSchema = new Schema({
   emailVerificationToken: {
     type: String,
     default: null
+  },
+  address: {
+    type: String,
+    trim: true,
+    default: ''
+  },
+  phone: {
+    type: String,
+    trim: true,
+    default: ''
   }
 }, {
   timestamps: true
