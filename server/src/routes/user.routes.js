@@ -1,7 +1,11 @@
 import express from 'express';
 import { protect, isAdmin } from '../middlewares/auth.js';
-import { getProfile, updateProfile, listUsers, updateUser } from '../controllers/user.controller.js';
-
+import {
+  getProfile,
+  updateProfile,
+  listUsers,
+  updateUser,
+} from '../controllers/user.controller.js';
 const router = express.Router();
 
 router.get('/me', protect, getProfile);
