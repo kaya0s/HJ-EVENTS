@@ -9,14 +9,6 @@ HJ Wedding Event Booking System is a two-tier (client + server) app:
 
 It includes authentication, password reset (email/code + reset token stored in sessionStorage), booking management, and basic user flows.
 
-## Key features
-- User signup / login with server-side auth
-- Forgot-password → send reset code, reset password flow
-- Couple model for canonical dates (wedding/prenup)
-- Booking model that references Couple and stores per-booking eventDate
-- Axios-based API calls from client (uses VITE_API_URL)
-- Mongoose for data modeling and relationships
-
 ## Tech stack
 - Client: React, Vite, TypeScript (project patterns use import.meta.env for VITE_* vars), axios
 - Server: Node.js, Express, Mongoose, dotenv
