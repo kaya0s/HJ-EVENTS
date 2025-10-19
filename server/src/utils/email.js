@@ -61,26 +61,58 @@ export const sendWelcomeEmail = async (email, fullName) => {
     const mailOptions = {
       from: process.env.EMAIL_USER,
       to: email,
-      subject: 'Welcome to Your App!',
+      subject: 'Welcome to HJ Events — Wedding Coordination',
       html: `
-        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-          <h2 style="color: #333;">Welcome ${fullName}!</h2>
-          <p>Thank you for joining our platform. We're excited to have you on board!</p>
-          
-          <p>You can now access all the features of our application.</p>
-          
-          <div style="text-align: center; margin: 30px 0;">
-            <a href="${process.env.CLIENT_URL}/login" 
-               style="background-color: #007bff; color: white; padding: 12px 24px; text-decoration: none; border-radius: 5px; display: inline-block;">
-              Get Started
-            </a>
+      <div style="font-family: Arial, sans-serif; background-color: #fff7f7; padding: 30px;">
+        <div style="max-width: 600px; margin: 0 auto; background: #ffffff; border-radius: 8px; overflow: hidden; box-shadow: 0 2px 8px rgba(0,0,0,0.06);">
+        
+        <div style="padding: 24px 24px 0; text-align: center;">
+          <img
+          src="${process.env.BUSINESS_LOGO_URL || `${process.env.CLIENT_URL}/assets/logo.png`}"
+          alt="HJ Events Logo"
+          style="max-width: 140px; height: auto; display: inline-block; margin-bottom: 12px;"
+          />
+        </div>
+
+        <div style="padding: 0 24px 24px;">
+          <h1 style="color: #6b2635; font-size: 22px; margin: 8px 0 12px; text-align: center;">
+          Welcome, ${fullName}!
+          </h1>
+
+          <p style="color: #555555; line-height: 1.6; margin: 0 0 16px; text-align: center;">
+          Thank you for choosing HJ Events for your wedding coordination. We're delighted to be a part of your special journey — our team will help bring your vision to life.
+          </p>
+
+          <div style="background: linear-gradient(180deg, #fff 0%, #fff8f8 100%); border-radius: 6px; padding: 18px; margin: 16px 0; text-align: center;">
+          <p style="margin: 0 0 8px; color: #6b2635; font-weight: 600;">Next steps</p>
+          <p style="margin: 0 0 12px; color: #666; font-size: 14px;">
+            Complete your event details and we'll assign your dedicated coordinator.
+          </p>
+          <a href="${process.env.CLIENT_URL}/dashboard"
+             style="display: inline-block; background-color: #b76e79; color: #fff; padding: 12px 20px; border-radius: 5px; text-decoration: none; font-weight: 600;">
+            Set Up My Event
+          </a>
           </div>
-          
-          <hr style="margin: 30px 0; border: none; border-top: 1px solid #eee;">
-          <p style="color: #666; font-size: 12px;">
-            This is an automated message, please do not reply to this email.
+
+          <p style="color: #666; font-size: 14px; margin: 0 0 12px;">
+          If you'd like to speak with a coordinator now, email us at
+          <a href="mailto:${process.env.SUPPORT_EMAIL || process.env.EMAIL_USER}" style="color: #b76e79; text-decoration: none;">
+            ${process.env.SUPPORT_EMAIL || process.env.EMAIL_USER}
+          </a>.
+          </p>
+
+          <hr style="border: none; border-top: 1px solid #f0e6e6; margin: 20px 0;">
+
+          <p style="color: #999; font-size: 12px; text-align: center; margin: 0 0 18px;">
+          HJ Events • Wedding coordination & planning
+          </p>
+
+          <p style="color: #aaa; font-size: 11px; text-align: center; margin: 0 0 24px;">
+          This is an automated message, please do not reply to this email.
           </p>
         </div>
+        </div>
+      </div>
       `
     };
 
