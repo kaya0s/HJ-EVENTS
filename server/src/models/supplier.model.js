@@ -1,33 +1,39 @@
-const supplierSchema = new Schema({
-  name: { 
-    type: String, 
-    required: true
-   },
-  category: { 
-    type: String, 
-    required: true 
+import { Schema, model } from 'mongoose';
+
+const supplierSchema = new Schema(
+  {
+    name: {
+      type: String,
+      required: true,
+    },
+    category: {
+      type: String,
+      required: true,
+    },
+    description: {
+      type: String,
+      default: '',
+    },
+    contactInfo: {
+      phone: { type: String, default: '' },
+      email: { type: String, default: '' },
+      address: { type: String, default: '' },
+    },
+    priceRange: {
+      type: String,
+      default: '',
+    },
+    imageURL: {
+      type: String,
+      default: '',
+    },
+    rating: {
+      type: Number,
+      default: 0,
+    },
   },
-  description: { 
-    type: String 
-  },
-  contactInfo: {
-    phone: String,
-    email: String,
-    address: String
-  },
-  rating: { 
-    type: Number, 
-    default: 0 
-  },
-  isActive: { 
-    type: Boolean, 
-    default: true 
-  },
-  createdAt: { 
-    type: Date, 
-    default: Date.now 
-  }
-});
+  { timestamps: true }
+);
 
 const Supplier = model('Supplier', supplierSchema);
 export default Supplier;
