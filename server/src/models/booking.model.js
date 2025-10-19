@@ -1,7 +1,9 @@
+import mongoose, { Schema, model } from 'mongoose';
+
 const bookingSchema = new Schema({
   couple: { 
-    type: Schema.Types.ObjectId, 
-    ref: 'User', 
+    type: Schema.Types.ObjectId,
+    ref: 'user', 
     required: true 
   },
   package: { 
@@ -23,10 +25,11 @@ const bookingSchema = new Schema({
     enum: ['Unpaid', 'Reserved', 'Paid'], 
     default: 'Unpaid' 
   },
-  createdAt: { 
-    type: Date, 
-    default: Date.now 
+  totalAmount: { 
+    type: Number, 
+    default: 0 
   }
-});
+}, { timestamps: true });
 
-module.exports = model('Booking', bookingSchema);
+const Booking = model('Booking', bookingSchema);
+export default Booking;
