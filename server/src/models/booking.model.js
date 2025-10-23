@@ -2,9 +2,9 @@ import mongoose from 'mongoose';
 
 const bookingSchema = new mongoose.Schema(
   {
-    client: {
+    couple: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: 'User',
+      ref: 'Couple',
       required: true,
     },
     supplier: {
@@ -16,9 +16,9 @@ const bookingSchema = new mongoose.Schema(
       type: mongoose.Schema.Types.ObjectId,
       ref: 'Package',
     },
-    eventDate: {
+    prenuptDate: {
       type: Date,
-      required: true,
+      default: null,
     },
     weddingDate: {
       type: Date,
@@ -28,6 +28,10 @@ const bookingSchema = new mongoose.Schema(
       type: String,
       enum: ['Pending', 'Accepted', 'Completed', 'Cancelled'],
       default: 'Pending',
+    },
+    notes: {
+      type: String,
+      trim: true,
     },
   },
   { timestamps: true }
