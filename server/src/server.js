@@ -9,9 +9,10 @@ import morgan from 'morgan';
 import cookieParser from 'cookie-parser';
 import supplierRoutes from './routes/supplier.routes.js';
 import bookingRoutes from './routes/booking.routes.js';
-import feedbackRoutes from './routes/feedback.routes.js';
+// import feedbackRoutes from './routes/feedback.routes.js';
 import adminRoutes from './routes/admin.routes.js';
 import userRoutes from './routes/user.routes.js';
+import feedbackRoutes from './routes/feedback.routes.js';
 
 dotenv.config();
 
@@ -22,21 +23,25 @@ const app = express();
 const PORT = process.env.PORT;
 
 // Middleware
-app.use(cors({
-  origin: process.env.CLIENT_URL,
-  credentials: true
-}));
+app.use(
+  cors({
+    origin: process.env.CLIENT_URL,
+    credentials: true,
+  })
+);
 app.use(json());
 app.use(cookieParser());
-app.use(session({
-  secret: process.env.SESSION_SECRET,
-  resave: false,
-  saveUninitialized: false,
-  cookie: {
-    secure: process.env.NODE_ENV === 'production',
-    maxAge: 24 * 60 * 60 * 1000 // 24 hours
-  }
-}));
+app.use(
+  session({
+    secret: process.env.SESSION_SECRET,
+    resave: false,
+    saveUninitialized: false,
+    cookie: {
+      secure: process.env.NODE_ENV === 'production',
+      maxAge: 24 * 60 * 60 * 1000, // 24 hours
+    },
+  })
+);
 app.use(passport.initialize());
 app.use(passport.session());
 app.use(morgan('dev'));
