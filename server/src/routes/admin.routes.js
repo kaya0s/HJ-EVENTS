@@ -1,7 +1,6 @@
 import express from 'express';
 import { protect, isAdmin } from '../middlewares/auth.js';
 import { getDashboard, getMonthlyRevenue } from '../controllers/reports.controller.js';
-
 import {
   postAnnouncement,
   listAnnouncements,
