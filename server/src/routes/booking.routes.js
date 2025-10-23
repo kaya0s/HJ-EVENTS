@@ -6,13 +6,13 @@ import {
   cancelBooking,
   approveBooking,
   rejectBooking,
-  mockPayment
+  mockPayment,
 } from '../controllers/booking.controller.js';
 
 const router = express.Router();
 
-router.post('/', protect, createBooking); // create booking
-router.get('/me', protect, getMyBookings);
+router.post('/', protect, isAdmin, createBooking);
+router.get('/me', protect, isAdmin, getMyBookings);
 router.post('/cancel/:id', protect, cancelBooking);
 
 // Admin actions

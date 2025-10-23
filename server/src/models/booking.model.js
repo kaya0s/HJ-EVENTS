@@ -1,35 +1,36 @@
-import mongoose, { Schema, model } from 'mongoose';
+import mongoose from 'mongoose';
 
-const bookingSchema = new Schema({
-  couple: { 
-    type: Schema.Types.ObjectId,
-    ref: 'user', 
-    required: true 
+const bookingSchema = new mongoose.Schema(
+  {
+    client: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'User',
+      required: true,
+    },
+    supplier: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'Supplier',
+      required: true,
+    },
+    package: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'Package',
+    },
+    eventDate: {
+      type: Date,
+      required: true,
+    },
+    weddingDate: {
+      type: Date,
+      required: true,
+    },
+    status: {
+      type: String,
+      enum: ['Pending', 'Accepted', 'Completed', 'Cancelled'],
+      default: 'Pending',
+    },
   },
-  package: { 
-    type: Schema.Types.ObjectId, 
-    ref: 'Package', 
-    required: true 
-  },
-  eventDate: { 
-    type: Date, 
-    required: true 
-  },
-  status: { 
-    type: String, 
-    enum: ['Pending', 'Approved', 'Rejected', 'Completed'], 
-    default: 'Pending' 
-  },
-  paymentStatus: { 
-    type: String, 
-    enum: ['Unpaid', 'Reserved', 'Paid'], 
-    default: 'Unpaid' 
-  },
-  totalAmount: { 
-    type: Number, 
-    default: 0 
-  }
-}, { timestamps: true });
+  { timestamps: true }
+);
 
-const Booking = model('Booking', bookingSchema);
-export default Booking;
+export default mongoose.model('Booking', bookingSchema);
