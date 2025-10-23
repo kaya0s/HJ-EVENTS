@@ -2,6 +2,7 @@
 
 import Supplier from '../models/supplier.model.js';
 import cloudinary from '../utils/cloudinary.js';
+import Booking from '../models/booking.model.js';
 
 // Helper to upload buffer to Cloudinary and return secure_url
 const uploadBufferToCloudinary = async (buffer, filename = 'upload') => {
@@ -11,7 +12,6 @@ const uploadBufferToCloudinary = async (buffer, filename = 'upload') => {
   return result.secure_url;
 };
 
-// Create supplier (Admin only)
 export const createSupplier = async (req, res) => {
   try {
     const data = req.body || {};
@@ -73,5 +73,94 @@ export const deleteSupplier = async (req, res) => {
     res.json({ message: 'Supplier deleted' });
   } catch (error) {
     res.status(500).json({ message: 'Server error' });
+  }
+};
+
+/**
+ * @desc   Get logged-in supplier profile
+ * @route  GET /api/suppliers/my-profile
+ * @access Supplier
+ */
+export const getMyProfile = async (req, res) => {
+  try {
+    const supplier = await Supplier.findById(req.user.id).select('-password'); // exclude password
+    if (!supplier) {
+      return res.status(404).json({ message: 'Supplier not found' });
+    }
+    res.json(supplier);
+  } catch (error) {
+    res.status(500).json({ message: 'Server error', error: error.message });
+  }
+};
+
+/**
+ * @desc   Update supplier profile
+ * @route  PUT /api/suppliers/my-profile
+ * @access Supplier
+ */
+export const updateMyProfile = async (req, res) => {
+  try {
+    const updates = req.body;
+
+    const supplier = await Supplier.findByIdAndUpdate(req.user.id, updates, {
+      new: true,
+      runValidators: true,
+    }).select('-password');
+
+    if (!supplier) {
+      return res.status(404).json({ message: 'Supplier not found' });
+    }
+
+    res.json({
+      message: 'Profile updated successfully',
+      supplier,
+    });
+  } catch (error) {
+    res.status(500).json({ message: 'Server error', error: error.message });
+  }
+};
+
+/**
+ * @desc   Get all bookings assigned to this supplier
+ * @route  GET /api/suppliers/my-bookings
+ * @access Supplier
+ */
+export const getMyBookings = async (req, res) => {
+  try {
+    const bookings = await Booking.find({ supplier: req.user.id })
+      .populate('client', 'name email')
+      .populate('package', 'name price status');
+
+    res.json(bookings);
+  } catch (error) {
+    res.status(500).json({ message: 'Server error', error: error.message });
+  }
+};
+
+/**
+ * @desc   Update booking status (Accepted, In Progress, Completed, etc.)
+ * @route  PATCH /api/suppliers/booking/:bookingId/status
+ * @access Supplier
+ */
+export const updateBookingStatus = async (req, res) => {
+  try {
+    const { bookingId } = req.params;
+    const { status } = req.body;
+
+    const booking = await Booking.findOne({
+      _id: bookingId,
+      supplier: req.user.id, // ensure supplier owns it
+    });
+
+    if (!booking) {
+      return res.status(404).json({ message: 'Booking not found or not yours' });
+    }
+
+    booking.status = status;
+    await booking.save();
+
+    res.json({ message: 'Booking status updated', booking });
+  } catch (error) {
+    res.status(500).json({ message: 'Server error', error: error.message });
   }
 };

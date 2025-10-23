@@ -1,6 +1,5 @@
 import Booking from '../models/booking.model.js';
 import Feedback from '../models/feedback.model.js';
-import Supplier from '../models/supplier.model.js';
 
 // Return counts and popular suppliers
 export const getDashboard = async (req, res) => {
@@ -15,12 +14,12 @@ export const getDashboard = async (req, res) => {
       { $sort: { count: -1 } },
       { $limit: 5 },
       { $lookup: { from: 'suppliers', localField: '_id', foreignField: '_id', as: 'supplier' } },
-      { $unwind: '$supplier' }
+      { $unwind: '$supplier' },
     ]);
 
     res.json({ totalBookings, pending, approved, popular });
   } catch (error) {
-    res.status(500).json({ message: 'Server error' });
+    res.status(500).json({ message: `Server error${error}` });
   }
 };
 
@@ -29,10 +28,10 @@ export const getMonthlyRevenue = async (req, res) => {
     const months = await Booking.aggregate([
       { $match: { paymentStatus: 'Paid' } },
       { $group: { _id: { $month: '$createdAt' }, revenue: { $sum: '$totalAmount' } } },
-      { $sort: { '_id': 1 } }
+      { $sort: { _id: 1 } },
     ]);
     res.json({ months });
   } catch (error) {
-    res.status(500).json({ message: 'Server error' });
+    res.status(500).json({ message: `Server error${error}` });
   }
 };
