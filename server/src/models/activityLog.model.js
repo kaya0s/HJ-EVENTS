@@ -1,24 +1,27 @@
-import {Schema,model} from 'mongoose'
+import { Schema, model } from 'mongoose';
 
-const activityLogSchema = new Schema({
-    actor:{
-        type: Schema.Types.ObjectId,
-        ref:'user',
-        required:false
+const activityLogSchema = new Schema(
+  {
+    actor: {
+      type: Schema.Types.ObjectId,
+      ref: 'user',
+      required: false,
     },
-    actorName:{
-        type:String,
-        default:''
+    actorName: {
+      type: String,
+      default: '',
     },
-    action:{
-        type:String,
-        required:true
+    action: {
+      type: String,
+      required: true,
     },
-    details:{
-        type:String,
-        default:''
-    }
-},{timestamps:true})
+    details: {
+      type: String,
+      default: '',
+    },
+  },
+  { timestamps: true }
+);
 
-const ActivityLog = model('ActivityLog',activityLogSchema)
-export default ActivityLog
+const ActivityLog = model('ActivityLog', activityLogSchema);
+export default ActivityLog;
