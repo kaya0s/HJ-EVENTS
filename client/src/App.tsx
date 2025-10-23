@@ -1,13 +1,18 @@
-import { StrictMode } from 'react'
-import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom'
-import { ThemeProvider } from '@/components/theme-provider'
-import { ThemeToggle } from '@/components/theme-toggle'
-import LoginPage from '@/pages/login'
-import SignupPage from '@/pages/signup'
-import ForgotPasswordPage from '@/pages/forgot-password'
-import ResetPasswordPage from '@/pages/reset-password'
-import AuthSuccessPage from '@/pages/auth-success'
-import DashboardPage from '@/pages/dashboard'
+import { StrictMode } from "react";
+import {
+  BrowserRouter as Router,
+  Routes,
+  Route,
+  Navigate,
+} from "react-router-dom";
+import { ThemeProvider } from "@/components/theme-provider";
+import { ThemeToggle } from "@/components/theme-toggle";
+import LoginPage from "@/pages/login";
+import SignupPage from "@/pages/signup";
+import ForgotPasswordPage from "@/pages/forgot-password";
+import ResetPasswordPage from "@/pages/reset-password";
+import AuthSuccessPage from "@/pages/auth-success";
+import DashboardPage from "@/pages/dashboard";
 
 function App() {
   return (
@@ -31,7 +36,7 @@ function App() {
         </Router>
       </ThemeProvider>
     </StrictMode>
-  )
+  );
 }
 
-export default App
+export default App;
