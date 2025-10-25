@@ -2,7 +2,22 @@ import { StrictMode } from "react";
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 import { ThemeProvider } from "@/components/theme-provider";
 import { ThemeToggle } from "@/components/theme-toggle";
-import { routes } from "@/routes/LoginRoute";
+import { LoginRoute } from "@/routes/LoginRoute";
+import { AdminRoutes } from "@/routes/AdminRoutes";
+
+// Helper function to render routes recursively (handles nested routes)
+const renderRoutes = (routes: any[]) => {
+  return routes.map((route, index) => {
+    if (route.children) {
+      return (
+        <Route key={index} path={route.path} element={route.element}>
+          {renderRoutes(route.children)}
+        </Route>
+      );
+    }
+    return <Route key={index} path={route.path} element={route.element} />;
+  });
+};
 
 function App() {
   return (
@@ -15,9 +30,8 @@ function App() {
             </div>
 
             <Routes>
-              {routes.map((route, index) => (
-                <Route key={index} path={route.path} element={route.element} />
-              ))}
+              {renderRoutes(LoginRoute)}
+              {renderRoutes(AdminRoutes)}
             </Routes>
           </div>
         </Router>

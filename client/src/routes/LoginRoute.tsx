@@ -6,7 +6,7 @@ import ResetPasswordPage from "@/pages/login/ResetPasswordPage";
 import AuthSuccessPage from "@/pages/login/AuthSuccessPage";
 import DashboardPage from "@/pages/login/DashboardPage";
 
-export const routes = [
+export const LoginRoute = [
   {
     path: "/",
     element: <Navigate to="/login" replace />,
