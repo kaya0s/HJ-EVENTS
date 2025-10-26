@@ -3,7 +3,7 @@ import { NavLink } from "react-router-dom";
 const adminNavItems = [
   { name: "Dashboard", path: "/admin", icon: "📊" }, // Use /admin, not /admin/dashboard
   { name: "Calendar", path: "/admin/calendar", icon: "📅" },
-  { name: "User Management", path: "/admin/users", icon: "👥" },
+  { name: "Bookings", path: "/admin/bookings", icon: "👥" },
   { name: "Analytics", path: "/admin/analytics", icon: "📈" },
   { name: "System Settings", path: "/admin/settings", icon: "⚙️" },
   { name: "Reports", path: "/admin/reports", icon: "📄" },
