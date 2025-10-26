@@ -3,7 +3,7 @@ import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 import { ThemeProvider } from "@/components/theme-provider";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { LoginRoute } from "@/routes/LoginRoute";
-import { AdminRoutes } from "@/routes/AdminRoutes";
+import AdminRoutes from "@/routes/AdminRoutes";
 
 // Helper function to render routes recursively (handles nested routes)
 const renderRoutes = (routes: any[]) => {
@@ -31,7 +31,7 @@ function App() {
 
             <Routes>
               {renderRoutes(LoginRoute)}
-              {renderRoutes(AdminRoutes)}
+              <Route path="/admin/*" element={<AdminRoutes />} />
             </Routes>
           </div>
         </Router>

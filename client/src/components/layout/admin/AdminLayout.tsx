@@ -1,23 +1,18 @@
 // src/components/layout/admin/AdminLayout.tsx
 import { Outlet } from "react-router-dom";
-import AdminNavbar from "./AdminNavBar";
+import AdminNavbar from "./AdminNavbar";
 import AdminSidebar from "./AdminSidebar";
-import Footer from "../shared/Footer";
 
-export default function AdminLayout() {
-  return (
-    <div className="flex h-screen overflow-hidden">
-      <AdminSidebar />
+const AdminLayout = () => (
+  <div className="flex flex-1 min-h-screen">
+    <AdminSidebar />
 
-      <div className="flex flex-col flex-1 overflow-hidden">
-        <AdminNavbar />
-
-        <main className="flex-1 overflow-y-auto bg-gray-50 p-6">
-          <Outlet /> {/* Admin pages render here */}
-        </main>
-
-        <Footer />
-      </div>
+    <div className="flex-1 flex flex-col min-h-0">
+      <AdminNavbar />
+      <main className="flex-1 p-4 overflow-auto">
+        <Outlet /> {/* This renders the nested route */}
+      </main>
     </div>
-  );
-}
+  </div>
+);
+export default AdminLayout;

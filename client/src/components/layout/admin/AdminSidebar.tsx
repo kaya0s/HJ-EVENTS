@@ -1,8 +1,8 @@
-// src/components/layout/admin/AdminSidebar.tsx
 import { NavLink } from "react-router-dom";
 
 const adminNavItems = [
-  { name: "Dashboard", path: "/admin/dashboard", icon: "📊" },
+  { name: "Dashboard", path: "/admin", icon: "📊" }, // Use /admin, not /admin/dashboard
+  { name: "Calendar", path: "/admin/calendar", icon: "📅" },
   { name: "User Management", path: "/admin/users", icon: "👥" },
   { name: "Analytics", path: "/admin/analytics", icon: "📈" },
   { name: "System Settings", path: "/admin/settings", icon: "⚙️" },
@@ -11,8 +11,8 @@ const adminNavItems = [
 
 export default function AdminSidebar() {
   return (
-    <aside className="w-64 bg-slate-900 text-white flex flex-col">
-      <div className="p-6 border-b border-slate-700">
+    <aside className="w-64 bg-slate-900 text-white flex flex-col flex-shrink-0 rounded">
+      <div className="p-6 ">
         <h2 className="text-2xl font-bold">Admin Panel</h2>
       </div>
 
@@ -21,6 +21,7 @@ export default function AdminSidebar() {
           <NavLink
             key={item.path}
             to={item.path}
+            end={item.path === "/admin"} // This ensures active state only for exact '/admin'
             className={({ isActive }) =>
               `flex items-center gap-3 px-4 py-3 rounded-lg transition ${
                 isActive ? "bg-slate-700" : "hover:bg-slate-800"
