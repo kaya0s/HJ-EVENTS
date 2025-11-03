@@ -4,6 +4,7 @@ import { ThemeProvider } from "@/components/theme-provider";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { LoginRoute } from "@/routes/LoginRoute";
 import AdminRoutes from "@/routes/AdminRoutes";
+import { ClientRoutes } from "@/routes/ClientRoutes";
 
 // Helper function to render routes recursively (handles nested routes)
 const renderRoutes = (routes: any[]) => {
@@ -26,12 +27,13 @@ function App() {
         <Router>
           <div className="relative min-h-screen">
             <div className="fixed top-4 right-4 z-50">
-              <ThemeToggle />
+              
             </div>
 
             <Routes>
               {renderRoutes(LoginRoute)}
               <Route path="/admin/*" element={<AdminRoutes />} />
+              <Route path="/*" element={<ClientRoutes />} />
             </Routes>
           </div>
         </Router>

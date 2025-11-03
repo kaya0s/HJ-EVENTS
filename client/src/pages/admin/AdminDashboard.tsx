@@ -1,8 +1,8 @@
-import { BookOpen, Users, CheckCircle2, Clock } from "lucide-react";
-import { StatCard } from "@/components/layout/admin/StatCard";
+import { BookOpen, Users, CheckCircle2, Clock, Search } from "lucide-react";
+import { StatCard } from "@/components/ui/StatCards";
 import { mockBookings, mockSuppliers } from "@/components/MockData";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { StatusBadge } from "@/components/layout/admin/StatusBadge";
+import AdminLayout from "@/components/layout/admin/AdminLayout";
 
 export default function AdminDashboard() {
   const totalBookings = mockBookings.length;
@@ -17,79 +17,79 @@ export default function AdminDashboard() {
   const recentBookings = mockBookings.slice(0, 5);
 
   return (
-    <div className="p-8 space-y-8 animate-fade-in">
-      <div>
-        <h1 className="text-3xl font-bold text-foreground mb-2">Dashboard</h1>
-        <p className="text-muted-foreground">
-          Welcome back! Here's what's happening with your events.
-        </p>
+    <AdminLayout>
+      <div className="space-y-6">
+        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
+          <StatCard
+            title="Total Bookings"
+            value={totalBookings}
+            icon={BookOpen}
+            trend="+12% From Last Month"
+            variant="info"
+          />
+          <StatCard
+            title="Pending Request"
+            value={pendingRequests}
+            icon={Clock}
+            trend="Needs Attention"
+            variant="warning"
+          />
+          <StatCard
+            title="Completed Events"
+            value={completedEvents}
+            icon={CheckCircle2}
+            trend="+8% From Last Month"
+            variant="success"
+          />
+          <StatCard
+            title="Total Suppliers"
+            value={totalSuppliers}
+            icon={Users}
+            trend="Active Partners"
+            variant="info"
+          />
+        </div>
+
+      <div className="flex items-center justify-between">
+        <h2 className="text-lg font-semibold">Recent Bookings</h2>
+        <div className="relative">
+          <input
+            type="text"
+            placeholder="Search"
+            className="pl-10 pr-4 py-2 border rounded-lg bg-background"
+          />
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+        </div>
       </div>
 
-      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
-        <StatCard
-          title="Total Bookings"
-          value={totalBookings}
-          icon={BookOpen}
-          trend="+12% from last month"
-          variant="default"
-        />
-        <StatCard
-          title="Pending Requests"
-          value={pendingRequests}
-          icon={Clock}
-          trend="Needs attention"
-          variant="warning"
-        />
-        <StatCard
-          title="Completed Events"
-          value={completedEvents}
-          icon={CheckCircle2}
-          trend="+8% from last month"
-          variant="success"
-        />
-        <StatCard
-          title="Total Suppliers"
-          value={totalSuppliers}
-          icon={Users}
-          trend="Active partners"
-          variant="info"
-        />
-      </div>
-
-      <Card className="border-border/50 shadow-soft">
-        <CardHeader>
-          <CardTitle>Recent Bookings</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-4">
-            {recentBookings.map((booking) => (
-              <div
-                key={booking.id}
-                className="flex items-center justify-between p-4 rounded-lg border border-border/50 hover:border-primary/30 transition-colors"
-              >
-                <div className="space-y-1">
-                  <p className="font-medium text-foreground">
-                    {booking.clientName}
-                  </p>
-                  <p className="text-sm text-muted-foreground">
-                    {new Date(booking.eventDate).toLocaleDateString("en-US", {
-                      month: "long",
-                      day: "numeric",
-                      year: "numeric",
-                    })}
-                  </p>
-                </div>
-                <div className="text-right space-y-1">
-                  <p className="text-sm text-muted-foreground">
-                    {booking.supplier}
-                  </p>
-                  <StatusBadge status={booking.status} />
-                </div>
-              </div>
-            ))}
+      <div className="space-y-4">
+        {recentBookings.map((booking) => (
+          <div
+            key={booking.id}
+            className="flex items-center justify-between p-4 rounded-lg bg-background border shadow-sm"
+          >
+            <div className="space-y-1">
+              <p className="font-medium text-foreground">
+                {booking.clientName}
+              </p>
+              <p className="text-sm text-muted-foreground">
+                {new Date(booking.eventDate).toLocaleDateString("en-US", {
+                  month: "long",
+                  day: "numeric",
+                  year: "numeric",
+                })}
+              </p>
+            </div>
+            <div className="text-right space-y-1">
+              <p className="text-sm text-muted-foreground">
+                {booking.supplier}
+              </p>
+              <StatusBadge status={booking.status} />
+            </div>
           </div>
-        </CardContent>
-      </Card>
+        ))}
+      </div>
     </div>
+    </AdminLayout>
   );
 }

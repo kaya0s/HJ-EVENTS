@@ -8,7 +8,7 @@ import type { Booking } from "@/components/MockData";
 import { Search, CheckCircle, XCircle, Eye } from "lucide-react";
 import { toast } from "sonner";
 
-export default function Bookings() {
+export function Bookings() {
   const [bookings, setBookings] = useState<Booking[]>(mockBookings);
   const [searchQuery, setSearchQuery] = useState("");
 

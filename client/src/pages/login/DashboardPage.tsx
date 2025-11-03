@@ -24,7 +24,20 @@ export default function DashboardPage() {
       return
     }
     
-    setUser(JSON.parse(userData))
+    const parsedUser = JSON.parse(userData)
+    setUser(parsedUser)
+    
+    // Redirect admin to admin panel
+    if (parsedUser.role === 'admin') {
+      navigate('/admin', { replace: true })
+      return
+    }
+    
+    // Redirect supplier to supplier panel
+    if (parsedUser.role === 'supplier') {
+      navigate('/supplier', { replace: true })
+      return
+    }
   }, [navigate])
 
   const handleLogout = () => {

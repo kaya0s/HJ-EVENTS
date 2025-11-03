@@ -34,17 +34,25 @@ export default function AuthSuccessPage() {
         try {
           const userData = JSON.parse(decodeURIComponent(userParam))
           localStorage.setItem('user', JSON.stringify(userData))
+          
+          // Simulate a brief loading state
+          setTimeout(() => {
+            setIsLoading(false)
+            // Redirect based on role
+            if (userData.role === 'admin') {
+              navigate('/admin', { replace: true })
+            } else if (userData.role === 'supplier') {
+              navigate('/supplier', { replace: true })
+            } else {
+              navigate('/dashboard', { replace: true })
+            }
+          }, 2000)
         } catch (error) {
           console.error('Error parsing user data:', error)
+          setIsLoading(false)
+          setError('Error processing authentication data')
         }
       }
-      
-      // Simulate a brief loading state
-      setTimeout(() => {
-        setIsLoading(false)
-        // Redirect to dashboard or home page
-        navigate('/dashboard', { replace: true })
-      }, 2000)
     } else {
       setError('No authentication token received.')
       setIsLoading(false)

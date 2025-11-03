@@ -1,10 +1,11 @@
 import LiquidEther from '@/components/ui/LiquidEther';
 import { useTheme } from '@/components/theme-provider'
 
-import React, { useState } from 'react'
+import React, { useState, useRef } from 'react'
 import axios from 'axios'
 import { Link, useNavigate } from 'react-router-dom'
 import { Eye, EyeOff } from 'lucide-react'
+import ReCAPTCHA from 'react-google-recaptcha'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -19,6 +20,8 @@ export default function LoginPage() {
   })
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState('')
+  const [recaptchaToken, setRecaptchaToken] = useState<string | null>(null)
+  const recaptchaRef = useRef<ReCAPTCHA>(null)
   const { theme } = useTheme()
   const navigate = useNavigate()
 
@@ -33,18 +36,32 @@ export default function LoginPage() {
     setIsLoading(true)
     setError('')
 
+    if (!recaptchaToken) {
+      setError('Please complete the reCAPTCHA verification')
+      setIsLoading(false)
+      return
+    }
+
     try {
       const apiUrl = import.meta.env.VITE_API_URL
       const res = await axios.post(
         `${apiUrl}/api/auth/login`,
-        formData,
+        { ...formData, recaptchaToken },
         { withCredentials: true }
       )
 
       const data = res.data
-      // Store user data and redirect
+      // Store user data
       localStorage.setItem('user', JSON.stringify(data.user))
-      navigate('/dashboard')
+      
+      // Redirect based on role
+      if (data.user.role === 'admin') {
+        navigate('/admin')
+      } else if (data.user.role === 'supplier') {
+        navigate('/supplier') // or wherever suppliers should go
+      } else {
+        navigate('/dashboard')
+      }
     } catch (err) {
       // axios error handling (narrow unknown)
       const e = err as { response?: { data?: { message?: string } } }
@@ -81,7 +98,7 @@ export default function LoginPage() {
          iterationsPoisson={32}
          resolution={0.5}
          isBounce={false}
-         autoDemo={true}
+         autoDemo={false}
          autoSpeed={0.5}
          autoIntensity={2.2}
          takeoverDuration={0.25}
@@ -94,7 +111,9 @@ export default function LoginPage() {
       {/* Login Card */}
       <Card className="w-full max-w-md shadow-lg border-border relative z-10 bg-background/70 backdrop-blur-md">
         <CardHeader className="space-y-6 pb-8">
-          <HJLogo />
+          <div className="flex justify-center">
+            <HJLogo className="w-20 h-20" />
+          </div>
           <CardTitle className="text-center text-xl font-medium text-foreground">
             Welcome Back
           </CardTitle>
@@ -159,11 +178,21 @@ export default function LoginPage() {
               </Link>
             </div>
 
+            <div className="flex justify-center my-4">
+              <ReCAPTCHA
+                ref={recaptchaRef}
+                sitekey={import.meta.env.VITE_RECAPTCHA_SITE_KEY}
+                onChange={(token) => setRecaptchaToken(token)}
+                theme={theme === 'dark' ? 'dark' : 'light'}
+                
+              />
+            </div>
+
             <Button 
               type="submit" 
               className="w-full"
               size="lg"
-              disabled={isLoading}
+              disabled={isLoading || !recaptchaToken}
             >
               {isLoading ? 'Logging in...' : 'Login now'}
             </Button>

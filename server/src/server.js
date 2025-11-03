@@ -13,6 +13,7 @@ import bookingRoutes from './routes/booking.routes.js';
 import adminRoutes from './routes/admin.routes.js';
 import userRoutes from './routes/user.routes.js';
 import feedbackRoutes from './routes/feedback.routes.js';
+import packageRoutes from './routes/package.routes.js';
 
 dotenv.config();
 
@@ -46,10 +47,11 @@ app.use(passport.initialize());
 app.use(passport.session());
 app.use(morgan('dev'));
 
-// Supplier routes
+// API routes
 app.use('/api/suppliers', supplierRoutes);
 app.use('/api/bookings', bookingRoutes);
 app.use('/api/feedback', feedbackRoutes);
+app.use('/api/packages', packageRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/users', userRoutes);
 

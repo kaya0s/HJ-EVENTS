@@ -112,6 +112,35 @@ router.post('/login', async (req, res) => {
   }
 });
 
+// Check authentication status
+router.get('/check', async (req, res) => {
+  try {
+    const token = req.cookies?.jwt || req.headers.authorization?.split(' ')[1];
+    if (!token) {
+      return res.status(401).json({ message: 'Not authenticated' });
+    }
+
+    const jwt = await import('jsonwebtoken');
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    const user = await User.findById(decoded.userId).select('-password');
+    
+    if (!user) {
+      return res.status(401).json({ message: 'User not found' });
+    }
+
+    res.status(200).json({
+      _id: user._id,
+      fullName: user.fullName,
+      email: user.email,
+      role: user.role,
+      profilePic: user.profilePic,
+    });
+  } catch (error) {
+    console.error('Auth check error:', error.message);
+    res.status(401).json({ message: 'Not authenticated' });
+  }
+});
+
 //register
 router.post('/register', async (req, res) => {
   const { firstName, lastName, email, password } = req.body;

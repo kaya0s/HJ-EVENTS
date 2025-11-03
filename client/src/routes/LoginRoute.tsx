@@ -4,7 +4,7 @@ import SignupPage from "@/pages/login/SignupPage";
 import ForgotPasswordPage from "@/pages/login/ForgotPasswordPage";
 import ResetPasswordPage from "@/pages/login/ResetPasswordPage";
 import AuthSuccessPage from "@/pages/login/AuthSuccessPage";
-import DashboardPage from "@/pages/login/DashboardPage";
+import AdminDashboard from "@/pages/admin/AdminDashboard";
 
 export const LoginRoute = [
   {
@@ -32,7 +32,7 @@ export const LoginRoute = [
     element: <AuthSuccessPage />,
   },
   {
-    path: "/dashboard",
-    element: <DashboardPage />,
+    path: "/admin",
+    element: <AdminDashboard />,
   },
 ];
