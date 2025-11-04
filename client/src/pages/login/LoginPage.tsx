@@ -1,113 +1,123 @@
-import LiquidEther from '@/components/ui/LiquidEther';
-import { useTheme } from '@/components/theme-provider'
+import LiquidEther from "@/components/ui/LiquidEther";
+import { useTheme } from "@/components/theme-provider";
 
-import React, { useState, useRef } from 'react'
-import axios from 'axios'
-import { Link, useNavigate } from 'react-router-dom'
-import { Eye, EyeOff } from 'lucide-react'
-import ReCAPTCHA from 'react-google-recaptcha'
-import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { HJLogo } from '@/components/hj-logo'
+import React, { useState, useRef } from "react";
+import axios from "axios";
+import { Link, useNavigate } from "react-router-dom";
+import { Eye, EyeOff } from "lucide-react";
+import ReCAPTCHA from "react-google-recaptcha";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { HJLogo } from "@/components/hj-logo";
 
 export default function LoginPage() {
-  const [showPassword, setShowPassword] = useState(false)
+  const [showPassword, setShowPassword] = useState(false);
   const [formData, setFormData] = useState({
-    email: '',
-    password: ''
-  })
-  const [isLoading, setIsLoading] = useState(false)
-  const [error, setError] = useState('')
-  const [recaptchaToken, setRecaptchaToken] = useState<string | null>(null)
-  const recaptchaRef = useRef<ReCAPTCHA>(null)
-  const { theme } = useTheme()
-  const navigate = useNavigate()
+    email: "",
+    password: "",
+  });
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState("");
+  const [recaptchaToken, setRecaptchaToken] = useState<string | null>(null);
+  const recaptchaRef = useRef<ReCAPTCHA>(null);
+  const { theme } = useTheme();
+  const navigate = useNavigate();
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const { name, value } = e.target
-    setFormData(prev => ({ ...prev, [name]: value }))
-    if (error) setError('')
-  }
+    const { name, value } = e.target;
+    setFormData((prev) => ({ ...prev, [name]: value }));
+    if (error) setError("");
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-    setIsLoading(true)
-    setError('')
+    e.preventDefault();
+    setIsLoading(true);
+    setError("");
 
     if (!recaptchaToken) {
-      setError('Please complete the reCAPTCHA verification')
-      setIsLoading(false)
-      return
+      setError("Please complete the reCAPTCHA verification");
+      setIsLoading(false);
+      return;
     }
 
     try {
-      const apiUrl = import.meta.env.VITE_API_URL
+      const apiUrl = import.meta.env.VITE_API_URL;
       const res = await axios.post(
         `${apiUrl}/api/auth/login`,
         { ...formData, recaptchaToken },
         { withCredentials: true }
-      )
+      );
 
-      const data = res.data
+      const data = res.data;
       // Store user data
-      localStorage.setItem('user', JSON.stringify(data.user))
-      
+      localStorage.setItem("user", JSON.stringify(data.user));
+
       // Redirect based on role
-      if (data.user.role === 'admin') {
-        navigate('/admin')
-      } else if (data.user.role === 'supplier') {
-        navigate('/supplier') // or wherever suppliers should go
+      if (data.user.role === "admin") {
+        navigate("/admin");
+      } else if (data.user.role === "supplier") {
+        navigate("/admin/suppliers");
       } else {
-        navigate('/dashboard')
+        navigate("/home");
       }
     } catch (err) {
       // axios error handling (narrow unknown)
-      const e = err as { response?: { data?: { message?: string } } }
+      const e = err as { response?: { data?: { message?: string } } };
       if (e && e.response && e.response.data && e.response.data.message) {
-        setError(e.response.data.message as string)
+        setError(e.response.data.message as string);
       } else {
-        setError('Network error. Please try again.')
+        setError("Network error. Please try again.");
       }
     } finally {
-      setIsLoading(false)
+      setIsLoading(false);
     }
-  }
+  };
 
   const handleGoogleLogin = () => {
-    window.location.href = `${import.meta.env.VITE_API_URL || 'http://localhost:3000'}/api/auth/google`
-  }
+    window.location.href = `${
+      import.meta.env.VITE_API_URL || "http://localhost:3000"
+    }/api/auth/google`;
+  };
 
   // Theme-based colors for LiquidEther
-  const lightModeColors = ['#F5F7FA', '#E3E8EE', '#C9D6E3'] // Soft gray/blue for white background
-  const darkModeColors = ['#5227FF', '#FF9FFC', '#B19EEF'] // Vibrant colors for dark mode
-  const currentColors = theme === 'dark' ? darkModeColors : lightModeColors
+  const lightModeColors = ["#F5F7FA", "#E3E8EE", "#C9D6E3"]; // Soft gray/blue for white background
+  const darkModeColors = ["#5227FF", "#FF9FFC", "#B19EEF"]; // Vibrant colors for dark mode
+  const currentColors = theme === "dark" ? darkModeColors : lightModeColors;
 
   return (
     <div className="min-h-screen bg-background flex items-center justify-center p-4 relative">
       {/* LiquidEther Background */}
-      <div style={{ width: '100%', height: '100vh', position: 'absolute', top: 0, left: 0, zIndex: 0 }}>
+      <div
+        style={{
+          width: "100%",
+          height: "100vh",
+          position: "absolute",
+          top: 0,
+          left: 0,
+          zIndex: 0,
+        }}
+      >
         <LiquidEther
-         colors={currentColors}
-         mouseForce={20}
-         cursorSize={100}
-         isViscous={false}
-         viscous={30}
-         iterationsViscous={32}
-         iterationsPoisson={32}
-         resolution={0.5}
-         isBounce={false}
-         autoDemo={false}
-         autoSpeed={0.5}
-         autoIntensity={2.2}
-         takeoverDuration={0.25}
-         autoResumeDelay={3000}
-         autoRampDuration={0.6}
-     
+          colors={currentColors}
+          mouseForce={20}
+          cursorSize={100}
+          isViscous={false}
+          viscous={30}
+          iterationsViscous={32}
+          iterationsPoisson={32}
+          resolution={0.5}
+          isBounce={false}
+          autoDemo={false}
+          autoSpeed={0.5}
+          autoIntensity={2.2}
+          takeoverDuration={0.25}
+          autoResumeDelay={3000}
+          autoRampDuration={0.6}
         />
       </div>
-      
+
       {/* Login Card */}
       <Card className="w-full max-w-md shadow-lg border-border relative z-10 bg-background/70 backdrop-blur-md">
         <CardHeader className="space-y-6 pb-5">
@@ -127,7 +137,12 @@ export default function LoginPage() {
             )}
 
             <div className="space-y-2">
-              <Label htmlFor="email" className="text-sm font-medium text-foreground">Email</Label>
+              <Label
+                htmlFor="email"
+                className="text-sm font-medium text-foreground"
+              >
+                Email
+              </Label>
               <Input
                 id="email"
                 name="email"
@@ -139,9 +154,14 @@ export default function LoginPage() {
                 className="w-full"
               />
             </div>
-            
+
             <div className="space-y-2">
-              <Label htmlFor="password" className="text-sm font-medium text-foreground">Password</Label>
+              <Label
+                htmlFor="password"
+                className="text-sm font-medium text-foreground"
+              >
+                Password
+              </Label>
               <div className="relative">
                 <Input
                   id="password"
@@ -170,8 +190,8 @@ export default function LoginPage() {
             </div>
 
             <div className="text-right">
-              <Link 
-                to="/forgot-password" 
+              <Link
+                to="/forgot-password"
                 className="text-sm text-primary hover:text-primary/80 transition-colors"
               >
                 Forgot password?
@@ -183,18 +203,17 @@ export default function LoginPage() {
                 ref={recaptchaRef}
                 sitekey={import.meta.env.VITE_RECAPTCHA_SITE_KEY}
                 onChange={(token) => setRecaptchaToken(token)}
-                theme={theme === 'dark' ? 'dark' : 'light'}
-                
+                theme={theme === "dark" ? "dark" : "light"}
               />
             </div>
 
-            <Button 
-              type="submit" 
+            <Button
+              type="submit"
               className="w-full"
               size="lg"
               disabled={isLoading || !recaptchaToken}
             >
-              {isLoading ? 'Logging in...' : 'Login now'}
+              {isLoading ? "Logging in..." : "Login now"}
             </Button>
           </form>
 
@@ -209,8 +228,8 @@ export default function LoginPage() {
             </div>
           </div>
 
-          <Button 
-            variant="outline" 
+          <Button
+            variant="outline"
             className="w-full"
             size="lg"
             onClick={handleGoogleLogin}
@@ -239,10 +258,10 @@ export default function LoginPage() {
 
           <div className="text-center mt-6">
             <span className="text-sm text-muted-foreground">
-              Don't Have An Account?{' '}
+              Don't Have An Account?{" "}
             </span>
-            <Link 
-              to="/signup" 
+            <Link
+              to="/signup"
               className="text-sm font-medium text-primary hover:text-primary/80 transition-colors"
             >
               Sign Up
@@ -251,5 +270,5 @@ export default function LoginPage() {
         </CardContent>
       </Card>
     </div>
-  )
+  );
 }

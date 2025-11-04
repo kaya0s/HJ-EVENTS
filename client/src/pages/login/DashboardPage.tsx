@@ -1,50 +1,50 @@
-import { useEffect, useState } from 'react'
-import { useNavigate } from 'react-router-dom'
-import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { HJLogo } from '@/components/hj-logo'
-import { LogOut, User } from 'lucide-react'
+import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { HJLogo } from "@/components/hj-logo";
+import { LogOut, User } from "lucide-react";
 
 export default function DashboardPage() {
-    const [user, setUser] = useState<{
-        _id: string;
-        fullName: string;
-        email: string;
-        role?: string;
-        googleId?: string;
-        profilePic?: string;
-      } | null>(null)
-  const navigate = useNavigate()
+  const [user, setUser] = useState<{
+    _id: string;
+    fullName: string;
+    email: string;
+    role?: string;
+    googleId?: string;
+    profilePic?: string;
+  } | null>(null);
+  const navigate = useNavigate();
 
   useEffect(() => {
     // Check if user is logged in
-    const userData = localStorage.getItem('user')
+    const userData = localStorage.getItem("user");
     if (!userData) {
-      navigate('/login')
-      return
+      navigate("/login");
+      return;
     }
-    
-    const parsedUser = JSON.parse(userData)
-    setUser(parsedUser)
-    
+
+    const parsedUser = JSON.parse(userData);
+    setUser(parsedUser);
+
     // Redirect admin to admin panel
-    if (parsedUser.role === 'admin') {
-      navigate('/admin', { replace: true })
-      return
+    if (parsedUser.role === "admin") {
+      navigate("/admin", { replace: true });
+      return;
     }
-    
+
     // Redirect supplier to supplier panel
-    if (parsedUser.role === 'supplier') {
-      navigate('/supplier', { replace: true })
-      return
+    if (parsedUser.role === "supplier") {
+      navigate("/supplier", { replace: true });
+      return;
     }
-  }, [navigate])
+  }, [navigate]);
 
   const handleLogout = () => {
-    localStorage.removeItem('user')
-    localStorage.removeItem('authToken')
-    navigate('/login')
-  }
+    localStorage.removeItem("user");
+    localStorage.removeItem("authToken");
+    navigate("/login");
+  };
 
   if (!user) {
     return (
@@ -54,7 +54,7 @@ export default function DashboardPage() {
           <p className="mt-2 text-muted-foreground">Loading...</p>
         </div>
       </div>
-    )
+    );
   }
 
   return (
@@ -83,7 +83,8 @@ export default function DashboardPage() {
             </CardHeader>
             <CardContent>
               <p className="text-muted-foreground">
-                You have successfully logged in! This is your dashboard where you can manage your account and access all features.
+                You have successfully logged in! This is your dashboard where
+                you can manage your account and access all features.
               </p>
             </CardContent>
           </Card>
@@ -95,9 +96,15 @@ export default function DashboardPage() {
               </CardHeader>
               <CardContent>
                 <div className="space-y-2">
-                  <p><strong>Name:</strong> {user.fullName}</p>
-                  <p><strong>Email:</strong> {user.email}</p>
-                  <p><strong>Role:</strong> {user.role || 'User'}</p>
+                  <p>
+                    <strong>Name:</strong> {user.fullName}
+                  </p>
+                  <p>
+                    <strong>Email:</strong> {user.email}
+                  </p>
+                  <p>
+                    <strong>Role:</strong> {user.role || "User"}
+                  </p>
                 </div>
               </CardContent>
             </Card>
@@ -108,10 +115,16 @@ export default function DashboardPage() {
               </CardHeader>
               <CardContent>
                 <div className="space-y-2">
-                  <p className="text-green-600 dark:text-green-400">✓ Successfully Authenticated</p>
-                  <p className="text-green-600 dark:text-green-400">✓ Session Active</p>
+                  <p className="text-green-600 dark:text-green-400">
+                    ✓ Successfully Authenticated
+                  </p>
+                  <p className="text-green-600 dark:text-green-400">
+                    ✓ Session Active
+                  </p>
                   {user.googleId && (
-                    <p className="text-blue-600 dark:text-blue-400">✓ Google Account Linked</p>
+                    <p className="text-blue-600 dark:text-blue-400">
+                      ✓ Google Account Linked
+                    </p>
                   )}
                 </div>
               </CardContent>
@@ -120,5 +133,5 @@ export default function DashboardPage() {
         </div>
       </div>
     </div>
-  )
+  );
 }
