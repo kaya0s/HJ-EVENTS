@@ -110,9 +110,9 @@ export default function LoginPage() {
       
       {/* Login Card */}
       <Card className="w-full max-w-md shadow-lg border-border relative z-10 bg-background/70 backdrop-blur-md">
-        <CardHeader className="space-y-6 pb-8">
-          <div className="flex justify-center">
-            <HJLogo className="w-20 h-20" />
+        <CardHeader className="space-y-6 pb-5">
+          <div className="flex justify-center mb-0">
+            <HJLogo />
           </div>
           <CardTitle className="text-center text-xl font-medium text-foreground">
             Welcome Back
@@ -132,7 +132,7 @@ export default function LoginPage() {
                 id="email"
                 name="email"
                 type="email"
-                placeholder="Example@gmail.com"
+                placeholder="Email"
                 value={formData.email}
                 onChange={handleInputChange}
                 required
