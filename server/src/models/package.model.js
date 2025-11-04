@@ -14,12 +14,20 @@ const packageSchema = new Schema(
       type: Number,
       required: true,
     },
+    imageURL: {
+      type: String,
+      default: '',
+    },
     suppliers: [
       {
         type: Schema.Types.ObjectId,
         ref: 'Supplier',
       },
     ],
+    isAvailable: {
+      type: Boolean,
+      default: true,
+    },
   },
   { timestamps: true }
 );

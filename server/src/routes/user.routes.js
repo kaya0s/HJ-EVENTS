@@ -5,14 +5,18 @@ import {
   updateProfile,
   listUsers,
   updateUser,
+  createSupplierAccount,
+  deleteUser,
 } from '../controllers/user.controller.js';
 const router = express.Router();
 
 router.get('/me', protect, getProfile);
 router.put('/me', protect, updateProfile);
 
-// Admin
+// Admin - specific routes first
+router.post('/supplier-account', protect, isAdmin, createSupplierAccount);
 router.get('/', protect, isAdmin, listUsers);
 router.put('/:id', protect, isAdmin, updateUser);
+router.delete('/:id', protect, isAdmin, deleteUser);
 
 export default router;

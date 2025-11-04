@@ -1,51 +1,52 @@
-import React, { useState } from 'react'
-import axios from 'axios'
-import { Link, useNavigate } from 'react-router-dom'
-import { Eye, EyeOff } from 'lucide-react'
-import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import LiquidEther from '@/components/ui/LiquidEther'
-import { useTheme } from '@/components/theme-provider'
+import React, { useState } from "react";
+import axios from "axios";
+import { Link, useNavigate } from "react-router-dom";
+import { Eye, EyeOff } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import LiquidEther from "@/components/ui/LiquidEther";
+import { useTheme } from "@/components/theme-provider";
+import { toast } from "sonner";
 
 export default function SignupPage() {
-  const [showPassword, setShowPassword] = useState(false)
-  const [showConfirmPassword, setShowConfirmPassword] = useState(false)
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [formData, setFormData] = useState({
-    firstName: '',
-    lastName: '',
-    email: '',
-    password: '',
-    confirmPassword: ''
-  })
-  const [isLoading, setIsLoading] = useState(false)
-  const [error, setError] = useState('')
-  const { theme } = useTheme()
-  const navigate = useNavigate()
+    firstName: "",
+    lastName: "",
+    email: "",
+    password: "",
+    confirmPassword: "",
+  });
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState("");
+  const { theme } = useTheme();
+  const navigate = useNavigate();
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const { name, value } = e.target
-    setFormData(prev => ({ ...prev, [name]: value }))
-    if (error) setError('')
-  }
+    const { name, value } = e.target;
+    setFormData((prev) => ({ ...prev, [name]: value }));
+    if (error) setError("");
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-    setIsLoading(true)
-    setError('')
+    e.preventDefault();
+    setIsLoading(true);
+    setError("");
 
     // Validate passwords match
     if (formData.password !== formData.confirmPassword) {
-      setError('Passwords do not match')
-      setIsLoading(false)
-      return
+      setError("Passwords do not match");
+      setIsLoading(false);
+      return;
     }
 
     try {
-      const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:3000'
+      const apiUrl = import.meta.env.VITE_API_URL || "http://localhost:3000";
 
-      const res = await axios.post(
+      await axios.post(
         `${apiUrl}/api/auth/register`,
         {
           firstName: formData.firstName,
@@ -54,36 +55,46 @@ export default function SignupPage() {
           password: formData.password,
         },
         { withCredentials: true }
-      )
+      );
 
-      const data = res.data
-      // Store user data and redirect
-      localStorage.setItem('user', JSON.stringify(data.user))
-      navigate('/dashboard')
+      // On successful registration, prompt user to login
+      toast.success("Registration successful. Please login to continue.");
+      navigate("/login");
     } catch (err) {
       if (axios.isAxiosError(err) && err.response) {
-        setError(err.response.data?.message || 'Signup failed')
+        setError(err.response.data?.message || "Signup failed");
       } else {
-        setError('Network error. Please try again.')
+        setError("Network error. Please try again.");
       }
     } finally {
-      setIsLoading(false)
+      setIsLoading(false);
     }
-  }
+  };
 
   const handleGoogleSignup = () => {
-    window.location.href = `${import.meta.env.VITE_API_URL || 'http://localhost:3000'}/api/auth/google`
-  }
+    window.location.href = `${
+      import.meta.env.VITE_API_URL || "http://localhost:3000"
+    }/api/auth/google`;
+  };
 
   // Theme-based colors for LiquidEther
-  const lightModeColors = ['#F5F7FA', '#E3E8EE', '#C9D6E3'] // Soft gray/blue for white background
-  const darkModeColors = ['#5227FF', '#FF9FFC', '#B19EEF'] // Vibrant colors for dark mode
-  const currentColors = theme === 'dark' ? darkModeColors : lightModeColors
+  const lightModeColors = ["#F5F7FA", "#E3E8EE", "#C9D6E3"]; // Soft gray/blue for white background
+  const darkModeColors = ["#5227FF", "#FF9FFC", "#B19EEF"]; // Vibrant colors for dark mode
+  const currentColors = theme === "dark" ? darkModeColors : lightModeColors;
 
   return (
     <div className="min-h-screen bg-background flex items-center justify-center p-4 relative">
       {/* LiquidEther Background */}
-      <div style={{ width: '100%', height: '100vh', position: 'absolute', top: 0, left: 0, zIndex: 0 }}>
+      <div
+        style={{
+          width: "100%",
+          height: "100vh",
+          position: "absolute",
+          top: 0,
+          left: 0,
+          zIndex: 0,
+        }}
+      >
         <LiquidEther
           colors={currentColors}
           mouseForce={20}
@@ -102,7 +113,7 @@ export default function SignupPage() {
           autoRampDuration={0.6}
         />
       </div>
-      
+
       {/* Signup Card */}
       <Card className="w-full max-w-md shadow-lg border-border relative z-10 bg-background/70 backdrop-blur-md">
         <CardHeader className="space-y-6 pb-8">
@@ -121,7 +132,12 @@ export default function SignupPage() {
             {/* Group first and last name side by side on larger screens */}
             <div className="flex flex-col gap-4 sm:flex-row">
               <div className="flex-1 space-y-2">
-                <Label htmlFor="firstName" className="text-sm font-medium text-foreground">First Name</Label>
+                <Label
+                  htmlFor="firstName"
+                  className="text-sm font-medium text-foreground"
+                >
+                  First Name
+                </Label>
                 <Input
                   id="firstName"
                   name="firstName"
@@ -134,7 +150,12 @@ export default function SignupPage() {
                 />
               </div>
               <div className="flex-1 space-y-2">
-                <Label htmlFor="lastName" className="text-sm font-medium text-foreground">Last Name</Label>
+                <Label
+                  htmlFor="lastName"
+                  className="text-sm font-medium text-foreground"
+                >
+                  Last Name
+                </Label>
                 <Input
                   id="lastName"
                   name="lastName"
@@ -151,7 +172,12 @@ export default function SignupPage() {
             {/* Group email and password fields side by side on larger screens */}
             <div className="flex flex-col gap-4 sm:flex-row">
               <div className="flex-1 space-y-2">
-                <Label htmlFor="email" className="text-sm font-medium text-foreground">Email</Label>
+                <Label
+                  htmlFor="email"
+                  className="text-sm font-medium text-foreground"
+                >
+                  Email
+                </Label>
                 <Input
                   id="email"
                   name="email"
@@ -164,7 +190,12 @@ export default function SignupPage() {
                 />
               </div>
               <div className="flex-1 space-y-2">
-                <Label htmlFor="password" className="text-sm font-medium text-foreground">Password</Label>
+                <Label
+                  htmlFor="password"
+                  className="text-sm font-medium text-foreground"
+                >
+                  Password
+                </Label>
                 <div className="relative">
                   <Input
                     id="password"
@@ -195,7 +226,12 @@ export default function SignupPage() {
 
             {/* Confirm password field full width */}
             <div className="space-y-2">
-              <Label htmlFor="confirmPassword" className="text-sm font-medium text-foreground">Confirm Password</Label>
+              <Label
+                htmlFor="confirmPassword"
+                className="text-sm font-medium text-foreground"
+              >
+                Confirm Password
+              </Label>
               <div className="relative">
                 <Input
                   id="confirmPassword"
@@ -223,13 +259,13 @@ export default function SignupPage() {
               </div>
             </div>
 
-            <Button 
-              type="submit" 
+            <Button
+              type="submit"
               className="w-full"
               size="lg"
               disabled={isLoading}
             >
-              {isLoading ? 'Creating Account...' : 'Create Account'}
+              {isLoading ? "Creating Account..." : "Create Account"}
             </Button>
           </form>
 
@@ -244,8 +280,8 @@ export default function SignupPage() {
             </div>
           </div>
 
-          <Button 
-            variant="outline" 
+          <Button
+            variant="outline"
             className="w-full"
             size="lg"
             onClick={handleGoogleSignup}
@@ -274,10 +310,10 @@ export default function SignupPage() {
 
           <div className="text-center mt-6">
             <span className="text-sm text-muted-foreground">
-              Already Have An Account?{' '}
+              Already Have An Account?{" "}
             </span>
-            <Link 
-              to="/login" 
+            <Link
+              to="/login"
               className="text-sm font-medium text-primary hover:text-primary/80 transition-colors"
             >
               Sign In
@@ -286,5 +322,5 @@ export default function SignupPage() {
         </CardContent>
       </Card>
     </div>
-  )
+  );
 }
