@@ -1,5 +1,5 @@
 import express from 'express';
-import { protect, isAdmin } from '../middlewares/auth.js';
+import { protect, authorize } from '../middlewares/auth.js';
 import upload from '../middlewares/upload.js';
 import {
   createPackage,
@@ -17,10 +17,9 @@ router.get('/', listPackages);
 router.get('/:id', getPackage);
 
 // Admin routes
-router.post('/', protect, isAdmin, upload.single('image'), createPackage);
-router.put('/:id', protect, isAdmin, upload.single('image'), updatePackage);
-router.delete('/:id', protect, isAdmin, deletePackage);
-router.patch('/:id/availability', protect, isAdmin, toggleAvailability);
+router.post('/', protect, authorize('admin'), upload.single('image'), createPackage);
+router.put('/:id', protect, authorize('admin'), upload.single('image'), updatePackage);
+router.delete('/:id', protect, authorize('admin'), deletePackage);
+router.patch('/:id/availability', protect, authorize('admin'), toggleAvailability);
 
 export default router;
-

@@ -9,7 +9,7 @@ import {
   NewPassword,
   checkAuth,
   Logout,
-} from '../controllers/auth.controllers.js';
+} from '../controllers/auth.controller.js';
 
 const router = express.Router();
 
@@ -55,24 +55,14 @@ router.get(
   }
 );
 
-// Check authentication status
 router.get('/check', checkAuth);
-
-//Login
 router.post('/login', Login);
-
-//register
 router.post('/register', Register);
-
-// Forgot Password - Send reset code
 router.post('/forgot-password', ForgotPassword);
-
 router.post('/verify-reset-code', verifyResetCode);
-
 router.post('/new-password', NewPassword);
 
 // Logout
 router.post('/logout', Logout);
-
 
 export default router;
