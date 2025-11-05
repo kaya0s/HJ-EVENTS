@@ -17,14 +17,6 @@ export const protect = async (req, res, next) => {
   }
 };
 
-//tanggalon ko rani
-export const isAdmin = (req, res, next) => {
-  if (!req.user || req.user.role !== 'admin') {
-    return res.status(403).json({ message: 'Admin access required' });
-  }
-  next();
-};
-
 export const authorize = (...allowedRoles) => {
   return (req, res, next) => {
     // Ensure user is authenticated first
@@ -41,11 +33,4 @@ export const authorize = (...allowedRoles) => {
 
     next(); //permitted
   };
-};
-
-export const isSupplier = (req, res, next) => {
-  if (!req.user || req.user.role !== 'supplier') {
-    return res.status(403).json({ message: 'Supplier access required' });
-  }
-  next();
 };
