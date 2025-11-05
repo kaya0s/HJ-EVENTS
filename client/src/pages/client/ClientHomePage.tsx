@@ -1,8 +1,9 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { ClientNavBar } from "@/components/layout/client/ClientNavBar";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { axiosInstance } from "@/lib/axios";
 import {
   ChevronLeft,
   ChevronRight,
@@ -41,36 +42,44 @@ export const ClientHomePage = () => {
     }
   }, []);
 
-  const packages = useMemo<PackageItem[]>(
-    () => [
-      {
-        id: "basic",
-        name: "Basic Package",
-        price: 799,
-        description: "Essential coordination for small events.",
-        features: ["Event day coordination", "Vendor liaison", "Basic decor"],
-      },
-      {
-        id: "standard",
-        name: "Standard Package",
-        price: 1999,
-        description: "Planning support and enhanced experience.",
-        features: [
-          "Planning assistance",
-          "Venue coordination",
-          "Catering guidance",
-        ],
-      },
-      {
-        id: "premium",
-        name: "Premium Package",
-        price: 4499,
-        description: "Full service planning and luxury touches.",
-        features: ["Full planning", "Premium decor", "On-site manager"],
-      },
-    ],
-    []
-  );
+  const [packages, setPackages] = useState<PackageItem[]>([]);
+  const [loadingPackages, setLoadingPackages] = useState<boolean>(false);
+  const [packagesError, setPackagesError] = useState<string>("");
+
+  useEffect(() => {
+    const fetchPackages = async () => {
+      try {
+        setLoadingPackages(true);
+        setPackagesError("");
+        const res = await axiosInstance.get("/packages");
+        const data = res.data as unknown;
+        const maybeItems = (data as Record<string, unknown>)?.data ?? data;
+        const arr: unknown[] = Array.isArray(maybeItems)
+          ? (maybeItems as unknown[])
+          : [];
+        const normalized: PackageItem[] = arr.map((p) => {
+          const obj = (p ?? {}) as Record<string, unknown>;
+          const toStringArray = (v: unknown): string[] =>
+            Array.isArray(v)
+              ? (v.filter((x) => typeof x === "string") as string[])
+              : [];
+          return {
+            id: (obj.id ?? obj._id ?? "") as string,
+            name: (obj.name ?? "") as string,
+            price: Number(obj.price ?? 0),
+            description: (obj.description ?? "") as string,
+            features: toStringArray(obj.features),
+          };
+        });
+        setPackages(normalized);
+      } catch {
+        setPackagesError("Failed to load packages.");
+      } finally {
+        setLoadingPackages(false);
+      }
+    };
+    fetchPackages();
+  }, []);
 
   const selectPackage = (pkgId: string) => {
     navigate(`/book?packageId=${encodeURIComponent(pkgId)}`);
@@ -280,7 +289,15 @@ export const ClientHomePage = () => {
                 See all
               </Button>
             </div>
+            {packagesError && (
+              <p className="text-sm text-red-500 mb-4">{packagesError}</p>
+            )}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {loadingPackages && packages.length === 0 && (
+                <div className="col-span-full text-center text-muted-foreground">
+                  Loading packages...
+                </div>
+              )}
               {packages.map((pkg) => (
                 <Card key={pkg.id} className="p-6 flex flex-col">
                   <div className="mb-4">
@@ -292,7 +309,7 @@ export const ClientHomePage = () => {
                   <div className="mt-auto">
                     <div className="text-3xl font-bold mb-3">${pkg.price}</div>
                     <ul className="list-disc pl-5 space-y-1 mb-5 text-muted-foreground">
-                      {pkg.features.map((f) => (
+                      {pkg.features?.map((f) => (
                         <li key={f}>{f}</li>
                       ))}
                     </ul>

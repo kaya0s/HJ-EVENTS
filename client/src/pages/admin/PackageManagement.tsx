@@ -1,8 +1,9 @@
-import { useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
+import { axiosInstance } from "@/lib/axios";
 
 type AdminPackage = {
   id: string;
@@ -13,53 +14,71 @@ type AdminPackage = {
 };
 
 export default function PackageManagement() {
-  const initial = useMemo<AdminPackage[]>(
-    () => [
-      {
-        id: "basic",
-        name: "Basic Package",
-        price: 799,
-        description: "Essential coordination for small events.",
-        features: ["Event day coordination", "Vendor liaison", "Basic decor"],
-      },
-      {
-        id: "standard",
-        name: "Standard Package",
-        price: 1999,
-        description: "Planning support and enhanced experience.",
-        features: [
-          "Planning assistance",
-          "Venue coordination",
-          "Catering guidance",
-        ],
-      },
-    ],
-    []
-  );
-  const [packages, setPackages] = useState<AdminPackage[]>(initial);
+  const [packages, setPackages] = useState<AdminPackage[]>([]);
   const [name, setName] = useState("");
   const [price, setPrice] = useState("");
   const [description, setDescription] = useState("");
   const [features, setFeatures] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
 
-  const addPackage = (e: React.FormEvent) => {
+  const fetchPackages = async (): Promise<void> => {
+    try {
+      setLoading(true);
+      setError("");
+      const res = await axiosInstance.get("/packages");
+      const data = res.data as unknown;
+      const maybeItems = (data as Record<string, unknown>)?.data ?? data;
+      const arr: unknown[] = Array.isArray(maybeItems)
+        ? (maybeItems as unknown[])
+        : [];
+      const normalized: AdminPackage[] = arr.map((p) => {
+        const obj = (p ?? {}) as Record<string, unknown>;
+        const toStringArray = (v: unknown): string[] =>
+          Array.isArray(v)
+            ? (v.filter((x) => typeof x === "string") as string[])
+            : [];
+        return {
+          id: (obj.id ?? obj._id ?? "") as string,
+          name: (obj.name ?? "") as string,
+          price: Number(obj.price ?? 0),
+          description: (obj.description ?? "") as string,
+          features: toStringArray(obj.features),
+        };
+      });
+      setPackages(normalized);
+    } catch {
+      setError("Failed to load packages.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchPackages();
+  }, []);
+
+  const addPackage = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    const id = name.trim().toLowerCase().replace(/\s+/g, "-");
-    const newPkg: AdminPackage = {
-      id,
-      name: name.trim(),
-      price: Number(price) || 0,
-      description: description.trim(),
-      features: features
-        .split(",")
-        .map((f) => f.trim())
-        .filter(Boolean),
-    };
-    setPackages((prev) => [newPkg, ...prev]);
-    setName("");
-    setPrice("");
-    setDescription("");
-    setFeatures("");
+    try {
+      const payload = {
+        name: name.trim(),
+        price: Number(price) || 0,
+        description: description.trim(),
+        features: features
+          .split(",")
+          .map((f) => f.trim())
+          .filter(Boolean),
+      };
+      await axiosInstance.post("/packages", payload);
+      setName("");
+      setPrice("");
+      setDescription("");
+      setFeatures("");
+      fetchPackages();
+    } catch {
+      setError("Failed to add package.");
+    }
   };
 
   return (
@@ -118,7 +137,13 @@ export default function PackageManagement() {
         </form>
       </Card>
 
+      {error && <p className="text-sm text-red-500">{error}</p>}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        {loading && packages.length === 0 && (
+          <div className="col-span-full text-center text-muted-foreground">
+            Loading packages...
+          </div>
+        )}
         {packages.map((pkg) => (
           <Card key={pkg.id} className="p-6">
             <div className="mb-3">
