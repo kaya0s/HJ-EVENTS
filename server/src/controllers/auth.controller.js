@@ -293,7 +293,7 @@ export const checkAuth = async (req, res) => {
       return res.status(401).json({ message: 'Not authenticated' });
     }
 
-    const jwt = await import('jsonwebtoken');
+    const { default: jwt } = await import('jsonwebtoken');
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
     const user = await User.findById(decoded.userId).select('-password');
 
