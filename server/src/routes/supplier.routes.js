@@ -1,5 +1,5 @@
 import express from 'express';
-import { protect, isAdmin, isSupplier } from '../middlewares/auth.js';
+import { protect, authorize } from '../middlewares/auth.js';
 import upload from '../middlewares/upload.js';
 import {
   createSupplier,
@@ -20,13 +20,13 @@ router.get('/', listSuppliers);
 router.get('/:id', getSupplier);
 
 // Admin access
-router.post('/', protect, isAdmin, upload.single('image'), createSupplier);
-router.put('/:id', protect, isAdmin, upload.single('image'), updateSupplier);
-router.delete('/:id', protect, isAdmin, deleteSupplier);
+router.post('/', protect, authorize('admin'), upload.single('image'), createSupplier);
+router.put('/:id', protect, authorize('admin'), upload.single('image'), updateSupplier);
+router.delete('/:id', protect, authorize('admin'), deleteSupplier);
 
 // Supplier access
-router.get('/my-profile', protect, isSupplier, getMyProfile);
-router.put('/my-profile', protect, isSupplier, updateMyProfile);
-router.get('/my-bookings', protect, isSupplier, getMyBookings);
-router.patch('/booking/:bookingId/status', protect, isSupplier, updateBookingStatus);
+router.get('/my-profile', protect, authorize('supplier'), getMyProfile);
+router.put('/my-profile', protect, authorize('supplier'), updateMyProfile);
+router.get('/my-bookings', protect, authorize('supplier'), getMyBookings);
+router.patch('/booking/:bookingId/status', protect, authorize('supplier'), updateBookingStatus);
 export default router;

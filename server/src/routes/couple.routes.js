@@ -6,6 +6,7 @@ import {
   updateCouple,
   deleteCouple,
 } from '../controllers/couple.controller.js';
+import { sendCoupleRequest, respondToCoupleRequest } from '../controllers/couple.controller.js';
 
 import { protect, authorize } from '../middleware/auth.js';
 
@@ -25,5 +26,8 @@ router.put('/:id', protect, authorize('admin', 'client'), updateCouple);
 
 // Delete couple (Admin)
 router.delete('/:id', protect, authorize('admin'), deleteCouple);
+
+router.post('/request', protect, sendCoupleRequest);
+router.post('/response', protect, respondToCoupleRequest);
 
 export default router;
