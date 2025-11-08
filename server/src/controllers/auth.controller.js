@@ -6,6 +6,7 @@ import passport from 'passport';
 import { Strategy as GoogleStrategy } from 'passport-google-oauth20';
 import { generateResetCode, generateResetToken, hashResetToken } from '../utils/passwordReset.js';
 import { sendPasswordResetEmail } from '../utils/email.js';
+import { verifyRecaptcha } from '../utils/recaptcha.js';
 
 // Configure Google OAuth Strategy
 passport.use(
@@ -74,12 +75,60 @@ passport.deserializeUser(async (id, done) => {
   }
 });
 
+//Google OAuth
+export const googleAuth = (req, res, next) => {
+  passport.authenticate('google', {
+    scope: ['profile', 'email'],
+  })(req, res, next);
+};
+
+export const googleAuthCallback = async (req, res, next) => {
+  passport.authenticate('google', { session: false }, (err, user) => {
+    try {
+      if (err || !user) {
+        console.error('Google OAuth callback error:', err);
+        return res.redirect(`${process.env.CLIENT_URL}/login?error=oauth_failed`);
+      }
+
+      // Generate JWT token for the authenticated user
+      const token = generateToken(user._id, res);
+
+      // Return user data and redirect to frontend
+      const userData = {
+        _id: user._id,
+        fullName: user.fullName,
+        email: user.email,
+        profilePic: user.profilePic,
+        role: user.role,
+      };
+
+      // Redirect to frontend with success
+      res.redirect(
+        `${process.env.CLIENT_URL}/auth/success?token=${token}&user=${encodeURIComponent(JSON.stringify(userData))}`
+      );
+    } catch (error) {
+      console.error('Google OAuth callback error:', error);
+      res.redirect(`${process.env.CLIENT_URL}/login?error=oauth_failed`);
+    }
+  })(req, res, next);
+};
+
 //register
 export const Register = async (req, res) => {
-  const { firstName, lastName, email, password } = req.body;
+  const { firstName, lastName, email, password, recaptchaToken } = req.body;
   try {
     if (!firstName || !lastName || !email || !password) {
       return res.status(400).json({ message: 'All fields are required' });
+    }
+
+    // Verify reCAPTCHA
+    if (recaptchaToken) {
+      const isValidRecaptcha = await verifyRecaptcha(recaptchaToken);
+      if (!isValidRecaptcha) {
+        return res
+          .status(400)
+          .json({ message: 'reCAPTCHA verification failed. Please try again.' });
+      }
     }
 
     if (password.length < 6) {
@@ -127,11 +176,20 @@ export const Register = async (req, res) => {
 
 //Login
 export const Login = async (req, res) => {
-  const { email, password } = req.body;
+  const { email, password, recaptchaToken } = req.body;
 
   if (!email || !password) return res.status(400).json({ message: 'Invalid Credentials' });
-  console.log(email, password);
+
   try {
+    // Verify reCAPTCHA
+    if (recaptchaToken) {
+      const isValidRecaptcha = await verifyRecaptcha(recaptchaToken);
+      if (!isValidRecaptcha) {
+        return res
+          .status(400)
+          .json({ message: 'reCAPTCHA verification failed. Please try again.' });
+      }
+    }
     // Find user by email
     const user = await User.findOne({ email });
 
