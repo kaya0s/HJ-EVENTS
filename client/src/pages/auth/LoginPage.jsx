@@ -1,15 +1,15 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useAuthStore } from "../../store/useAuthStore";
 import AuthImagePattern from "../../components/AuthImagePattern";
 import { Link } from "react-router-dom";
-import {
-  Eye,
-  EyeOff,
-  Loader2,
-  UserLock,
-  Mail,
-  MessageSquare,
-} from "lucide-react";
+import { Eye, EyeOff, Loader2, UserLock, Mail } from "lucide-react";
+import Logo from "../../components/Logo";
+import toast from "react-hot-toast";
+import GoogleButton from "react-google-button";
+import { loadRecaptchaScript, executeRecaptcha } from "../../utils/recaptcha";
+
+// Get reCAPTCHA site key from environment variable
+const RECAPTCHA_SITE_KEY = import.meta.env.VITE_RECAPTCHA_SITE_KEY || "";
 
 const LoginPage = () => {
   const [showPassword, setShowPassword] = useState(false);
@@ -17,15 +17,67 @@ const LoginPage = () => {
     email: "",
     password: "",
   });
-  const { login, isLoggingIn } = useAuthStore();
+  const { login, isLoggingIn, loginWithGoogle } = useAuthStore();
+
+  // Load reCAPTCHA script on mount if site key is configured
+  useEffect(() => {
+    if (RECAPTCHA_SITE_KEY) {
+      loadRecaptchaScript(RECAPTCHA_SITE_KEY).catch((error) => {
+        console.error("Failed to load reCAPTCHA:", error);
+      });
+    }
+  }, []);
+
+  const validateForm = () => {
+    if (!formData.email.trim()) return toast.error("Email is required");
+    if (!/\S+@\S+\.\S+/.test(formData.email))
+      return toast.error("Invalid email format");
+    if (!formData.password) return toast.error("Password is required");
+    return true;
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    login(formData);
+    const isValid = validateForm();
+
+    if (isValid === true) {
+      try {
+        let recaptchaToken = "";
+
+        // Execute reCAPTCHA v3 if site key is configured
+        if (RECAPTCHA_SITE_KEY) {
+          try {
+            recaptchaToken = await executeRecaptcha(
+              RECAPTCHA_SITE_KEY,
+              "login"
+            );
+          } catch (error) {
+            console.error("reCAPTCHA execution error:", error);
+            toast.error("reCAPTCHA verification failed. Please try again.");
+            return;
+          }
+        }
+
+        // Send form data with reCAPTCHA token to backend
+        login({ ...formData, recaptchaToken });
+      } catch (error) {
+        console.error("Form submission error:", error);
+        toast.error("An error occurred. Please try again.");
+      }
+    }
+  };
+
+  const handleGoogleLogin = async () => {
+    try {
+      // Call your google login method in the auth store.
+      await loginWithGoogle();
+    } catch {
+      toast.error("Google login failed.");
+    }
   };
 
   return (
-    <div className="h-screen grid lg:grid-cols-2">
+    <div className="grid min-h-[calc(100vh-4rem)] lg:grid-cols-2">
       {/* Left Side - Form */}
       <div className="flex flex-col justify-center items-center p-6 sm:p-12">
         <div className="w-full max-w-md space-y-8">
@@ -36,10 +88,31 @@ const LoginPage = () => {
                 className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center group-hover:bg-primary/20
               transition-colors"
               >
-                <MessageSquare className="w-6 h-6 text-primary" />
+                <Logo />
               </div>
               <h1 className="text-2xl font-bold mt-2">Welcome Back</h1>
-              <p className="text-base-content/60">Sign in to your account</p>
+              <p className="text-base-content/60">
+                Sign in to plan your wedding day
+              </p>
+            </div>
+          </div>
+
+          {/* Google Auth */}
+          <div className="mb-2">
+            <GoogleButton
+              className="w-full"
+              onClick={handleGoogleLogin}
+              disabled={isLoggingIn}
+              label="Sign in with Google"
+            />
+          </div>
+
+          <div className="relative">
+            <div className="absolute inset-0 flex items-center">
+              <div className="w-full border-t border-base-content/20" />
+            </div>
+            <div className="relative flex justify-center text-sm">
+              <span className="bg-base-100 px-2 text-base-content/40">or</span>
             </div>
           </div>
 
@@ -112,11 +185,16 @@ const LoginPage = () => {
             </button>
           </form>
 
-          <div className="text-center">
+          <div className="text-center space-y-2">
             <p className="text-base-content/60">
               Don&apos;t have an account?{" "}
               <Link to="/signup" className="link link-primary">
                 Create account
+              </Link>
+            </p>
+            <p className="text-base-content/60">
+              <Link to="/forgot-password" className="link link-primary">
+                Forgot password?
               </Link>
             </p>
           </div>

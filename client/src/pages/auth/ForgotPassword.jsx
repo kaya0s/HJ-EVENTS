@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useAuthStore } from "../../store/useAuthStore";
 import AuthImagePattern from "../../components/AuthImagePattern";
 import { Link } from "react-router-dom";
-import { Loader2, Mail, KeyRound } from "lucide-react";
+import { Loader2, Mail, KeyRound, Heart } from "lucide-react";
 import toast from "react-hot-toast";
 
 const ForgotPassword = () => {
@@ -33,7 +33,7 @@ const ForgotPassword = () => {
   };
 
   return (
-    <div className="h-screen grid lg:grid-cols-2">
+    <div className="grid min-h-[calc(100vh-4rem)] lg:grid-cols-2">
       {/* Left Side - Form */}
       <div className="flex flex-col justify-center items-center p-6 sm:p-12">
         <div className="w-full max-w-md space-y-8">
@@ -44,7 +44,7 @@ const ForgotPassword = () => {
                 className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center group-hover:bg-primary/20
                 transition-colors"
               >
-                <KeyRound className="w-6 h-6 text-primary" />
+                <Heart className="w-6 h-6 text-primary" />
               </div>
               <h1 className="text-2xl font-bold mt-2">Forgot Password</h1>
               <p className="text-base-content/60">

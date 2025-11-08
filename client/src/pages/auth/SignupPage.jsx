@@ -1,80 +1,139 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useAuthStore } from "../../store/useAuthStore";
-import { Eye, EyeOff, Loader2, Lock, Mail, User, Beer } from "lucide-react";
+import { Eye, EyeOff, Loader2, Lock, Mail, User, Heart } from "lucide-react";
 import { Link } from "react-router-dom";
+import { loadRecaptchaScript, executeRecaptcha } from "../../utils/recaptcha";
 
 import AuthImagePattern from "../../components/AuthImagePattern";
 import toast from "react-hot-toast";
 
+// Get reCAPTCHA site key from environment variable
+const RECAPTCHA_SITE_KEY = import.meta.env.VITE_RECAPTCHA_SITE_KEY || "";
+
 const SignUpPage = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [formData, setFormData] = useState({
-    fullName: "",
+    firstName: "",
+    lastName: "",
     email: "",
     password: "",
   });
 
   const { signup, isSigningUp } = useAuthStore();
 
+  // Load reCAPTCHA script on mount if site key is configured
+  useEffect(() => {
+    if (RECAPTCHA_SITE_KEY) {
+      loadRecaptchaScript(RECAPTCHA_SITE_KEY).catch((error) => {
+        console.error("Failed to load reCAPTCHA:", error);
+      });
+    }
+  }, []);
+
   const validateForm = () => {
-    if (!formData.fullName.trim()) return toast.error("Full name is required");
+    if (!formData.firstName.trim())
+      return toast.error("First name is required");
+    if (!formData.lastName.trim()) return toast.error("Last name is required");
     if (!formData.email.trim()) return toast.error("Email is required");
     if (!/\S+@\S+\.\S+/.test(formData.email))
       return toast.error("Invalid email format");
     if (!formData.password) return toast.error("Password is required");
     if (formData.password.length < 6)
       return toast.error("Password must be at least 6 characters");
-
     return true;
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-
     const success = validateForm();
 
-    if (success === true) signup(formData);
+    if (success === true) {
+      try {
+        let recaptchaToken = "";
+
+        // Execute reCAPTCHA v3 if site key is configured
+        if (RECAPTCHA_SITE_KEY) {
+          try {
+            recaptchaToken = await executeRecaptcha(
+              RECAPTCHA_SITE_KEY,
+              "signup"
+            );
+          } catch (error) {
+            console.error("reCAPTCHA execution error:", error);
+            toast.error("reCAPTCHA verification failed. Please try again.");
+            return;
+          }
+        }
+
+        // Send form data with reCAPTCHA token to backend
+        signup({ ...formData, recaptchaToken });
+      } catch (error) {
+        console.error("Form submission error:", error);
+        toast.error("An error occurred. Please try again.");
+      }
+    }
   };
 
   return (
-    <div className="min-h-screen grid lg:grid-cols-2">
+    <div className="grid min-h-[calc(100vh-4rem)] lg:grid-cols-2">
       {/* left side */}
-      <div className="flex flex-col justify-center items-center p-6 sm:p-12">
-        <div className="w-full max-w-md space-y-8">
+      <div className="flex flex-col justify-center items-center p-4 sm:p-8">
+        <div className="w-full max-w-sm space-y-8">
           {/* LOGO */}
           <div className="text-center mb-8">
             <div className="flex flex-col items-center gap-2 group">
               <div
-                className="size-12 rounded-xl bg-primary/10 flex items-center justify-center 
+                className="size-12 rounded-xl bg-primary/10 flex items-center justify-center
               group-hover:bg-primary/20 transition-colors"
               >
-                <Beer className="size-6 text-primary" />
+                <Heart className="size-6 text-primary" />
               </div>
               <h1 className="text-2xl font-bold mt-2">Create Account</h1>
               <p className="text-base-content/60">
-                Get started with your free account
+                Start planning your special day!
               </p>
             </div>
           </div>
 
-          <form onSubmit={handleSubmit} className="space-y-6">
-            <div className="form-control">
-              <label className="label">
-                <span className="label-text font-medium">Full Name</span>
-              </label>
-              <div className="relative">
-                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                  <User className="size-5 text-base-content/40" />
+          <form onSubmit={handleSubmit} className="space-y-5">
+            <div className="flex gap-2">
+              <div className="form-control flex-1">
+                <label className="label">
+                  <span className="label-text font-medium">First Name</span>
+                </label>
+                <div className="relative">
+                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                    <User className="size-5 text-base-content/40" />
+                  </div>
+                  <input
+                    type="text"
+                    className="input input-bordered w-full pl-10"
+                    placeholder="John"
+                    value={formData.firstName}
+                    onChange={(e) =>
+                      setFormData({ ...formData, firstName: e.target.value })
+                    }
+                  />
                 </div>
-                <input
-                  type="text"
-                  className={`input input-bordered w-full pl-10`}
-                  placeholder="John Doe"
-                  value={formData.fullName}
-                  onChange={(e) =>
-                    setFormData({ ...formData, fullName: e.target.value })
-                  }
-                />
+              </div>
+              <div className="form-control flex-1">
+                <label className="label">
+                  <span className="label-text font-medium">Last Name</span>
+                </label>
+                <div className="relative">
+                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                    <User className="size-5 text-base-content/40" />
+                  </div>
+                  <input
+                    type="text"
+                    className="input input-bordered w-full pl-10"
+                    placeholder="Doe"
+                    value={formData.lastName}
+                    onChange={(e) =>
+                      setFormData({ ...formData, lastName: e.target.value })
+                    }
+                  />
+                </div>
               </div>
             </div>
 
@@ -88,7 +147,7 @@ const SignUpPage = () => {
                 </div>
                 <input
                   type="email"
-                  className={`input input-bordered w-full pl-10`}
+                  className="input input-bordered w-full pl-10"
                   placeholder="you@example.com"
                   value={formData.email}
                   onChange={(e) =>
@@ -108,7 +167,7 @@ const SignUpPage = () => {
                 </div>
                 <input
                   type={showPassword ? "text" : "password"}
-                  className={`input input-bordered w-full pl-10`}
+                  className="input input-bordered w-full pl-10"
                   placeholder="••••••••"
                   value={formData.password}
                   onChange={(e) =>
@@ -157,10 +216,9 @@ const SignUpPage = () => {
       </div>
 
       {/* right side */}
-
       <AuthImagePattern
-        title="Join the Drop Listers"
-        subtitle="Sometimes in the Deans list but always in the Drop List"
+        title="Plan your wedding beautifully"
+        subtitle="Collaborate with coordinators, manage bookings, and craft the celebration you envision."
       />
     </div>
   );
