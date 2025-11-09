@@ -27,12 +27,7 @@ const Navbar = () => {
     }
 
     if (authUser.role === "admin") {
-      return [
-        { label: "Dashboard", to: "/admin" },
-        { label: "Manage Clients", to: "/admin/clients" },
-        { label: "Manage Suppliers", to: "/admin/suppliers" },
-        { label: "Reports", to: "/admin/reports" },
-      ];
+      return [];
     }
 
     if (authUser.role === "supplier") {
