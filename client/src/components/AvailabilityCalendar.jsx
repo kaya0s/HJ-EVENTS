@@ -121,8 +121,8 @@ export default function AvailabilityCalendar() {
 
         {/* Weekday headers */}
         <div className="grid grid-cols-7 mb-2 gap-1 text-base-content/50 text-sm font-medium select-none">
-          {["S", "M", "T", "W", "T", "F", "S"].map((d) => (
-            <span key={d} className="w-10 text-center tracking-tight">
+          {["S", "M", "T", "W", "T", "F", "S"].map((d, i) => (
+            <span key={`${d}-${i}`} className="w-10 text-center tracking-tight">
               {d}
             </span>
           ))}
