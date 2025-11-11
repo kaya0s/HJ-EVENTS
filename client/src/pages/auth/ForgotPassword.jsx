@@ -1,14 +1,15 @@
 import { useState } from "react";
 import { useAuthStore } from "../../store/useAuthStore";
 import AuthImagePattern from "../../components/AuthImagePattern";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { Loader2, Mail, KeyRound, Heart } from "lucide-react";
 import toast from "react-hot-toast";
 
 const ForgotPassword = () => {
+  const navigate = useNavigate();
   const [email, setEmail] = useState("");
   const [isSending, setIsSending] = useState(false);
-  const { sendResetLink } = useAuthStore(); // you’ll add this to your store next
+  const { sendResetCode } = useAuthStore(); // you’ll add this to your store next
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -19,14 +20,11 @@ const ForgotPassword = () => {
 
     try {
       setIsSending(true);
-      await sendResetLink(email);
-      toast.success("Password reset link sent! Check your inbox.", {
-        duration: 5000,
-      });
+      await sendResetCode(email);
+      // Redirect after success
+      navigate("/verify-reset-code");
     } catch {
-      toast.error("Something went wrong. Please try again later.", {
-        duration: 4000,
-      });
+      // Error is already handled in the store
     } finally {
       setIsSending(false);
     }

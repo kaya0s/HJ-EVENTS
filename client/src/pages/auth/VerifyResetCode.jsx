@@ -1,18 +1,36 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useAuthStore } from "../../store/useAuthStore";
-import { Link } from "react-router-dom";
-import { KeyRound, Mail, Check, Loader2, Heart } from "lucide-react";
+import AuthImagePattern from "../../components/AuthImagePattern";
+import { Link, useNavigate } from "react-router-dom";
+import { KeyRound, Check, Loader2, Heart } from "lucide-react";
+import toast from "react-hot-toast";
 
 const VerifyResetCode = () => {
   const { verifyResetCode } = useAuthStore();
-  const [formData, setFormData] = useState({ email: "", code: "" });
+  const navigate = useNavigate();
+  const [code, setCode] = useState("");
   const [submitting, setSubmitting] = useState(false);
+
+  useEffect(() => {
+    // Check if resetToken exists, if not redirect to forgot password
+    const resetToken = sessionStorage.getItem("resetToken");
+    if (!resetToken) {
+      toast.error("Please request a reset code first");
+      navigate("/forgot-password");
+    }
+  }, [navigate]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    if (!code.trim()) {
+      return toast.error("Please enter the reset code");
+    }
     setSubmitting(true);
     try {
-      await verifyResetCode(formData);
+      await verifyResetCode(code);
+      navigate("/new-password");
+    } catch (error) {
+      // Error is already handled in the store
     } finally {
       setSubmitting(false);
     }
@@ -37,26 +55,6 @@ const VerifyResetCode = () => {
           <form onSubmit={handleSubmit} className="space-y-6">
             <div className="form-control">
               <label className="label">
-                <span className="label-text font-medium">Email</span>
-              </label>
-              <div className="relative">
-                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                  <Mail className="h-5 w-5 text-base-content/40" />
-                </div>
-                <input
-                  type="email"
-                  className="input input-bordered w-full pl-10"
-                  placeholder="you@example.com"
-                  value={formData.email}
-                  onChange={(e) =>
-                    setFormData({ ...formData, email: e.target.value })
-                  }
-                />
-              </div>
-            </div>
-
-            <div className="form-control">
-              <label className="label">
                 <span className="label-text font-medium">Reset Code</span>
               </label>
               <div className="relative">
@@ -67,10 +65,9 @@ const VerifyResetCode = () => {
                   type="text"
                   className="input input-bordered w-full pl-10"
                   placeholder="Enter 6-digit code"
-                  value={formData.code}
-                  onChange={(e) =>
-                    setFormData({ ...formData, code: e.target.value })
-                  }
+                  value={code}
+                  onChange={(e) => setCode(e.target.value)}
+                  maxLength={6}
                 />
               </div>
             </div>
@@ -97,7 +94,13 @@ const VerifyResetCode = () => {
         </div>
       </div>
 
-      <div className="hidden lg:block bg-base-200" />
+      {/* Right Side - Image/Pattern */}
+      <AuthImagePattern
+        title={"Verify your reset code"}
+        subtitle={
+          "Enter the 6-digit code sent to your email to continue resetting your password."
+        }
+      />
     </div>
   );
 };
