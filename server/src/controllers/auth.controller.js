@@ -121,15 +121,15 @@ export const Register = async (req, res) => {
       return res.status(400).json({ message: 'All fields are required' });
     }
 
-    // // Verify reCAPTCHA
-    // if (recaptchaToken) {
-    //   const isValidRecaptcha = await verifyRecaptcha(recaptchaToken);
-    //   if (!isValidRecaptcha) {
-    //     return res
-    //       .status(400)
-    //       .json({ message: 'reCAPTCHA verification failed. Please try again.' });
-    //   }
-    // }
+    // Verify reCAPTCHA
+    if (recaptchaToken) {
+      const isValidRecaptcha = await verifyRecaptcha(recaptchaToken);
+      if (!isValidRecaptcha) {
+        return res
+          .status(400)
+          .json({ message: 'reCAPTCHA verification failed. Please try again.' });
+      }
+    }
 
     if (password.length < 6) {
       return res.status(400).json({ message: 'Password must be at least 6 characters' });
