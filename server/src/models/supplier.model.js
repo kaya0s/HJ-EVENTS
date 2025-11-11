@@ -8,6 +8,7 @@ const supplierSchema = new Schema(
     },
     category: {
       type: String,
+      enum: ['Food', 'catering', 'Decoration', 'Photography', 'Videography', 'Music', 'Florist'],
       required: true,
     },
     description: {

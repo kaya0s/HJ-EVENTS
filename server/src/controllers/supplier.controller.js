@@ -16,13 +16,26 @@ export const createSupplier = async (req, res) => {
   try {
     const data = req.body || {};
 
+    // Reconstruct nested contactInfo from flattened FormData
+    const supplierData = {
+      name: data.name,
+      category: data.category,
+      description: data.description || '',
+      priceRange: data.priceRange || '',
+      contactInfo: {
+        phone: data['contactInfo[phone]'] || data.contactInfo?.phone || '',
+        email: data['contactInfo[email]'] || data.contactInfo?.email || '',
+        address: data['contactInfo[address]'] || data.contactInfo?.address || '',
+      },
+    };
+
     // If file buffer available, upload to cloudinary and set imageURL
     if (req.file && req.file.buffer) {
       const imageURL = await uploadBufferToCloudinary(req.file.buffer, req.file.originalname);
-      data.imageURL = imageURL;
+      supplierData.imageURL = imageURL;
     }
 
-    const supplier = new Supplier({ ...data });
+    const supplier = new Supplier(supplierData);
     await supplier.save();
     res.status(201).json({ supplier });
   } catch (error) {
@@ -52,12 +65,35 @@ export const getSupplier = async (req, res) => {
 
 export const updateSupplier = async (req, res) => {
   try {
-    const updates = req.body || {};
+    const data = req.body || {};
+
+    // Reconstruct nested contactInfo from flattened FormData
+    const updates = {
+      name: data.name,
+      category: data.category,
+      description: data.description,
+      priceRange: data.priceRange,
+      contactInfo: {
+        phone: data['contactInfo[phone]'] || data.contactInfo?.phone || '',
+        email: data['contactInfo[email]'] || data.contactInfo?.email || '',
+        address: data['contactInfo[address]'] || data.contactInfo?.address || '',
+      },
+    };
+
+    // Remove undefined fields
+    Object.keys(updates).forEach((key) => {
+      if (updates[key] === undefined) delete updates[key];
+    });
+
     if (req.file && req.file.buffer) {
       const imageURL = await uploadBufferToCloudinary(req.file.buffer, req.file.originalname);
       updates.imageURL = imageURL;
     }
-    const supplier = await Supplier.findByIdAndUpdate(req.params.id, updates, { new: true });
+
+    const supplier = await Supplier.findByIdAndUpdate(req.params.id, updates, {
+      new: true,
+      runValidators: true,
+    });
     if (!supplier) return res.status(404).json({ message: 'Supplier not found' });
     res.json({ supplier });
   } catch (error) {
