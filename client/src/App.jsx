@@ -1,5 +1,5 @@
 import { useEffect } from "react";
-import { Routes, Route } from "react-router-dom";
+import { Routes, Route, Navigate } from "react-router-dom";
 import { Loader } from "lucide-react";
 import { Toaster } from "react-hot-toast";
 
@@ -13,6 +13,7 @@ import {
   ClientRoutes,
   AdminRoutes,
   SupplierRoutes,
+  SharedRoutes,
 } from "./routes";
 
 const App = () => {
@@ -42,6 +43,7 @@ const App = () => {
       <main className="flex-1 pt-16">
         <Routes>
           {AuthRoutes({ authUser })}
+          {SharedRoutes({ authUser })}
           {ClientRoutes({ authUser })}
           {AdminRoutes({ authUser })}
           {SupplierRoutes({ authUser })}
