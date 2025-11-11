@@ -5,7 +5,6 @@ import authRoutes from './routes/auth.routes.js';
 import dotenv from 'dotenv';
 import passport from 'passport';
 import session from 'express-session';
-import morgan from 'morgan';
 import cookieParser from 'cookie-parser';
 import supplierRoutes from './routes/supplier.routes.js';
 import bookingRoutes from './routes/booking.routes.js';
@@ -45,7 +44,6 @@ app.use(
 );
 app.use(passport.initialize());
 app.use(passport.session());
-app.use(morgan('dev'));
 
 // API routes
 app.use('/api/suppliers', supplierRoutes);
