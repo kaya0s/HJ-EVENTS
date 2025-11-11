@@ -55,8 +55,7 @@ export const useAuthStore = create((set, get) => ({
   loginWithGoogle: async () => {
     set({ isLoggingIn: true });
     try {
-      const apiUrl =
-        import.meta.env.VITE_API_URL || "http://localhost:3000/api";
+      const apiUrl = import.meta.env.VITE_API_URL;
       const googleAuthUrl = `${apiUrl}/auth/google`;
 
       // Open the Google sign-in popup, handled by your backend
