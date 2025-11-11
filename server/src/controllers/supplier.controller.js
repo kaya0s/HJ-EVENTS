@@ -8,7 +8,7 @@ import Booking from '../models/booking.model.js';
 const uploadBufferToCloudinary = async (buffer, filename = 'upload') => {
   // Convert buffer to data URI
   const dataUri = `data:image/jpeg;base64,${buffer.toString('base64')}`;
-  const result = await cloudinary.uploader.upload(dataUri, { folder: 'suppliers' });
+  const result = await cloudinary.uploader.upload(dataUri, { folder: 'hj-events/suppliers' });
   return result.secure_url;
 };
 

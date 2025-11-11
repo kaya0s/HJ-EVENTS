@@ -2,9 +2,9 @@ import Package from '../models/package.model.js';
 import cloudinary from '../utils/cloudinary.js';
 
 // Helper to upload buffer to Cloudinary and return secure_url
-const uploadBufferToCloudinary = async (buffer, filename = 'upload') => {
+const uploadBufferToCloudinary = async (buffer) => {
   const dataUri = `data:image/jpeg;base64,${buffer.toString('base64')}`;
-  const result = await cloudinary.uploader.upload(dataUri, { folder: 'packages' });
+  const result = await cloudinary.uploader.upload(dataUri, { folder: 'hj-events/packages' });
   return result.secure_url;
 };
 
@@ -42,7 +42,7 @@ export const createPackage = async (req, res) => {
     if (suppliersData) {
       try {
         supplierIds = typeof suppliersData === 'string' ? JSON.parse(suppliersData) : suppliersData;
-      } catch (e) {
+      } catch {
         console.log('Failed to parse suppliers, using empty array');
         supplierIds = [];
       }
@@ -72,7 +72,9 @@ export const createPackage = async (req, res) => {
  */
 export const listPackages = async (req, res) => {
   try {
-    const packages = await Package.find({}).populate('suppliers', 'name category').sort('-createdAt');
+    const packages = await Package.find({})
+      .populate('suppliers', 'name category')
+      .sort('-createdAt');
     res.json({ packages });
   } catch (error) {
     res.status(500).json({ message: 'Server error', error: error.message });
@@ -86,7 +88,10 @@ export const listPackages = async (req, res) => {
  */
 export const getPackage = async (req, res) => {
   try {
-    const packageItem = await Package.findById(req.params.id).populate('suppliers', 'name category');
+    const packageItem = await Package.findById(req.params.id).populate(
+      'suppliers',
+      'name category'
+    );
     if (!packageItem) return res.status(404).json({ message: 'Package not found' });
     res.json({ package: packageItem });
   } catch (error) {
@@ -114,7 +119,7 @@ export const updatePackage = async (req, res) => {
     if (suppliersData) {
       try {
         supplierIds = typeof suppliersData === 'string' ? JSON.parse(suppliersData) : suppliersData;
-      } catch (e) {
+      } catch {
         supplierIds = [];
       }
     }
@@ -130,11 +135,10 @@ export const updatePackage = async (req, res) => {
       }
     }
 
-    const packageItem = await Package.findByIdAndUpdate(
-      req.params.id,
-      updates,
-      { new: true, runValidators: true }
-    ).populate('suppliers', 'name category');
+    const packageItem = await Package.findByIdAndUpdate(req.params.id, updates, {
+      new: true,
+      runValidators: true,
+    }).populate('suppliers', 'name category');
 
     if (!packageItem) return res.status(404).json({ message: 'Package not found' });
 
@@ -169,7 +173,7 @@ export const deletePackage = async (req, res) => {
 export const toggleAvailability = async (req, res) => {
   try {
     const { isAvailable } = req.body;
-    
+
     if (typeof isAvailable !== 'boolean') {
       return res.status(400).json({ message: 'isAvailable must be a boolean value' });
     }
