@@ -2,6 +2,14 @@ import User from '../models/user.model.js';
 import Supplier from '../models/supplier.model.js';
 import bcrypt from 'bcryptjs';
 import ActivityLog from '../models/activityLog.model.js';
+import cloudinary from '../utils/cloudinary.js';
+
+// Helper to upload buffer to Cloudinary and return secure_url
+const uploadBufferToCloudinary = async (buffer) => {
+  const dataUri = `data:image/jpeg;base64,${buffer.toString('base64')}`;
+  const result = await cloudinary.uploader.upload(dataUri, { folder: 'hj-events/profiles' });
+  return result.secure_url;
+};
 
 /**
  * @desc   Create supplier account (admin only)
@@ -98,22 +106,94 @@ export const getProfile = async (req, res) => {
  */
 export const updateProfile = async (req, res) => {
   try {
-    const updates = req.body;
-    if (updates.password) {
-      const salt = await bcrypt.genSalt(10);
-      updates.password = await bcrypt.hash(updates.password, salt);
+    const updates = {};
+    const data = req.body || {};
+
+    // Handle text fields
+    if (data.fullName) updates.fullName = data.fullName.trim();
+    if (data.email) updates.email = data.email.trim().toLowerCase();
+    if (data.phone) updates.phone = data.phone.trim();
+    if (data.address) updates.address = data.address.trim();
+
+    // Handle profile picture upload
+    if (req.file && req.file.buffer) {
+      try {
+        const imageURL = await uploadBufferToCloudinary(req.file.buffer);
+        updates.profilePic = imageURL;
+      } catch (uploadError) {
+        console.error('Cloudinary upload error:', uploadError);
+        return res.status(500).json({ message: 'Failed to upload profile picture' });
+      }
     }
+
     const user = await User.findByIdAndUpdate(req.user._id, updates, { new: true }).select(
       '-password'
     );
+
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
     await ActivityLog.create({
       actor: req.user._id,
       actorName: req.user.fullName,
       action: 'Update profile',
     });
+
     res.json({ user });
   } catch (error) {
-    res.status(500).json({ message: `server error${error}` });
+    console.error('Update profile error:', error);
+    res.status(500).json({ message: 'Server error', error: error.message });
+  }
+};
+
+/**
+ * @desc   Change password
+ * @method  PUT
+ * @access all
+ */
+export const changePassword = async (req, res) => {
+  try {
+    const { currentPassword, newPassword } = req.body;
+
+    if (!currentPassword || !newPassword) {
+      return res.status(400).json({ message: 'Current password and new password are required' });
+    }
+
+    if (newPassword.length < 6) {
+      return res.status(400).json({ message: 'New password must be at least 6 characters' });
+    }
+
+    const user = await User.findById(req.user._id);
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    // Verify current password
+    if (user.password) {
+      const isMatch = await bcrypt.compare(currentPassword, user.password);
+      if (!isMatch) {
+        return res.status(400).json({ message: 'Current password is incorrect' });
+      }
+    }
+
+    // Hash new password
+    const salt = await bcrypt.genSalt(10);
+    const hashedPassword = await bcrypt.hash(newPassword, salt);
+
+    user.password = hashedPassword;
+    await user.save();
+
+    await ActivityLog.create({
+      actor: req.user._id,
+      actorName: req.user.fullName,
+      action: 'Change password',
+    });
+
+    res.json({ message: 'Password changed successfully' });
+  } catch (error) {
+    console.error('Change password error:', error);
+    res.status(500).json({ message: 'Server error', error: error.message });
   }
 };
 
@@ -162,22 +242,22 @@ export const deleteUser = async (req, res) => {
   try {
     const user = await User.findById(req.params.id);
     if (!user) return res.status(404).json({ message: 'User not found' });
-    
+
     // If deleting a supplier account, also delete from Supplier collection
     if (user.role === 'supplier') {
       await Supplier.findOneAndDelete({ 'contactInfo.email': user.email });
     }
-    
+
     // Delete the user
     await User.findByIdAndDelete(req.params.id);
-    
+
     await ActivityLog.create({
       actor: req.user._id,
       actorName: req.user.fullName,
       action: 'Deleted user',
       details: `Deleted user: ${user.email}`,
     });
-    
+
     res.json({ message: 'User deleted successfully' });
   } catch (error) {
     res.status(500).json({ message: `Server error${error}` });
