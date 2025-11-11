@@ -1,16 +1,46 @@
+import { Route, Navigate } from "react-router-dom";
 import AdminDashboard from "../pages/admin/Dashboard";
-import AdminBookings from "../pages/admin/Bookings";
-import AdminReports from "../pages/admin/Reports";
-import AdminLayout from "../layouts/AdminLayout"; // optional layout wrapper
+import ManageClients from "../pages/admin/ManageClients";
+import ManageSuppliers from "../pages/admin/ManageSuppliers";
+import Reports from "../pages/admin/Reports";
 
-export const adminRoutes = [
-  {
-    path: "/admin",
-    element: <AdminLayout />,
-    children: [
-      { index: true, element: <AdminDashboard /> },
-      { path: "bookings", element: <AdminBookings /> },
-      { path: "reports", element: <AdminReports /> },
-    ],
-  },
-];
+export const AdminRoutes = ({ authUser }) => (
+  <>
+    <Route
+      path="/admin"
+      element={
+        authUser?.role === "admin" ? (
+          <AdminDashboard />
+        ) : (
+          <Navigate to="/" replace />
+        )
+      }
+    />
+    <Route
+      path="/admin/clients"
+      element={
+        authUser?.role === "admin" ? (
+          <ManageClients />
+        ) : (
+          <Navigate to="/" replace />
+        )
+      }
+    />
+    <Route
+      path="/admin/suppliers"
+      element={
+        authUser?.role === "admin" ? (
+          <ManageSuppliers />
+        ) : (
+          <Navigate to="/" replace />
+        )
+      }
+    />
+    <Route
+      path="/admin/reports"
+      element={
+        authUser?.role === "admin" ? <Reports /> : <Navigate to="/" replace />
+      }
+    />
+  </>
+);

@@ -1,20 +1,47 @@
-import ClientLayout from "../layouts/ClientLayout";
-import ClientHome from "../pages/client/Home";
-import Packages from "../pages/client/Packages";
-import BookingForm from "../pages/client/BookingForm";
+import { Route, Navigate } from "react-router-dom";
+import Home from "../pages/client/Home";
+import About from "../pages/client/About";
+import Contact from "../pages/client/Contact";
 import MyBookings from "../pages/client/MyBookings";
-import Feedback from "../pages/client/Feedback";
+import Profile from "../pages/client/Profile";
+import ThemesPage from "../pages/ThemesPage";
 
-export const clientRoutes = [
-  {
-    path: "/",
-    element: <ClientLayout />,
-    children: [
-      { index: true, element: <ClientHome /> },
-      { path: "packages", element: <Packages /> },
-      { path: "book", element: <BookingForm /> },
-      { path: "my-bookings", element: <MyBookings /> },
-      { path: "feedback", element: <Feedback /> },
-    ],
-  },
-];
+export const ClientRoutes = ({ authUser }) => (
+  <>
+    <Route path="/" element={<Home />} />
+    <Route
+      path="/about"
+      element={
+        authUser?.role === "user" ? <About /> : <Navigate to="/login" replace />
+      }
+    />
+    <Route
+      path="/contact"
+      element={
+        authUser?.role === "user" ? (
+          <Contact />
+        ) : (
+          <Navigate to="/login" replace />
+        )
+      }
+    />
+    <Route
+      path="/my-bookings"
+      element={
+        authUser?.role === "user" ? (
+          <MyBookings />
+        ) : (
+          <Navigate to="/login" replace />
+        )
+      }
+    />
+    <Route
+      path="/profile"
+      element={authUser ? <Profile /> : <Navigate to="/login" replace />}
+    />
+    <Route
+      path="/themes"
+      element={authUser ? <ThemesPage /> : <Navigate to="/login" replace />}
+    />
+  </>
+);
