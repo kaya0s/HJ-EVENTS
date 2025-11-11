@@ -3,6 +3,7 @@ import AdminDashboard from "../pages/admin/Dashboard";
 import ManageClients from "../pages/admin/ManageClients";
 import ManageSuppliers from "../pages/admin/ManageSuppliers";
 import Reports from "../pages/admin/Reports";
+import Packages from "../pages/admin/Packages";
 
 export const AdminRoutes = ({ authUser }) => (
   <>
@@ -40,6 +41,12 @@ export const AdminRoutes = ({ authUser }) => (
       path="/admin/reports"
       element={
         authUser?.role === "admin" ? <Reports /> : <Navigate to="/" replace />
+      }
+    />
+    <Route
+      path="/admin/packages"
+      element={
+        authUser?.role === "admin" ? <Packages /> : <Navigate to="/" replace />
       }
     />
   </>
