@@ -3,12 +3,25 @@ import Home from "../pages/client/Home";
 import About from "../pages/client/About";
 import Contact from "../pages/client/Contact";
 import MyBookings from "../pages/client/MyBookings";
-import Profile from "../pages/client/Profile";
-import ThemesPage from "../pages/ThemesPage";
-
 export const ClientRoutes = ({ authUser }) => (
   <>
-    <Route path="/" element={<Home />} />
+    <Route
+      path="/"
+      element={
+        !authUser ? (
+          <Home /> // no auth user → can see homepage
+        ) : authUser.role === "user" ? (
+          <Home /> // normal user → can see homepage
+        ) : authUser.role === "admin" ? (
+          <Navigate to="/admin" replace />
+        ) : authUser.role === "supplier" ? (
+          <Navigate to="/supplier" replace />
+        ) : (
+          <Navigate to="/login" replace />
+        )
+      }
+    />
+
     <Route
       path="/about"
       element={
@@ -34,14 +47,6 @@ export const ClientRoutes = ({ authUser }) => (
           <Navigate to="/login" replace />
         )
       }
-    />
-    <Route
-      path="/profile"
-      element={authUser ? <Profile /> : <Navigate to="/login" replace />}
-    />
-    <Route
-      path="/themes"
-      element={authUser ? <ThemesPage /> : <Navigate to="/login" replace />}
     />
   </>
 );
