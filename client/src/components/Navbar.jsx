@@ -1,7 +1,7 @@
 import { Link, useLocation } from "react-router-dom";
 import { useMemo } from "react";
 import { useAuthStore } from "../store/useAuthStore";
-import { LogOut, Settings, User } from "lucide-react";
+import { LogOut, Palette, User } from "lucide-react";
 import Logo from "./Logo";
 
 const Navbar = () => {
@@ -10,15 +10,15 @@ const Navbar = () => {
 
   const profileLink = useMemo(() => {
     if (!authUser) return "/login";
-    if (authUser.role === "admin") return "/admin";
-    if (authUser.role === "supplier") return "/supplier/profile";
+    if (authUser.role === "admin") return "/profile";
+    if (authUser.role === "supplier") return "profile";
     return "/profile";
   }, [authUser]);
 
-  const settingsLink = useMemo(() => {
+  const themesLink = useMemo(() => {
     if (!authUser) return "/login";
-    if (authUser.role === "admin") return "/admin/settings";
-    return "/settings";
+    if (authUser.role === "admin") return "themes";
+    return "/themes";
   }, [authUser]);
 
   const navLinks = useMemo(() => {
@@ -37,7 +37,7 @@ const Navbar = () => {
         { label: "Profile", to: "/supplier/profile" },
       ];
     }
-
+    //client
     return [
       { label: "Home", to: "/" },
       { label: "About", to: "/about" },
@@ -48,7 +48,7 @@ const Navbar = () => {
 
   return (
     <header className="fixed top-0 z-40 w-full border-b border-base-300 bg-base-100/90 backdrop-blur-lg">
-      <div className="container mx-auto flex h-16 items-center justify-between px-4">
+      <div className="container mx-auto flex h-16 items-center justify-between w-full max-w-screen-2xl px-2 md:px-10">
         <Link
           to="/"
           className="flex items-center gap-3 hover:opacity-90 transition"
@@ -57,9 +57,9 @@ const Navbar = () => {
             <Logo compact className="h-8 w-8" />
           </div>
           <div className="leading-tight">
-            <p className="text-lg font-bold">HJ Weddings</p>
+            <p className="text-lg font-bold">HJ Weddings Events</p>
             <p className="text-xs text-base-content/60">
-              Elegant event planning
+              Elegant Event Coordination
             </p>
           </div>
         </Link>
@@ -85,18 +85,28 @@ const Navbar = () => {
           {authUser ? (
             <>
               <Link
-                to={settingsLink}
+                to={themesLink}
                 className="btn btn-ghost btn-sm hidden sm:inline-flex"
               >
-                <Settings className="h-4 w-4" />
-                <span>Settings</span>
+                <Palette className="h-4 w-4" />
+                <span>Themes</span>
               </Link>
 
               <Link
                 to={profileLink}
-                className="btn btn-outline btn-sm hidden sm:inline-flex"
+                className="btn btn-ghost btn-sm hidden sm:inline-flex"
               >
-                <User className="h-4 w-4" />
+                <div className="w-4 h-4 rounded-full overflow-hidden flex items-center justify-center bg-base-200">
+                  {authUser?.profilePic ? (
+                    <img
+                      src={authUser.profilePic}
+                      alt="Profile"
+                      className="w-full h-full object-cover"
+                    />
+                  ) : (
+                    <User className="h-4 w-4" />
+                  )}
+                </div>
                 <span>Profile</span>
               </Link>
 
