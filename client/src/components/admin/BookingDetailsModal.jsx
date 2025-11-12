@@ -79,8 +79,10 @@ const BookingDetailsModal = ({ booking, isOpen, onClose }) => {
             <div className="flex items-start gap-3">
               <Tag className="mt-1 text-primary" size={20} />
               <div>
-                <p className="text-sm text-base-content/60">Event Type</p>
-                <p className="font-semibold">{booking.eventType}</p>
+                <p className="text-sm text-base-content/60">Wedding Title</p>
+                <p className="font-semibold">
+                  {booking.title || "Untitled Wedding"}
+                </p>
               </div>
             </div>
 

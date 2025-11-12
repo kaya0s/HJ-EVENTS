@@ -60,7 +60,7 @@ const BookingsTable = ({ bookings, onViewDetails }) => {
             <th>Booking ID</th>
             <th>Client Name</th>
             <th>Event Date</th>
-            <th>Event Type</th>
+            <th>Wedding Title</th>
             <th>Status</th>
             <th>Assigned Suppliers</th>
             <th>Actions</th>
@@ -76,8 +76,8 @@ const BookingsTable = ({ bookings, onViewDetails }) => {
                 {booking.user?.fullName || booking.user?.id?.fullName || "N/A"}
               </td>
               <td>{dayjs(booking.weddingDate).format("MMM DD, YYYY")}</td>
-              <td>
-                <span className="badge badge-outline">{booking.eventType}</span>
+              <td className="font-medium">
+                {booking.title || "Untitled Wedding"}
               </td>
               <td>{getStatusBadge(booking.status)}</td>
               <td>

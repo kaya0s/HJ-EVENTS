@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import dayjs from "dayjs";
 import { X, Calendar, MapPin, Tag, CheckCircle, Users } from "lucide-react";
 import toast from "react-hot-toast";
 import DatePickerCalendar from "./DatePickerCalendar";
@@ -7,10 +8,10 @@ import { useSupplierStore } from "../store/useSupplierStore";
 
 const BookingModal = ({ package: pkg, isOpen, onClose, onBook }) => {
   const [selectedDate, setSelectedDate] = useState(null);
-  const [eventType, setEventType] = useState("Wedding");
+  const [title, setTitle] = useState("");
   const [venue, setVenue] = useState("");
   const [bookedDates, setBookedDates] = useState([]);
-  const [selectedSuppliers, setSelectedSuppliers] = useState({}); // { category: supplierId }
+  const [selectedSuppliers, setSelectedSuppliers] = useState({});
   const [showConfirmation, setShowConfirmation] = useState(false);
   const {
     suppliers,
@@ -24,16 +25,15 @@ const BookingModal = ({ package: pkg, isOpen, onClose, onBook }) => {
     if (isOpen) {
       const fetchData = async () => {
         try {
-          // Change: Don't use Promise.all, first fetch all suppliers, then fetch booked dates for ALL packages, not just this one.
           await fetchAllSuppliers();
 
-          // Important fix: fetch all bookings from server (not just this package)
-          // to ensure all booked dates are shown on the calendar
-          const datesResponse = await axiosInstance.get("/bookings/availability?allPackages=true");
-          // Assuming API returns { bookedDates: [{ date: "2024-05-10" }, ...] }
-          // Normalize to array of strings for DatePickerCalendar
+          const datesResponse = await axiosInstance.get(
+            "/bookings/availability?allPackages=true"
+          );
           const booked = Array.isArray(datesResponse.data?.bookedDates)
-            ? datesResponse.data.bookedDates.map((d) => typeof d === "string" ? d : d.date)
+            ? datesResponse.data.bookedDates.map((d) =>
+                typeof d === "string" ? d : d.date
+              )
             : [];
           setBookedDates(booked);
         } catch (error) {
@@ -50,12 +50,45 @@ const BookingModal = ({ package: pkg, isOpen, onClose, onBook }) => {
   useEffect(() => {
     if (!isOpen) {
       setSelectedDate(null);
-      setEventType("Wedding");
+      setTitle("");
       setVenue("");
       setSelectedSuppliers({});
       setShowConfirmation(false);
     }
   }, [isOpen]);
+
+  useEffect(() => {
+    if (!selectedDate) return;
+    setSelectedSuppliers((prev) => {
+      const conflicts = Object.entries(prev)
+        .map(([category, supplierId]) => {
+          if (!supplierId) return null;
+          const supplier = suppliers.find((s) => s._id === supplierId);
+          if (supplier?.unavailableDates?.includes(selectedDate)) {
+            return { category, supplier };
+          }
+          return null;
+        })
+        .filter(Boolean);
+
+      if (conflicts.length === 0) return prev;
+
+      const updated = { ...prev };
+      conflicts.forEach(({ category }) => {
+        updated[category] = null;
+      });
+
+      toast.error(
+        `${conflicts
+          .map(({ supplier }) => supplier.name)
+          .join(", ")} not available on ${dayjs(selectedDate).format(
+          "MMM DD, YYYY"
+        )}. Please choose another supplier.`
+      );
+
+      return updated;
+    });
+  }, [selectedDate, suppliers]);
 
   const handleSupplierChange = (category, supplierId) => {
     setSelectedSuppliers((prev) => ({
@@ -76,17 +109,16 @@ const BookingModal = ({ package: pkg, isOpen, onClose, onBook }) => {
       return;
     }
 
-    if (!eventType) {
-      toast.error("Please select an event type");
-      return;
-    }
-
     if (!venue.trim()) {
       toast.error("Please enter a venue");
       return;
     }
 
-    // Show confirmation step
+    if (!title.trim()) {
+      toast.error("Please enter a wedding title");
+      return;
+    }
+
     setShowConfirmation(true);
   };
 
@@ -97,7 +129,7 @@ const BookingModal = ({ package: pkg, isOpen, onClose, onBook }) => {
       packageId: pkg._id,
       packageName: pkg.name,
       eventDate: selectedDate,
-      eventType,
+      title: title.trim(),
       venue: venue.trim(),
       suppliers: supplierIds,
     });
@@ -157,8 +189,8 @@ const BookingModal = ({ package: pkg, isOpen, onClose, onBook }) => {
               <div className="space-y-2 text-sm">
                 <div className="flex items-center gap-2">
                   <Tag className="w-4 h-4 text-base-content/60" />
-                  <span className="text-base-content/70">Type:</span>
-                  <span className="font-medium">{eventType}</span>
+                  <span className="text-base-content/70">Title:</span>
+                  <span className="font-medium">{title}</span>
                 </div>
                 <div className="flex items-center gap-2">
                   <Calendar className="w-4 h-4 text-base-content/60" />
@@ -258,23 +290,23 @@ const BookingModal = ({ package: pkg, isOpen, onClose, onBook }) => {
         </div>
 
         <form className="space-y-6" onSubmit={handleSubmit}>
-          {/* Event Type Dropdown */}
+          {/* Wedding Title */}
           <div className="form-control w-full">
             <label className="label">
               <div className="flex items-center gap-2">
                 <Tag className="w-4 h-4 text-base-content/60" />
-                <span className="label-text font-medium">Event Type</span>
+                <span className="label-text font-medium">Wedding Title</span>
               </div>
             </label>
-            <select
-              value={eventType}
-              onChange={(e) => setEventType(e.target.value)}
-              className="select select-bordered w-full focus:select-primary"
+            <input
+              type="text"
+              value={title}
+              onChange={(e) => setTitle(e.target.value)}
+              placeholder="Enter a title (e.g., John & Jane's Celebration)"
+              className="input input-bordered w-full focus:input-primary"
+              maxLength={120}
               required
-            >
-              <option value="Wedding">Wedding</option>
-              <option value="Debut">Debut</option>
-            </select>
+            />
           </div>
 
           {/* Date Picker Calendar */}
@@ -346,6 +378,14 @@ const BookingModal = ({ package: pkg, isOpen, onClose, onBook }) => {
                 categories.map((category) => {
                   const categorySuppliers = getSuppliersByCategory(category);
                   if (categorySuppliers.length === 0) return null;
+                  const unavailableForDate = selectedDate
+                    ? categorySuppliers.filter((supplier) =>
+                        supplier.unavailableDates?.includes(selectedDate)
+                      )
+                    : [];
+                  const allUnavailable =
+                    selectedDate &&
+                    unavailableForDate.length === categorySuppliers.length;
 
                   return (
                     <div key={category} className="form-control">
@@ -362,14 +402,47 @@ const BookingModal = ({ package: pkg, isOpen, onClose, onBook }) => {
                         }
                       >
                         <option value="">None (Admin will assign)</option>
-                        {categorySuppliers.map((supplier) => (
-                          <option key={supplier._id} value={supplier._id}>
-                            {supplier.name}
-                            {supplier.rating > 0 && ` ⭐ ${supplier.rating}`}
-                            {supplier.priceRange && ` - ${supplier.priceRange}`}
-                          </option>
-                        ))}
+                        {categorySuppliers.map((supplier) => {
+                          const isUnavailable =
+                            selectedDate &&
+                            supplier.unavailableDates?.includes(selectedDate);
+                          return (
+                            <option
+                              key={supplier._id}
+                              value={supplier._id}
+                              disabled={Boolean(isUnavailable)}
+                            >
+                              {supplier.name}
+                              {supplier.rating > 0 && ` ⭐ ${supplier.rating}`}
+                              {supplier.priceRange &&
+                                ` - ${supplier.priceRange}`}
+                              {isUnavailable ? " (Unavailable)" : ""}
+                            </option>
+                          );
+                        })}
                       </select>
+                      {selectedDate &&
+                        unavailableForDate.length > 0 &&
+                        !allUnavailable && (
+                          <label className="label">
+                            <span className={`label-text-alt text-warning`}>
+                              {`${unavailableForDate.length} supplier${
+                                unavailableForDate.length > 1 ? "s" : ""
+                              } unavailable on ${dayjs(selectedDate).format(
+                                "MMM DD, YYYY"
+                              )}.`}
+                            </span>
+                          </label>
+                        )}
+                      {selectedDate && allUnavailable && (
+                        <label className="label">
+                          <span className="label-text-alt text-error">
+                            {`All ${category} suppliers are unavailable on ${dayjs(
+                              selectedDate
+                            ).format("MMM DD, YYYY")}.`}
+                          </span>
+                        </label>
+                      )}
                     </div>
                   );
                 })
@@ -397,7 +470,7 @@ const BookingModal = ({ package: pkg, isOpen, onClose, onBook }) => {
             <button
               type="submit"
               className="btn btn-primary min-w-[120px]"
-              disabled={!selectedDate || !venue.trim()}
+              disabled={!selectedDate || !venue.trim() || !title.trim()}
             >
               Book Now
             </button>
