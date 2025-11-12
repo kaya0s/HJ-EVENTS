@@ -1,7 +1,6 @@
 import { create } from "zustand";
 import axiosInstance from "../lib/axios.js";
 import toast from "react-hot-toast";
-import { redirect } from "react-router-dom";
 
 export const useAuthStore = create((set, get) => ({
   authUser: null,
@@ -16,7 +15,7 @@ export const useAuthStore = create((set, get) => ({
       const res = await axiosInstance.get("/auth/check");
       set({ authUser: res.data });
     } catch (error) {
-      console.log("Error in checkAuth:", error);
+      console.log("Error in checking auth:", error);
       set({ authUser: null });
     } finally {
       set({ isCheckingAuth: false });
@@ -40,16 +39,6 @@ export const useAuthStore = create((set, get) => ({
     }
   },
 
-  forgotPassword: async (data) => {
-    try {
-      await axiosInstance.post("/auth/forgot-password", data);
-      toast.success("Email sent successfully");
-      redirect("/verify-reset-code");
-    } catch (error) {
-      toast.error(error.response?.data?.message || error.message);
-    }
-  },
-
   login: async (data) => {
     set({ isLoggingIn: true });
     try {
@@ -66,8 +55,7 @@ export const useAuthStore = create((set, get) => ({
   loginWithGoogle: async () => {
     set({ isLoggingIn: true });
     try {
-      const apiUrl =
-        import.meta.env.VITE_API_URL || "http://localhost:3000/api";
+      const apiUrl = import.meta.env.VITE_API_URL;
       const googleAuthUrl = `${apiUrl}/auth/google`;
 
       // Open the Google sign-in popup, handled by your backend
@@ -136,33 +124,59 @@ export const useAuthStore = create((set, get) => ({
     }
   },
 
-  sendResetLink: async (email) => {
+  sendResetCode: async (email) => {
     try {
-      await axiosInstance.post("/auth/forgot-password", { email });
-      toast.success("Email sent successfully");
-      redirect("/verify-reset-code");
+      const res = await axiosInstance.post("/auth/forgot-password", { email });
+      // Store resetToken from response for use in next steps
+      if (res.data.resetToken) {
+        sessionStorage.setItem("resetToken", res.data.resetToken);
+      }
+      toast.success("Reset code sent to your email");
+      return res.data;
     } catch (error) {
       toast.error(error.response?.data?.message || error.message);
+      throw error;
     }
   },
 
-  verifyResetCode: async (payload) => {
+  verifyResetCode: async (code) => {
     try {
-      await axiosInstance.post("/auth/verify-reset-code", payload);
+      const resetToken = sessionStorage.getItem("resetToken");
+      if (!resetToken) {
+        toast.error("Reset token not found. Please request a new reset code.");
+        throw new Error("Reset token not found");
+      }
+      await axiosInstance.post("/auth/verify-reset-code", { resetToken, code });
+      // Store code for next step
+      sessionStorage.setItem("resetCode", code);
       toast.success("Code verified. You can set a new password.");
-      redirect("/new-password");
     } catch (error) {
       toast.error(error.response?.data?.message || error.message);
+      throw error;
     }
   },
 
-  setNewPassword: async (payload) => {
+  setNewPassword: async (newPassword, confirmNewPassword) => {
     try {
-      await axiosInstance.post("/auth/new-password", payload);
+      const resetToken = sessionStorage.getItem("resetToken");
+      const code = sessionStorage.getItem("resetCode");
+      if (!resetToken || !code) {
+        toast.error("Reset token or code not found. Please start over.");
+        throw new Error("Reset token or code not found");
+      }
+      await axiosInstance.post("/auth/new-password", {
+        resetToken,
+        code,
+        newPassword,
+        confirmNewPassword,
+      });
+      // Clear stored reset data
+      sessionStorage.removeItem("resetToken");
+      sessionStorage.removeItem("resetCode");
       toast.success("Password updated. Please login.");
-      redirect("/login");
     } catch (error) {
       toast.error(error.response?.data?.message || error.message);
+      throw error;
     }
   },
 
@@ -176,15 +190,35 @@ export const useAuthStore = create((set, get) => ({
     }
   },
 
-  updateProfile: async (data) => {
+  updateProfile: async (formData) => {
     set({ isUpdatingProfile: true });
     try {
-      const res = await axiosInstance.put("/auth/update-profile", data);
-      set({ authUser: res.data });
+      const res = await axiosInstance.put("/users/me", formData, {
+        headers: { "Content-Type": "multipart/form-data" },
+      });
+      set({ authUser: res.data.user });
       toast.success("Profile updated successfully");
+      return res.data.user;
     } catch (error) {
       console.log("error in update profile:", error);
       toast.error(error.response?.data?.message || error.message);
+      throw error;
+    } finally {
+      set({ isUpdatingProfile: false });
+    }
+  },
+
+  changePassword: async (currentPassword, newPassword) => {
+    set({ isUpdatingProfile: true });
+    try {
+      await axiosInstance.put("/users/me/password", {
+        currentPassword,
+        newPassword,
+      });
+      toast.success("Password changed successfully");
+    } catch (error) {
+      toast.error(error.response?.data?.message || error.message);
+      throw error;
     } finally {
       set({ isUpdatingProfile: false });
     }

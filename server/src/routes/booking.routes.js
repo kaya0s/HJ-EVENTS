@@ -6,20 +6,25 @@ import {
   cancelBooking,
   approveBooking,
   rejectBooking,
-  mockPayment,
+  getBookedDates,
+  getAllBookings,
+  assignSuppliersToBooking,
 } from '../controllers/booking.controller.js';
 
 const router = express.Router();
 
-router.post('/', protect, authorize('admin'), createBooking);
-router.get('/me', protect, authorize('admin'), getMyBookings);
+// Public route for availability calendar
+router.get('/availability', getBookedDates);
+
+// User can create bookings (client role)
+router.post('/', protect, createBooking);
+router.get('/me', protect, getMyBookings);
 router.post('/cancel/:id', protect, cancelBooking);
 
 // Admin actions
+router.get('/all', protect, authorize('admin'), getAllBookings);
 router.post('/approve/:id', protect, authorize('admin'), approveBooking);
 router.post('/reject/:id', protect, authorize('admin'), rejectBooking);
-
-// Mock payment
-router.post('/payment', protect, mockPayment);
+router.patch('/:id/suppliers', protect, authorize('admin'), assignSuppliersToBooking);
 
 export default router;

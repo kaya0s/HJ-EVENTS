@@ -1,13 +1,29 @@
-import { useRef } from "react";
+import { useRef, useState, useEffect } from "react";
 import { useAuthStore } from "../../store/useAuthStore";
 import "cally";
-import AvailabilityCalendar from "../../components/AvailabilityCalendar";
 import Packages from "../../components/Packages";
 import SupplierCarousel from "../../components/SupplierCarousel";
+import DatePickerCalendar from "../../components/DatePickerCalendar";
+import axiosInstance from "../../lib/axios";
 
 const Home = () => {
   const { authUser } = useAuthStore();
   const packagesRef = useRef(null);
+  const [bookedDates, setBookedDates] = useState([]);
+
+  // Fetch booked dates for availability calendar
+  useEffect(() => {
+    const fetchBookedDates = async () => {
+      try {
+        const response = await axiosInstance.get("/bookings/availability");
+        setBookedDates(response.data?.bookedDates || []);
+      } catch (error) {
+        console.error("Error fetching booked dates:", error);
+        setBookedDates([]);
+      }
+    };
+    fetchBookedDates();
+  }, []);
 
   const handleExplorePackagesClick = (e) => {
     if (authUser?.role === "user") {
@@ -20,8 +36,8 @@ const Home = () => {
 
   return (
     <section className="bg-linear-to-b from-base-100 via-base-200/60 to-base-100">
-      <div className="container mx-auto flex min-h-[calc(100vh-4rem)] flex-col justify-center gap-12 px-4 py-20 lg:flex-row lg:items-center">
-        <div className="max-w-2xl space-y-6 text-center lg:text-left">
+      <div className="container mx-auto flex min-h-[calc(100vh-4rem)] flex-col justify-center gap-12 w-full max-w-screen-2xl px-2 md:px-10 py-10 lg:flex-row lg:items-center">
+        <div className="max-w-2xl mx-auto space-y-6 text-center lg:text-left lg:mx-0">
           <p className="text-sm font-semibold uppercase tracking-[0.3em] text-primary/70">
             Wedding Coordination Studio
           </p>
@@ -49,7 +65,9 @@ const Home = () => {
             </a>
           </div>
         </div>
-        <AvailabilityCalendar />
+        <div className="scale-100 mx-auto mt-8 lg:mt-0">
+          <DatePickerCalendar bookedDates={bookedDates} />
+        </div>
       </div>
 
       <SupplierCarousel />

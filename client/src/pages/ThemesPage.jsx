@@ -1,7 +1,7 @@
 import { THEMES } from "../utils/themes";
 import { useThemeStore } from "../store/useThemeStore";
 
-const SettingsPage = () => {
+const ThemesPage = () => {
   const { theme, setTheme } = useThemeStore();
 
   return (
@@ -68,4 +68,4 @@ const SettingsPage = () => {
     </div>
   );
 };
-export default SettingsPage;
+export default ThemesPage;

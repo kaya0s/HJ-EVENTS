@@ -1,9 +1,9 @@
 import { usePackageStore } from "../store/usePackageStore";
 import { useEffect, useState } from "react";
-import BookingModal from "../components/BookingModal"; // Adjust import path
+import BookingModal from "../components/BookingModal";
 
 const Packages = () => {
-  const { packages, fetchPackages } = usePackageStore();
+  const { packages, fetchPackages, bookPackage } = usePackageStore();
   const [selectedPackage, setSelectedPackage] = useState(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
 
@@ -22,13 +22,15 @@ const Packages = () => {
   };
 
   const handleBookPackage = async (bookingData) => {
-    if (typeof window !== "undefined" && window.bookingPackage) {
-      await window.bookingPackage(bookingData);
-    }
+    await bookPackage(bookingData);
+    handleCloseModal();
   };
 
+  // Only display packages with isAvailable === true
+  const availablePackages = packages.filter((pkg) => pkg.isAvailable);
+
   return (
-    <section className="container mx-auto px-4 py-16 space-y-12">
+    <section className="container mx-auto w-full max-w-screen-2xl px-2 md:px-10 py-10 space-y-12">
       <div className="max-w-2xl space-y-4">
         <p className="text-sm font-semibold uppercase tracking-[0.3em] text-primary/70">
           Packages
@@ -43,7 +45,7 @@ const Packages = () => {
       </div>
 
       <div className="grid gap-8 lg:grid-cols-3">
-        {packages.map((pkg) => {
+        {availablePackages.map((pkg) => {
           const imageUrl = pkg.imageURL;
           return (
             <article
