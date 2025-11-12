@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useNavigate, useSearchParams } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import { useAuthStore } from "../../store/useAuthStore";
 import { useBookingStore } from "../../store/useBookingStore";
 import AdminSidebar from "../../components/admin/AdminSidebar";
@@ -11,17 +11,16 @@ import NotificationsPanel from "../../components/admin/NotificationsPanel";
 import ManageClients from "./ManageClients";
 import { Loader } from "lucide-react";
 import ReportsAnalytics from "../../components/admin/ReportsAnalytics";
+import AdminCalendar from "../../components/admin/AdminCalendar";
+import Packages from "./Packages";
 
 const Dashboard = () => {
   const { authUser } = useAuthStore();
   const navigate = useNavigate();
-  const [searchParams, setSearchParams] = useSearchParams();
   const { bookings, statistics, isLoading, fetchAllBookings } =
     useBookingStore();
   const [selectedBooking, setSelectedBooking] = useState(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const tabParam = searchParams.get("tab") || "overview";
-  const [activeTab, setActiveTab] = useState(tabParam); // overview, bookings, suppliers
 
   useEffect(() => {
     if (authUser?.role !== "admin") {
@@ -30,11 +29,6 @@ const Dashboard = () => {
     }
     fetchAllBookings();
   }, [authUser, navigate, fetchAllBookings]);
-
-  useEffect(() => {
-    const tab = searchParams.get("tab") || "overview";
-    setActiveTab(tab);
-  }, [searchParams]);
 
   const handleViewDetails = (booking) => {
     setSelectedBooking(booking);
@@ -51,7 +45,6 @@ const Dashboard = () => {
   if (authUser?.role !== "admin") {
     return null;
   }
-
   return (
     <div className="min-h-screen bg-base-100">
       <AdminSidebar />
@@ -67,116 +60,42 @@ const Dashboard = () => {
             </p>
           </div>
 
-          {/* Tabs */}
-          <div className="tabs tabs-boxed mb-6">
-            <button
-              className={`tab ${activeTab === "overview" ? "tab-active" : ""}`}
-              onClick={() => {
-                setActiveTab("overview");
-                setSearchParams({});
-              }}
-            >
-              Overview
-            </button>
-            <button
-              className={`tab ${activeTab === "bookings" ? "tab-active" : ""}`}
-              onClick={() => {
-                setActiveTab("bookings");
-                setSearchParams({ tab: "bookings" });
-              }}
-            >
-              Bookings
-            </button>
-            <button
-              className={`tab ${activeTab === "suppliers" ? "tab-active" : ""}`}
-              onClick={() => {
-                setActiveTab("suppliers");
-                setSearchParams({ tab: "suppliers" });
-              }}
-            >
-              Suppliers
-            </button>
-            <button
-              className={`tab ${activeTab === "clients" ? "tab-active" : ""}`}
-              onClick={() => {
-                setActiveTab("clients");
-                setSearchParams({ tab: "clients" });
-              }}
-            >
-              Clients & Users
-            </button>
+          {/* Overview Content */}
+          <div className="space-y-6">
+            <StatisticsCards statistics={statistics} />
+
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+              {/* Bookings Section */}
+              <div className="lg:col-span-2">
+                <div className="card bg-base-100 shadow-lg">
+                  <div className="card-body">
+                    <h2 className="card-title mb-4">Recent Bookings</h2>
+                    {isLoading ? (
+                      <div className="text-center py-12">
+                        <Loader className="animate-spin mx-auto" size={32} />
+                      </div>
+                    ) : (
+                      <BookingsTable
+                        bookings={bookings.slice(0, 5)}
+                        onViewDetails={handleViewDetails}
+                      />
+                    )}
+                    {bookings.length > 5 && (
+                      <div className="card-actions justify-end mt-4">
+                        {/* Option to link to all bookings can be handled by navbar now */}
+                        {/* No View All Bookings button here anymore */}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+
+              {/* Notifications Panel */}
+              <div className="lg:col-span-1">
+                <NotificationsPanel />
+              </div>
+            </div>
           </div>
-
-          {/* Overview Tab */}
-          {activeTab === "overview" && (
-            <div className="space-y-6">
-              <StatisticsCards statistics={statistics} />
-
-              {/* Reports & Analytics Section */}
-              <ReportsAnalytics />
-
-              <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                {/* Bookings Section */}
-                <div className="lg:col-span-2">
-                  <div className="card bg-base-100 shadow-lg">
-                    <div className="card-body">
-                      <h2 className="card-title mb-4">Recent Bookings</h2>
-                      {isLoading ? (
-                        <div className="text-center py-12">
-                          <Loader className="animate-spin mx-auto" size={32} />
-                        </div>
-                      ) : (
-                        <BookingsTable
-                          bookings={bookings.slice(0, 5)}
-                          onViewDetails={handleViewDetails}
-                        />
-                      )}
-                      {bookings.length > 5 && (
-                        <div className="card-actions justify-end mt-4">
-                          <button
-                            className="btn btn-sm btn-ghost"
-                            onClick={() => setActiveTab("bookings")}
-                          >
-                            View All Bookings
-                          </button>
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                </div>
-
-                {/* Notifications Panel */}
-                <div className="lg:col-span-1">
-                  <NotificationsPanel />
-                </div>
-              </div>
-            </div>
-          )}
-
-          {/* Bookings Tab */}
-          {activeTab === "bookings" && (
-            <div className="card bg-base-100 shadow-lg">
-              <div className="card-body">
-                <h2 className="card-title mb-4">All Bookings</h2>
-                {isLoading ? (
-                  <div className="text-center py-12">
-                    <Loader className="animate-spin mx-auto" size={32} />
-                  </div>
-                ) : (
-                  <BookingsTable
-                    bookings={bookings}
-                    onViewDetails={handleViewDetails}
-                  />
-                )}
-              </div>
-            </div>
-          )}
-
-          {/* Suppliers Tab */}
-          {activeTab === "suppliers" && <SuppliersSection />}
-
-          {/* Clients & Users Tab */}
-          {activeTab === "clients" && <ManageClients />}
         </div>
       </main>
 

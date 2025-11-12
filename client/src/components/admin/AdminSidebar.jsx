@@ -1,52 +1,78 @@
-import { Link, useLocation } from "react-router-dom";
+import { NavLink } from "react-router-dom";
 import {
   LayoutDashboard,
   Calendar,
   Users,
   UserCheck,
-  FileText,
   Menu,
   X,
   Package,
+  CalendarDays,
+  FileText,
 } from "lucide-react";
 import { useState } from "react";
 
 const AdminSidebar = () => {
-  const location = useLocation();
   const [isMobileOpen, setIsMobileOpen] = useState(false);
 
   const navItems = [
-    { path: "/admin", label: "Dashboard", icon: LayoutDashboard },
     {
-      path: "/admin?tab=bookings",
+      path: "/admin",
+      label: "Dashboard",
+      icon: LayoutDashboard,
+      end: true,
+    },
+    {
+      path: "/admin/bookings",
       label: "Bookings",
       icon: Calendar,
-      tab: "bookings",
     },
     {
-      path: "/admin?tab=suppliers",
-      label: "Suppliers",
-      icon: Users,
-      tab: "suppliers",
-    },
-    {
-      path: "/admin?tab=clients",
+      path: "/admin/clients",
       label: "Clients & Users",
       icon: UserCheck,
-      tab: "clients",
     },
-    { path: "/admin/packages", label: "Packages", icon: Package },
+    {
+      path: "/admin/suppliers",
+      label: "Suppliers",
+      icon: Users,
+    },
+    {
+      path: "/admin/calendar",
+      label: "Wedding Calendar",
+      icon: CalendarDays,
+    },
+    {
+      path: "/admin/packages",
+      label: "Packages",
+      icon: Package,
+    },
+    {
+      path: "/admin/reports",
+      label: "Reports & Analytics",
+      icon: FileText,
+    },
   ];
 
-  const isActive = (item) => {
-    if (item.tab) {
-      const params = new URLSearchParams(location.search);
-      return params.get("tab") === item.tab;
-    }
-    if (item.path === "/admin") {
-      return location.pathname === "/admin" && !location.search;
-    }
-    return location.pathname.startsWith(item.path);
+  const renderNavLink = (item) => {
+    const Icon = item.icon;
+    const baseClasses =
+      "flex items-center gap-3 px-4 py-3 rounded-lg transition-colors";
+    return (
+      <NavLink
+        key={item.path}
+        to={item.path}
+        end={item.end}
+        className={({ isActive }) =>
+          `${baseClasses} ${
+            isActive ? "bg-primary text-primary-content" : "hover:bg-base-300"
+          }`
+        }
+      >
+        <Icon size={20} />
+        <span className="font-medium">{item.label}</span>
+      </NavLink>
+    );
   };
 
   return (
@@ -70,23 +96,7 @@ const AdminSidebar = () => {
               Admin Panel
             </h2>
             <nav className="space-y-2">
-              {navItems.map((item) => {
-                const Icon = item.icon;
-                return (
-                  <Link
-                    key={item.path}
-                    to={item.path}
-                    className={`flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${
-                      isActive(item)
-                        ? "bg-primary text-primary-content"
-                        : "hover:bg-base-300"
-                    }`}
-                  >
-                    <Icon size={20} />
-                    <span className="font-medium">{item.label}</span>
-                  </Link>
-                );
-              })}
+              {navItems.map((item) => renderNavLink(item))}
             </nav>
           </div>
         </aside>
@@ -115,24 +125,24 @@ const AdminSidebar = () => {
                   </button>
                 </div>
                 <nav className="space-y-2">
-                  {navItems.map((item) => {
-                    const Icon = item.icon;
-                    return (
-                      <Link
-                        key={item.path}
-                        to={item.path}
-                        onClick={() => setIsMobileOpen(false)}
-                        className={`flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${
-                          isActive(item)
+                  {navItems.map((item) => (
+                    <NavLink
+                      key={item.path}
+                      to={item.path}
+                      end={item.end}
+                      onClick={() => setIsMobileOpen(false)}
+                      className={({ isActive }) =>
+                        `flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${
+                          isActive
                             ? "bg-primary text-primary-content"
                             : "hover:bg-base-300"
-                        }`}
-                      >
-                        <Icon size={20} />
-                        <span className="font-medium">{item.label}</span>
-                      </Link>
-                    );
-                  })}
+                        }`
+                      }
+                    >
+                      <item.icon size={20} />
+                      <span className="font-medium">{item.label}</span>
+                    </NavLink>
+                  ))}
                 </nav>
               </div>
             </aside>
