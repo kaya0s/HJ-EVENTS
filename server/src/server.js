@@ -13,6 +13,7 @@ import adminRoutes from './routes/admin.routes.js';
 import userRoutes from './routes/user.routes.js';
 import feedbackRoutes from './routes/feedback.routes.js';
 import packageRoutes from './routes/package.routes.js';
+import path from 'path';
 
 dotenv.config();
 
@@ -56,6 +57,11 @@ app.use('/api/users', userRoutes);
 // API routes
 app.use('/api/auth', authRoutes);
 
+app.use(express.static(path.join(__dirname, '../client/dist')));
+
+app.get('*', (req, res) => {
+  res.sendFile(path.join(__dirname, '../client/dist/index.html'));
+});
 // Start server
 app.listen(PORT, () => {
   console.log(`Server is running on port ${PORT}`);
