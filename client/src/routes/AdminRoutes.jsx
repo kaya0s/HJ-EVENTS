@@ -4,6 +4,8 @@ import ManageClients from "../pages/admin/ManageClients";
 import ManageSuppliers from "../pages/admin/ManageSuppliers";
 import Reports from "../pages/admin/Reports";
 import Packages from "../pages/admin/Packages";
+import Bookings from "../pages/admin/Bookings";
+import Calendar from "../pages/admin/Calendar";
 
 export const AdminRoutes = ({ authUser }) => (
   <>
@@ -35,6 +37,18 @@ export const AdminRoutes = ({ authUser }) => (
         ) : (
           <Navigate to="/" replace />
         )
+      }
+    />
+    <Route
+      path="/admin/bookings"
+      element={
+        authUser?.role === "admin" ? <Bookings /> : <Navigate to="/" replace />
+      }
+    />
+    <Route
+      path="/admin/calendar"
+      element={
+        authUser?.role === "admin" ? <Calendar /> : <Navigate to="/" replace />
       }
     />
     <Route
