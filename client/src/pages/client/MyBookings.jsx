@@ -70,7 +70,7 @@ const MyBookings = () => {
               <tr>
                 <th className="px-6 py-4 font-semibold">Booking ID</th>
                 <th className="px-6 py-4 font-semibold">Event Date</th>
-                <th className="px-6 py-4 font-semibold">Event Type</th>
+                <th className="px-6 py-4 font-semibold">Wedding Title</th>
                 <th className="px-6 py-4 font-semibold">Venue</th>
                 <th className="px-6 py-4 font-semibold">Status</th>
               </tr>
@@ -85,9 +85,7 @@ const MyBookings = () => {
                     {formatDate(booking.weddingDate)}
                   </td>
                   <td className="px-6 py-4 text-base-content/70">
-                    <span className="badge badge-outline">
-                      {booking.eventType}
-                    </span>
+                    {booking.title || "Untitled Wedding"}
                   </td>
                   <td className="px-6 py-4 text-base-content/70">
                     {booking.venue || "N/A"}
@@ -108,7 +106,7 @@ const MyBookings = () => {
               >
                 <div className="flex items-center justify-between">
                   <p className="font-semibold text-base-content">
-                    {booking.eventType}
+                    {booking.title || "Untitled Wedding"}
                   </p>
                   {getStatusBadge(booking.status)}
                 </div>
