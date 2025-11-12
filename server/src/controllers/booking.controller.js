@@ -15,17 +15,12 @@ import { sendBookingApprovalEmail, sendBookingRejectionEmail } from '../utils/em
  */
 export const createBooking = async (req, res) => {
   try {
-    const { packageId, eventDate, eventType, venue, suppliers } = req.body;
+    const { packageId, eventDate, title, venue, suppliers } = req.body;
 
-    if (!packageId || !eventDate || !eventType || !venue) {
+    if (!packageId || !eventDate || !title || !venue) {
       return res.status(400).json({
-        message: 'Missing required fields: packageId, eventDate, eventType, and venue are required',
+        message: 'Missing required fields: packageId, eventDate, title, and venue are required',
       });
-    }
-
-    // Validate eventType
-    if (!['Debut', 'Wedding'].includes(eventType)) {
-      return res.status(400).json({ message: 'Invalid event type. Must be "Debut" or "Wedding"' });
     }
 
     if (req.user.role !== 'user') {
@@ -59,7 +54,7 @@ export const createBooking = async (req, res) => {
         id: req.user._id,
         fullName: req.user.fullName,
       },
-      eventType,
+      title: title.trim(),
       venue: venue.trim(),
       package: pkg._id,
       weddingDate: new Date(eventDate),

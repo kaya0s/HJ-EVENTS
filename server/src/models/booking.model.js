@@ -12,10 +12,11 @@ const bookingSchema = new mongoose.Schema(
         required: true,
       },
     },
-    eventType: {
+    title: {
       type: String,
-      enum: ['Debut', 'Wedding'],
       required: true,
+      trim: true,
+      maxlength: 120,
     },
     venue: {
       type: String,

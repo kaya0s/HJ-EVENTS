@@ -39,7 +39,7 @@ export const usePackageStore = create((set) => ({
   bookPackage: async ({
     packageId,
     eventDate,
-    eventType,
+    title,
     venue,
     suppliers = [],
   }) => {
@@ -48,7 +48,7 @@ export const usePackageStore = create((set) => ({
       const payload = {
         packageId,
         eventDate,
-        eventType,
+        title,
         venue,
         suppliers: Array.isArray(suppliers) ? suppliers : [],
       };
