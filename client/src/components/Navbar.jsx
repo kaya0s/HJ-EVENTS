@@ -66,7 +66,13 @@ const Navbar = () => {
 
         <nav className="hidden items-center gap-6 md:flex">
           {navLinks.map((link) => {
-            const isActive = location.pathname === link.to;
+            let isActive = location.pathname === link.to;
+            if (link.tab) {
+              const params = new URLSearchParams(location.search);
+              isActive =
+                location.pathname === "/admin" &&
+                params.get("tab") === link.tab;
+            }
             return (
               <Link
                 key={link.to}
