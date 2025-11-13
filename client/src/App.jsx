@@ -5,7 +5,6 @@ import { Toaster } from "react-hot-toast";
 
 import Navbar from "./components/Navbar";
 import Footer from "./components/Footer";
-import BackgroundVideo from "./components/BackgroundVideo";
 
 import { useAuthStore } from "./store/useAuthStore";
 import { useThemeStore } from "./store/useThemeStore";
@@ -35,12 +34,10 @@ const App = () => {
     );
 
   return (
-    <BackgroundVideo videoSrc="https://www.pexels.com/download/video/8776122/">
-      {/* <div className="bg-linear-to-b from-base-100 via-base-200/60 to-base-100" /> */}
-      <div
-        data-theme={theme}
-        // className="min-h-screen bg-base-100 text-base-content flex flex-col"
-      />
+    <div
+      data-theme={theme}
+      className="min-h-screen bg-base-100 text-base-content flex flex-col"
+    >
       <Navbar />
 
       <main className="flex-1 pt-16">
@@ -54,7 +51,7 @@ const App = () => {
       </main>
       {authUser?.role !== "admin" && <Footer />}
       <Toaster />
-    </BackgroundVideo>
+    </div>
   );
 };
 
