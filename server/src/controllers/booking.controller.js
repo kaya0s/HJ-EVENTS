@@ -30,8 +30,20 @@ export const createBooking = async (req, res) => {
     const pkg = await Package.findById(packageId);
     if (!pkg) return res.status(404).json({ message: 'Package not found' });
 
-    // Check if date is already booked
+    // Check if date is at least 15 days in advance
     const eventDateObj = new Date(eventDate);
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const minDate = new Date(today);
+    minDate.setDate(minDate.getDate() + 15);
+
+    if (eventDateObj < minDate) {
+      return res.status(400).json({
+        message: 'Bookings must be made at least 15 days in advance',
+      });
+    }
+
+    // Check if date is already booked
     const startOfDay = new Date(eventDateObj);
     startOfDay.setHours(0, 0, 0, 0);
     const endOfDay = new Date(eventDateObj);
@@ -42,7 +54,7 @@ export const createBooking = async (req, res) => {
         $gte: startOfDay,
         $lte: endOfDay,
       },
-      status: { $nin: ['cancelled', 'rejected'] },
+      status: 'accepted',
     });
 
     if (existingBooking) {
@@ -154,16 +166,15 @@ export const approveBooking = async (req, res) => {
             })
           : 'N/A';
 
+        console.log('Sending email to:', booking.user.id.email);
         await sendBookingApprovalEmail(
-          console.log(booking.user.id.email),
           booking.user.id.email,
-          booking.user.fullName || booking.user.id.fullName || 'Client',
+          booking.user.fullName || booking.user.id.fullName,
           booking._id.toString().slice(-8).toUpperCase(),
           eventDate
         );
       } catch (emailError) {
         console.error('Error sending approval email:', emailError);
-        // Don't fail the request if email fails
       }
     }
 
@@ -358,9 +369,9 @@ export const getBookedDates = async (req, res) => {
   try {
     console.log('Fetching booked dates...');
 
-    // Get all bookings that are not cancelled
+    // Get only accepted bookings for availability calendar
     const bookings = await Booking.find({
-      status: { $nin: ['cancelled', 'rejected'] },
+      status: 'accepted',
     })
       .select('weddingDate prenuptDate')
       .lean();
