@@ -31,7 +31,7 @@ export const listAnnouncements = async (req, res) => {
 export const getActivityLogs = async (req, res) => {
   try {
     const logs = await ActivityLog.find().sort('-createdAt').limit(200);
-    res.json(logs);
+    res.status(200).json(logs);
   } catch (error) {
     res.status(500).json({ message: `server error ${error.message}` });
   }

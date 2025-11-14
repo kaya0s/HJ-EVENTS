@@ -5,7 +5,6 @@ import authRoutes from './routes/auth.routes.js';
 import dotenv from 'dotenv';
 import passport from 'passport';
 import session from 'express-session';
-import morgan from 'morgan';
 import cookieParser from 'cookie-parser';
 import supplierRoutes from './routes/supplier.routes.js';
 import bookingRoutes from './routes/booking.routes.js';
@@ -14,6 +13,13 @@ import adminRoutes from './routes/admin.routes.js';
 import userRoutes from './routes/user.routes.js';
 import feedbackRoutes from './routes/feedback.routes.js';
 import packageRoutes from './routes/package.routes.js';
+import path from 'path';
+import { fileURLToPath } from 'url';
+import { dirname } from 'path';
+
+// ES module fix for __dirname
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
 
 dotenv.config();
 
@@ -45,7 +51,6 @@ app.use(
 );
 app.use(passport.initialize());
 app.use(passport.session());
-app.use(morgan('dev'));
 
 // API routes
 app.use('/api/suppliers', supplierRoutes);
@@ -57,6 +62,13 @@ app.use('/api/users', userRoutes);
 
 // API routes
 app.use('/api/auth', authRoutes);
+
+// Serve static files
+app.use(express.static(path.join(__dirname, '../../client/dist')));
+
+app.get('*', (req, res) => {
+  res.sendFile(path.join(__dirname, '../../client/dist/index.html'));
+});
 
 // Start server
 app.listen(PORT, () => {

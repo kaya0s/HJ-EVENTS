@@ -261,3 +261,80 @@ export const sendBookingRejectionEmail = async (email, fullName, bookingId, reas
     return { success: false, error: error.message };
   }
 };
+
+export const sendSupplierCredentialsEmail = async ({
+  email,
+  password,
+  fullName,
+  companyName = 'HJ Events',
+  loginUrl = `${process.env.CLIENT_URL || ''}/login`,
+}) => {
+  try {
+    const transporter = createTransporter();
+    const supportEmail = process.env.SUPPORT_EMAIL || process.env.EMAIL_USER || '';
+
+    const mailOptions = {
+      from: process.env.EMAIL_USER,
+      to: email,
+      subject: `${companyName} Supplier Portal Access`,
+      html: `
+        <div style="font-family: Arial, sans-serif; background-color: #fff7f7; padding: 30px;">
+          <div style="max-width: 600px; margin: 0 auto; background: #ffffff; border-radius: 8px; overflow: hidden; box-shadow: 0 2px 8px rgba(0,0,0,0.06);">
+            <div style="padding: 24px 24px 0; text-align: center;">
+              <img
+                src="${process.env.BUSINESS_LOGO_URL || `${process.env.CLIENT_URL}/assets/logo.png`}"
+                alt="${companyName} Logo"
+                style="max-width: 140px; height: auto; display: inline-block; margin-bottom: 12px;"
+              />
+            </div>
+            <div style="padding: 0 24px 24px;">
+              <h1 style="color: #6b2635; font-size: 22px; margin: 8px 0 12px; text-align: center;">
+                Welcome${fullName ? `, ${fullName}` : ''}!
+              </h1>
+              <p style="color: #555; line-height: 1.6; text-align: center;">
+                We've created your supplier account so you can collaborate with our coordination team.
+              </p>
+              <div style="background: #fff8f8; border-radius: 6px; padding: 18px; margin: 16px 0;">
+                <p style="margin: 0 0 8px; color: #6b2635; font-weight: 600; text-align: center;">
+                  Your login credentials
+                </p>
+                <p style="margin: 0; color: #666; font-size: 14px; text-align: center;">
+                  <strong>Email:</strong> ${email}<br/>
+                  <strong>Temporary Password:</strong> ${password}
+                </p>
+              </div>
+              <div style="text-align: center; margin: 24px 0;">
+                <a
+                  href="${loginUrl}"
+                  style="display: inline-block; background-color: #b76e79; color: #fff; padding: 12px 24px; border-radius: 5px; text-decoration: none; font-weight: 600;"
+                >
+                  Go to Supplier Portal
+                </a>
+              </div>
+              <p style="color: #666; font-size: 14px; text-align: center; margin: 0 0 12px;">
+                For security, please sign in and update your password the first time you log in.
+              </p>
+              <p style="color: #666; font-size: 13px; text-align: center; margin: 0 0 12px;">
+                Need help? Contact us at
+                <a href="mailto:${supportEmail}" style="color: #b76e79; text-decoration: none;">
+                  ${supportEmail}
+                </a>.
+              </p>
+              <hr style="border: none; border-top: 1px solid #f0e6e6; margin: 20px 0;">
+              <p style="color: #999; font-size: 12px; text-align: center; margin: 0 0 18px;">
+                ${companyName} • Wedding coordination & planning
+              </p>
+            </div>
+          </div>
+        </div>
+      `,
+    };
+
+    const result = await transporter.sendMail(mailOptions);
+    console.log('Supplier credentials email sent:', result.messageId);
+    return { success: true, messageId: result.messageId };
+  } catch (error) {
+    console.error('Error sending supplier credentials email:', error);
+    return { success: false, error: error.message };
+  }
+};

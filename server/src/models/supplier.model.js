@@ -2,12 +2,19 @@ import { Schema, model } from 'mongoose';
 
 const supplierSchema = new Schema(
   {
+    user: {
+      type: Schema.Types.ObjectId,
+      ref: 'user',
+      required: true,
+      unique: true,
+    },
     name: {
       type: String,
       required: true,
     },
     category: {
       type: String,
+      enum: ['Food', 'catering', 'Decoration', 'Photography', 'Videography', 'Music', 'Florist'],
       required: true,
     },
     description: {
@@ -30,6 +37,10 @@ const supplierSchema = new Schema(
     rating: {
       type: Number,
       default: 0,
+    },
+    unavailableDates: {
+      type: [Date],
+      default: [],
     },
   },
   { timestamps: true }

@@ -2,16 +2,32 @@ import mongoose from 'mongoose';
 
 const bookingSchema = new mongoose.Schema(
   {
-    couple: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: 'Couple',
+    user: {
+      id: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'user', // Must match the model name in user.model.js
+      },
+      fullName: {
+        type: String,
+        required: true,
+      },
+    },
+    title: {
+      type: String,
+      required: true,
+      trim: true,
+      maxlength: 120,
+    },
+    venue: {
+      type: String,
       required: true,
     },
-    supplier: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: 'Supplier',
-      required: true,
-    },
+    suppliers: [
+      {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'Supplier',
+      },
+    ],
     package: {
       type: mongoose.Schema.Types.ObjectId,
       ref: 'Package',
@@ -29,12 +45,8 @@ const bookingSchema = new mongoose.Schema(
       enum: ['Pending', 'Accepted', 'Completed', 'Cancelled'],
       default: 'Pending',
     },
-    notes: {
-      type: String,
-      trim: true,
-    },
   },
   { timestamps: true }
 );
-
-export default mongoose.model('Booking', bookingSchema);
+const Booking = mongoose.model('Booking', bookingSchema);
+export default Booking;

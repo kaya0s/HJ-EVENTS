@@ -1,8 +1,10 @@
 import express from 'express';
 import { protect, authorize } from '../middlewares/auth.js';
+import upload from '../middlewares/upload.js';
 import {
   getProfile,
   updateProfile,
+  changePassword,
   listUsers,
   updateUser,
   createSupplierAccount,
@@ -11,7 +13,8 @@ import {
 const router = express.Router();
 
 router.get('/me', protect, getProfile);
-router.put('/me', protect, updateProfile);
+router.put('/me', protect, upload.single('profilePic'), updateProfile);
+router.put('/me/password', protect, changePassword);
 
 // Admin - specific routes first
 router.post('/supplier-account', protect, authorize('admin'), createSupplierAccount);
