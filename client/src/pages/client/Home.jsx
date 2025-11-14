@@ -5,6 +5,7 @@ import Packages from "../../components/Packages";
 import SupplierCarousel from "../../components/SupplierCarousel";
 import DatePickerCalendar from "../../components/DatePickerCalendar";
 import axiosInstance from "../../lib/axios";
+import { Link } from "react-router-dom";
 
 const Home = () => {
   const { authUser } = useAuthStore();
@@ -35,7 +36,7 @@ const Home = () => {
   };
 
   return (
-    <section className="bg-linear-to-b from-base-100 via-base-200/60 to-base-100">
+    <section className="bg-linear-to-b from-base-100/80 via-base-200/40 to-base-100/80">
       <div className="container mx-auto flex min-h-[calc(100vh-4rem)] flex-col justify-center gap-8 md:gap-12 w-full max-w-screen-2xl px-4 md:px-10 py-8 md:py-10 lg:flex-row lg:items-center">
         <div className="max-w-2xl mx-auto space-y-4 md:space-y-6 text-center lg:text-left lg:mx-0">
           <p className="text-sm font-semibold uppercase tracking-[0.3em] text-primary/70">
@@ -57,12 +58,9 @@ const Home = () => {
             >
               Explore packages
             </a>
-            <a
-              href={authUser?.role === "user" ? "/about" : "/"}
-              className="btn btn-outline btn-lg"
-            >
-              About us
-            </a>
+            <Link to="/about" className="btn btn-outline btn-lg">
+              About
+            </Link>
           </div>
         </div>
         <div className="scale-100 mx-auto mt-6 md:mt-8 lg:mt-0">
