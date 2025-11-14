@@ -48,7 +48,7 @@ const Navbar = () => {
 
   return (
     <header className="fixed top-0 z-40 w-full border-b border-base-300 bg-base-100/90 backdrop-blur-lg">
-      <div className="container mx-auto flex h-16 items-center justify-between w-full max-w-screen-2xl px-2 md:px-10">
+      <div className="container mx-auto flex h-16 items-center justify-between w-full max-w-screen-2xl px-4 md:px-10">
         <Link
           to="/"
           className="flex items-center gap-3 hover:opacity-90 transition"
@@ -57,9 +57,9 @@ const Navbar = () => {
             <Logo compact className="h-8 w-8" />
           </div>
           <div className="leading-tight">
-            <p className="text-lg font-bold">HJ Weddings Events</p>
-            <p className="text-xs text-base-content/60">
-              Elegant Event Coordination
+            <p className="text-lg font-bold">
+              <span className="sm:hidden">HJ Weddings</span>
+              <span className="hidden sm:inline">HJ Weddings Events</span>
             </p>
           </div>
         </Link>
