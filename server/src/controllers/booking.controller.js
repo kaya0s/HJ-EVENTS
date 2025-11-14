@@ -30,8 +30,20 @@ export const createBooking = async (req, res) => {
     const pkg = await Package.findById(packageId);
     if (!pkg) return res.status(404).json({ message: 'Package not found' });
 
-    // Check if date is already booked
+    // Check if date is at least 15 days in advance
     const eventDateObj = new Date(eventDate);
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const minDate = new Date(today);
+    minDate.setDate(minDate.getDate() + 15);
+
+    if (eventDateObj < minDate) {
+      return res.status(400).json({
+        message: 'Bookings must be made at least 15 days in advance',
+      });
+    }
+
+    // Check if date is already booked
     const startOfDay = new Date(eventDateObj);
     startOfDay.setHours(0, 0, 0, 0);
     const endOfDay = new Date(eventDateObj);
@@ -42,7 +54,7 @@ export const createBooking = async (req, res) => {
         $gte: startOfDay,
         $lte: endOfDay,
       },
-      status: { $ne: 'Cancelled' },
+      status: 'accepted',
     });
 
     if (existingBooking) {
@@ -109,11 +121,11 @@ export const getMyBookings = async (req, res) => {
  */
 export const cancelBooking = async (req, res) => {
   try {
-    const booking = await Booking.findOne({ _id: req.params.id, user: req.user._id });
+    const booking = await Booking.findOne({ _id: req.params.id, 'user.id': req.user._id });
     if (!booking) return res.status(404).json({ message: 'Booking not found' });
-    if (booking.status === 'Accepted')
+    if (booking.status === 'accepted')
       return res.status(400).json({ message: 'Cannot cancel an accepted booking' });
-    booking.status = 'Cancelled';
+    booking.status = 'cancelled';
     await booking.save();
     res.json({ booking });
   } catch (error) {
@@ -133,7 +145,7 @@ export const approveBooking = async (req, res) => {
       .populate('package');
     if (!booking) return res.status(404).json({ message: 'Booking not found' });
 
-    booking.status = 'Accepted';
+    booking.status = 'accepted';
     await booking.save();
 
     await ActivityLog.create({
@@ -154,16 +166,15 @@ export const approveBooking = async (req, res) => {
             })
           : 'N/A';
 
+        console.log('Sending email to:', booking.user.id.email);
         await sendBookingApprovalEmail(
-          console.log(booking.user.id.email),
           booking.user.id.email,
-          booking.user.fullName || booking.user.id.fullName || 'Client',
+          booking.user.fullName || booking.user.id.fullName,
           booking._id.toString().slice(-8).toUpperCase(),
           eventDate
         );
       } catch (emailError) {
         console.error('Error sending approval email:', emailError);
-        // Don't fail the request if email fails
       }
     }
 
@@ -186,7 +197,7 @@ export const rejectBooking = async (req, res) => {
       .populate('package');
     if (!booking) return res.status(404).json({ message: 'Booking not found' });
 
-    booking.status = 'Cancelled';
+    booking.status = 'rejected';
     await booking.save();
 
     // Send email notification to client
@@ -310,6 +321,46 @@ export const assignSuppliersToBooking = async (req, res) => {
 };
 
 /**
+ * @desc   Update booking (client only)
+ * @method  PATCH
+ * @access Client
+ */
+export const updateBooking = async (req, res) => {
+  try {
+    const { title, venue } = req.body;
+    const booking = await Booking.findOne({ _id: req.params.id, 'user.id': req.user._id })
+      .populate('package')
+      .populate('suppliers', 'name category rating');
+
+    if (!booking) return res.status(404).json({ message: 'Booking not found' });
+
+    // Cannot edit accepted bookings
+    if (booking.status === 'accepted') {
+      return res.status(400).json({ message: 'Cannot edit an accepted booking' });
+    }
+
+    // Update only allowed fields (not weddingDate)
+    if (title !== undefined) booking.title = title.trim();
+    if (venue !== undefined) booking.venue = venue.trim();
+
+    await booking.save();
+
+    // Log activity
+    await ActivityLog.create({
+      actor: req.user._id,
+      actorName: req.user.fullName,
+      action: 'Update booking',
+      details: `Booking ${booking._id}`,
+    });
+
+    res.json({ booking });
+  } catch (error) {
+    console.error('Update booking error:', error);
+    res.status(500).json({ message: 'Server error', error: error.message });
+  }
+};
+
+/**
  * @desc   Get booked dates for availability calendar
  * @method  GET
  * @access Public
@@ -318,9 +369,9 @@ export const getBookedDates = async (req, res) => {
   try {
     console.log('Fetching booked dates...');
 
-    // Get all bookings that are not cancelled
+    // Get only accepted bookings for availability calendar
     const bookings = await Booking.find({
-      status: { $ne: 'Cancelled' },
+      status: 'accepted',
     })
       .select('weddingDate prenuptDate')
       .lean();

@@ -359,11 +359,10 @@ const BookingModal = ({ package: pkg, isOpen, onClose, onBook }) => {
                 <span className="label-text font-medium">
                   Select Suppliers (Optional)
                 </span>
+                <span className="label-text-alt text-base-content/50">
+                  let admin assign
+                </span>
               </div>
-              <span className="label-text-alt text-base-content/50">
-                You can select suppliers for each category or leave it for admin
-                to assign
-              </span>
             </label>
             <div className="space-y-4 mt-2">
               {isLoadingSuppliers ? (

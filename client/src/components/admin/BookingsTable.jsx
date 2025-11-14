@@ -31,15 +31,22 @@ const BookingsTable = ({ bookings, onViewDetails }) => {
   };
 
   const getStatusBadge = (status) => {
+    const normalizedStatus = status?.toLowerCase() || status;
     const statusConfig = {
-      Pending: "badge-warning",
-      Accepted: "badge-success",
-      Completed: "badge-info",
-      Cancelled: "badge-error",
+      pending: "badge-warning",
+      accepted: "badge-success",
+      completed: "badge-info",
+      cancelled: "badge-error",
+      rejected: "badge-error",
     };
+    const displayStatus =
+      status?.charAt(0).toUpperCase() + status?.slice(1).toLowerCase() ||
+      status;
     return (
-      <span className={`badge ${statusConfig[status] || "badge-ghost"}`}>
-        {status}
+      <span
+        className={`badge ${statusConfig[normalizedStatus] || "badge-ghost"}`}
+      >
+        {displayStatus}
       </span>
     );
   };
@@ -98,7 +105,8 @@ const BookingsTable = ({ bookings, onViewDetails }) => {
                   >
                     <Eye size={16} />
                   </button>
-                  {booking.status === "Pending" && (
+                  {(booking.status === "pending" ||
+                    booking.status === "Pending") && (
                     <>
                       <button
                         className="btn btn-sm btn-success"

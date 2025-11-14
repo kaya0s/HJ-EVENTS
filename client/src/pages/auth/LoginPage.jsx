@@ -75,130 +75,132 @@ const LoginPage = () => {
   };
 
   return (
-    <div className="min-h-[calc(100vh-4rem)] flex items-center justify-center p-4">
-      <div className="w-full max-w-md bg-base-100 rounded-2xl shadow-lg p-8 space-y-8 flex flex-col justify-center mx-auto">
-        {/* Logo */}
-        <div className="text-center mb-4">
-          <div className="flex flex-col items-center gap-2 group">
-            <div
-              className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center group-hover:bg-primary/20
+    <section className="bg-gradient-to-b from-base-100/80 via-base-200/40 to-base-100/80">
+      <div className="container mx-auto flex min-h-[calc(100vh-4rem)] flex-col justify-center gap-8 md:gap-12 w-full max-w-screen-2xl px-4 md:px-10 py-8 md:py-10 lg:flex-row lg:items-center">
+        <div className="w-full max-w-md bg-base-100 rounded-2xl shadow-lg p-8 space-y-8 flex flex-col justify-center mx-auto">
+          {/* Logo */}
+          <div className="text-center mb-4">
+            <div className="flex flex-col items-center gap-2 group">
+              <div
+                className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center group-hover:bg-primary/20
             transition-colors"
-            >
-              <Logo />
+              >
+                <Logo />
+              </div>
+              <h1 className="text-2xl font-bold mt-2">Welcome Back</h1>
+              <p className="text-base-content/60">
+                Sign in to plan your wedding day
+              </p>
             </div>
-            <h1 className="text-2xl font-bold mt-2">Welcome Back</h1>
+          </div>
+
+          {/* Form */}
+          <form onSubmit={handleSubmit} className="space-y-6">
+            <div className="form-control">
+              <label className="label">
+                <span className="label-text font-medium">Email</span>
+              </label>
+              <div className="relative">
+                <span className="absolute inset-y-0 left-0 pl-3 flex items-center text-base-content/40">
+                  <User2 className="h-5 w-5" />
+                </span>
+                <input
+                  type="email"
+                  className="input input-bordered w-full pl-10"
+                  placeholder="you@example.com"
+                  value={formData.email}
+                  onChange={(e) =>
+                    setFormData({ ...formData, email: e.target.value })
+                  }
+                  autoComplete="username"
+                />
+              </div>
+            </div>
+
+            <div className="form-control">
+              <label className="label">
+                <span className="label-text font-medium">Password</span>
+              </label>
+              <div className="relative">
+                <span className="absolute inset-y-0 left-0 pl-3 flex items-center text-base-content/40">
+                  <LockKeyhole className="h-5 w-5" />
+                </span>
+                <input
+                  type={showPassword ? "text" : "password"}
+                  className="input input-bordered w-full pl-10"
+                  placeholder="••••••••"
+                  value={formData.password}
+                  onChange={(e) =>
+                    setFormData({ ...formData, password: e.target.value })
+                  }
+                  autoComplete="current-password"
+                />
+                <button
+                  type="button"
+                  className="absolute inset-y-0 right-0 pr-3 flex items-center"
+                  onClick={() => setShowPassword(!showPassword)}
+                  tabIndex={-1}
+                >
+                  {showPassword ? (
+                    <EyeOff className="h-5 w-5 text-base-content/40" />
+                  ) : (
+                    <Eye className="h-5 w-5 text-base-content/40" />
+                  )}
+                </button>
+              </div>
+            </div>
+
+            <button
+              type="submit"
+              className="btn btn-primary w-full"
+              disabled={isLoggingIn}
+            >
+              {isLoggingIn ? (
+                <>
+                  <Loader2 className="h-5 w-5 animate-spin" />
+                  Loading...
+                </>
+              ) : (
+                "Sign in"
+              )}
+            </button>
+          </form>
+
+          <div className="relative">
+            <div className="absolute inset-0 flex items-center">
+              <div className="w-full border-t border-base-content/20" />
+            </div>
+            <div className="relative flex justify-center text-sm">
+              <span className="bg-base-100 px-2 text-base-content/40">or</span>
+            </div>
+          </div>
+
+          {/* Google Auth */}
+          <div className="w-full">
+            <GoogleButton
+              style={{ width: "100%" }}
+              onClick={handleGoogleLogin}
+              disabled={isLoggingIn}
+              label="Sign in with Google"
+            />
+          </div>
+
+          <div className="text-center space-y-2">
             <p className="text-base-content/60">
-              Sign in to plan your wedding day
+              Don&apos;t have an account?{" "}
+              <Link to="/signup" className="link link-primary">
+                Create account
+              </Link>
+            </p>
+            <p className="text-base-content/60">
+              <Link to="/forgot-password" className="link link-primary">
+                Forgot password?
+              </Link>
             </p>
           </div>
         </div>
-
-        {/* Form */}
-        <form onSubmit={handleSubmit} className="space-y-6">
-          <div className="form-control">
-            <label className="label">
-              <span className="label-text font-medium">Email</span>
-            </label>
-            <div className="relative">
-              <span className="absolute inset-y-0 left-0 pl-3 flex items-center text-base-content/40">
-                <User2 className="h-5 w-5" />
-              </span>
-              <input
-                type="email"
-                className="input input-bordered w-full pl-10"
-                placeholder="you@example.com"
-                value={formData.email}
-                onChange={(e) =>
-                  setFormData({ ...formData, email: e.target.value })
-                }
-                autoComplete="username"
-              />
-            </div>
-          </div>
-
-          <div className="form-control">
-            <label className="label">
-              <span className="label-text font-medium">Password</span>
-            </label>
-            <div className="relative">
-              <span className="absolute inset-y-0 left-0 pl-3 flex items-center text-base-content/40">
-                <LockKeyhole className="h-5 w-5" />
-              </span>
-              <input
-                type={showPassword ? "text" : "password"}
-                className="input input-bordered w-full pl-10"
-                placeholder="••••••••"
-                value={formData.password}
-                onChange={(e) =>
-                  setFormData({ ...formData, password: e.target.value })
-                }
-                autoComplete="current-password"
-              />
-              <button
-                type="button"
-                className="absolute inset-y-0 right-0 pr-3 flex items-center"
-                onClick={() => setShowPassword(!showPassword)}
-                tabIndex={-1}
-              >
-                {showPassword ? (
-                  <EyeOff className="h-5 w-5 text-base-content/40" />
-                ) : (
-                  <Eye className="h-5 w-5 text-base-content/40" />
-                )}
-              </button>
-            </div>
-          </div>
-
-          <button
-            type="submit"
-            className="btn btn-primary w-full"
-            disabled={isLoggingIn}
-          >
-            {isLoggingIn ? (
-              <>
-                <Loader2 className="h-5 w-5 animate-spin" />
-                Loading...
-              </>
-            ) : (
-              "Sign in"
-            )}
-          </button>
-        </form>
-
-        <div className="relative">
-          <div className="absolute inset-0 flex items-center">
-            <div className="w-full border-t border-base-content/20" />
-          </div>
-          <div className="relative flex justify-center text-sm">
-            <span className="bg-base-100 px-2 text-base-content/40">or</span>
-          </div>
-        </div>
-
-        {/* Google Auth */}
-        <div className="w-full">
-          <GoogleButton
-            style={{ width: "100%" }}
-            onClick={handleGoogleLogin}
-            disabled={isLoggingIn}
-            label="Sign in with Google"
-          />
-        </div>
-
-        <div className="text-center space-y-2">
-          <p className="text-base-content/60">
-            Don&apos;t have an account?{" "}
-            <Link to="/signup" className="link link-primary">
-              Create account
-            </Link>
-          </p>
-          <p className="text-base-content/60">
-            <Link to="/forgot-password" className="link link-primary">
-              Forgot password?
-            </Link>
-          </p>
-        </div>
       </div>
-    </div>
+    </section>
   );
 };
 export default LoginPage;

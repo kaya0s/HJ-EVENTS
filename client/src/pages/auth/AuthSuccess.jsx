@@ -72,12 +72,14 @@ const AuthSuccess = () => {
   }, [searchParams, navigate, checkAuth]);
 
   return (
-    <div className="flex items-center justify-center min-h-screen">
-      <div className="text-center">
-        <Loader className="size-10 animate-spin mx-auto mb-4" />
-        <p className="text-base-content/70">Completing authentication...</p>
+    <section className="bg-gradient-to-b from-base-100/80 via-base-200/40 to-base-100/80">
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="text-center">
+          <Loader className="size-10 animate-spin mx-auto mb-4" />
+          <p className="text-base-content/70">Completing authentication...</p>
+        </div>
       </div>
-    </div>
+    </section>
   );
 };
 

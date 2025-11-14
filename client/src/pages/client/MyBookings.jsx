@@ -1,18 +1,24 @@
 import { useEffect, useState } from "react";
 import { useBookingStore } from "../../store/useBookingStore";
 import dayjs from "dayjs";
-import { Loader } from "lucide-react";
+import { Loader, Edit2 } from "lucide-react";
+import EditBookingModal from "../../components/EditBookingModal";
 
 const statusStyles = {
-  Accepted: "badge-success",
-  Pending: "badge-warning",
-  Completed: "badge-info",
-  Cancelled: "badge-error",
+  pending: "badge-warning",
+  accepted: "badge-success",
+  completed: "badge-info",
+  cancelled: "badge-error",
+  rejected: "badge-error",
 };
 
 const MyBookings = () => {
-  const { fetchMyBookings, isLoading } = useBookingStore();
+  const { fetchMyBookings, isLoading, cancelMyBooking, updateMyBooking } =
+    useBookingStore();
   const [bookings, setBookings] = useState([]);
+  const [cancellingId, setCancellingId] = useState(null);
+  const [editingBooking, setEditingBooking] = useState(null);
+  const [isSaving, setIsSaving] = useState(false);
 
   useEffect(() => {
     const loadBookings = async () => {
@@ -28,11 +34,82 @@ const MyBookings = () => {
   };
 
   const getStatusBadge = (status) => {
+    const normalizedStatus = status?.toLowerCase() || status;
+    const displayStatus =
+      status?.charAt(0).toUpperCase() + status?.slice(1).toLowerCase() ||
+      status;
     return (
-      <span className={`badge ${statusStyles[status] || "badge-ghost"}`}>
-        {status}
+      <span
+        className={`badge ${statusStyles[normalizedStatus] || "badge-ghost"}`}
+      >
+        {displayStatus}
       </span>
     );
+  };
+
+  const isPending = (status) => {
+    const normalized = status?.toLowerCase();
+    return normalized === "pending";
+  };
+
+  const canEdit = (status) => {
+    const normalized = status?.toLowerCase();
+    return normalized === "pending";
+  };
+
+  const handleCancel = async (bookingId) => {
+    if (!confirm("Are you sure you want to cancel this booking?")) return;
+    setCancellingId(bookingId);
+    try {
+      const updated = await cancelMyBooking(bookingId);
+      setBookings((prev) =>
+        prev.map((booking) =>
+          booking._id === bookingId
+            ? { ...booking, status: updated?.status || "cancelled" }
+            : booking
+        )
+      );
+    } catch {
+      // toast handled in store
+    } finally {
+      setCancellingId(null);
+    }
+  };
+
+  const handleEdit = (booking) => {
+    setEditingBooking(booking);
+  };
+
+  const handleCloseEdit = () => {
+    setEditingBooking(null);
+  };
+
+  const handleSaveEdit = async (formData) => {
+    if (!editingBooking) return;
+    setIsSaving(true);
+    try {
+      const updated = await updateMyBooking(editingBooking._id, formData);
+      setBookings((prev) =>
+        prev.map((booking) =>
+          booking._id === editingBooking._id
+            ? { ...booking, ...updated }
+            : booking
+        )
+      );
+      setEditingBooking(null);
+    } catch {
+      // toast handled in store
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const formatSuppliers = (suppliers) => {
+    if (!suppliers || suppliers.length === 0) return "None assigned";
+    if (Array.isArray(suppliers)) {
+      return suppliers.map((s) => s.name || s).join(", ");
+    }
+    return "None assigned";
   };
 
   return (
@@ -72,7 +149,9 @@ const MyBookings = () => {
                 <th className="px-6 py-4 font-semibold">Event Date</th>
                 <th className="px-6 py-4 font-semibold">Wedding Title</th>
                 <th className="px-6 py-4 font-semibold">Venue</th>
+                <th className="px-6 py-4 font-semibold">Assigned Suppliers</th>
                 <th className="px-6 py-4 font-semibold">Status</th>
+                <th className="px-6 py-4 font-semibold">Actions</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-base-300">
@@ -90,8 +169,38 @@ const MyBookings = () => {
                   <td className="px-6 py-4 text-base-content/70">
                     {booking.venue || "N/A"}
                   </td>
+                  <td className="px-6 py-4 text-base-content/70 text-sm">
+                    {formatSuppliers(booking.suppliers)}
+                  </td>
                   <td className="px-6 py-4">
                     {getStatusBadge(booking.status)}
+                  </td>
+                  <td className="px-6 py-4">
+                    <div className="flex gap-2">
+                      {canEdit(booking.status) && (
+                        <button
+                          className="btn btn-sm btn-outline btn-primary"
+                          onClick={() => handleEdit(booking)}
+                          title="Edit Booking"
+                        >
+                          <Edit2 size={16} />
+                        </button>
+                      )}
+                      {isPending(booking.status) && (
+                        <button
+                          className="btn btn-sm btn-outline btn-error"
+                          onClick={() => handleCancel(booking._id)}
+                          disabled={cancellingId === booking._id}
+                          title="Cancel Booking"
+                        >
+                          {cancellingId === booking._id ? (
+                            <Loader className="animate-spin" size={16} />
+                          ) : (
+                            "Cancel"
+                          )}
+                        </button>
+                      )}
+                    </div>
                   </td>
                 </tr>
               ))}
@@ -126,12 +235,51 @@ const MyBookings = () => {
                     </span>{" "}
                     {booking.venue || "N/A"}
                   </p>
+                  <p>
+                    <span className="font-medium text-base-content">
+                      Suppliers:
+                    </span>{" "}
+                    {formatSuppliers(booking.suppliers)}
+                  </p>
+                </div>
+                <div className="flex gap-2 mt-3">
+                  {canEdit(booking.status) && (
+                    <button
+                      className="btn btn-sm btn-outline btn-primary flex-1"
+                      onClick={() => handleEdit(booking)}
+                    >
+                      <Edit2 size={16} className="mr-1" />
+                      Edit
+                    </button>
+                  )}
+                  {isPending(booking.status) && (
+                    <button
+                      className="btn btn-sm btn-outline btn-error flex-1"
+                      onClick={() => handleCancel(booking._id)}
+                      disabled={cancellingId === booking._id}
+                    >
+                      {cancellingId === booking._id ? (
+                        <Loader className="animate-spin" size={16} />
+                      ) : (
+                        "Cancel"
+                      )}
+                    </button>
+                  )}
                 </div>
               </div>
             ))}
           </div>
         </div>
       )}
+
+      {/* Edit Booking Modal */}
+      <EditBookingModal
+        booking={editingBooking}
+        isOpen={!!editingBooking}
+        onClose={handleCloseEdit}
+        onSave={handleSaveEdit}
+        isSaving={isSaving}
+      />
     </section>
   );
 };

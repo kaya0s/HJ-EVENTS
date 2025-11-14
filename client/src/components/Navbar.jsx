@@ -1,7 +1,7 @@
 import { Link, useLocation } from "react-router-dom";
 import { useMemo } from "react";
 import { useAuthStore } from "../store/useAuthStore";
-import { LogOut, Palette, User } from "lucide-react";
+import { LogOut, Palette, User, UserRoundPlus } from "lucide-react";
 import Logo from "./Logo";
 
 const Navbar = () => {
@@ -16,7 +16,7 @@ const Navbar = () => {
   }, [authUser]);
 
   const themesLink = useMemo(() => {
-    if (!authUser) return "/login";
+    if (!authUser) return "/themes";
     if (authUser.role === "admin") return "themes";
     return "/themes";
   }, [authUser]);
@@ -48,7 +48,7 @@ const Navbar = () => {
 
   return (
     <header className="fixed top-0 z-40 w-full border-b border-base-300 bg-base-100/90 backdrop-blur-lg">
-      <div className="container mx-auto flex h-16 items-center justify-between w-full max-w-screen-2xl px-2 md:px-10">
+      <div className="container mx-auto flex h-16 items-center justify-between w-full max-w-screen-2xl px-4 md:px-10">
         <Link
           to="/"
           className="flex items-center gap-3 hover:opacity-90 transition"
@@ -57,9 +57,9 @@ const Navbar = () => {
             <Logo compact className="h-8 w-8" />
           </div>
           <div className="leading-tight">
-            <p className="text-lg font-bold">HJ Weddings Events</p>
-            <p className="text-xs text-base-content/60">
-              Elegant Event Coordination
+            <p className="text-lg font-bold">
+              <span className="sm:hidden">HJ Weddings</span>
+              <span className="hidden sm:inline">HJ Weddings Events</span>
             </p>
           </div>
         </Link>
@@ -88,20 +88,15 @@ const Navbar = () => {
         </nav>
 
         <div className="flex items-center gap-2">
+          {/* Themes button - now always visible */}
+          <Link to={themesLink} className="btn btn-ghost btn-sm">
+            <Palette className="h-4 w-4" />
+            <span className="hidden sm:inline">Themes</span>
+          </Link>
+
           {authUser ? (
             <>
-              <Link
-                to={themesLink}
-                className="btn btn-ghost btn-sm hidden sm:inline-flex"
-              >
-                <Palette className="h-4 w-4" />
-                <span>Themes</span>
-              </Link>
-
-              <Link
-                to={profileLink}
-                className="btn btn-ghost btn-sm hidden sm:inline-flex"
-              >
+              <Link to={profileLink} className="btn btn-ghost btn-sm">
                 <div className="w-4 h-4 rounded-full overflow-hidden flex items-center justify-center bg-base-200">
                   {authUser?.profilePic ? (
                     <img
@@ -113,7 +108,7 @@ const Navbar = () => {
                     <User className="h-4 w-4" />
                   )}
                 </div>
-                <span>Profile</span>
+                <span className="hidden sm:inline">Profile</span>
               </Link>
 
               <button onClick={logout} className="btn btn-primary btn-sm">
@@ -123,17 +118,13 @@ const Navbar = () => {
             </>
           ) : (
             <>
-              <Link
-                to="/login"
-                className="btn btn-ghost btn-sm hidden sm:inline-flex"
-              >
-                Sign in
+              <Link to="/login" className="btn btn-ghost btn-sm">
+                <User className="h-4 w-4" />
+                <span className="hidden sm:inline">Sign in</span>
               </Link>
-              <Link
-                to="/signup"
-                className="btn btn-primary btn-sm hidden sm:inline-flex"
-              >
-                Join us
+              <Link to="/signup" className="btn btn-primary btn-sm">
+                <UserRoundPlus className="h-4 w-4" />
+                <span className="hidden sm:inline">Join us</span>
               </Link>
             </>
           )}

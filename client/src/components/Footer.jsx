@@ -1,6 +1,6 @@
 import { Mail, MapPin, Phone, Heart } from "lucide-react";
 import Logo from "./Logo";
-
+import { Link } from "react-router-dom";
 const Footer = () => {
   const currentYear = new Date().getFullYear();
 
@@ -36,19 +36,30 @@ const Footer = () => {
               </a>
             </li>
             <li>
-              <a className="transition hover:text-primary" href="/about">
+              <Link to="/about" className="transition hover:text-primary">
                 About
-              </a>
+              </Link>
             </li>
             <li>
-              <a className="transition hover:text-primary" href="/packages">
+              <Link
+                to="/#packages"
+                onClick={(e) => {
+                  if (window.location.pathname === "/") {
+                    e.preventDefault();
+                    document
+                      .getElementById("packages")
+                      ?.scrollIntoView({ behavior: "smooth" });
+                  }
+                }}
+                className="transition hover:text-primary"
+              >
                 Packages
-              </a>
+              </Link>
             </li>
             <li>
-              <a className="transition hover:text-primary" href="/contact">
-                Contact
-              </a>
+              <Link to="/contact" className="transition hover:text-primary">
+                contact
+              </Link>
             </li>
           </ul>
         </div>

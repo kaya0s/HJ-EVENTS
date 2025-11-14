@@ -26,9 +26,12 @@ export default function DatePickerCalendar({
       const formatted = date.format("YYYY-MM-DD");
       const isBooked = bookedDates.includes(formatted);
       const isPast = date.isBefore(dayjs(), "day");
+      const isTooSoon = date.isBefore(dayjs().add(15, "days"), "day");
 
       if (isPast) {
         toast.error("Cannot select past dates");
+      } else if (isTooSoon) {
+        toast.error("Bookings must be made at least 15 days in advance");
       } else if (isBooked) {
         toast.error("This date is already booked!");
       } else {
@@ -40,9 +43,15 @@ export default function DatePickerCalendar({
     const formatted = date.format("YYYY-MM-DD");
     const isBooked = bookedDates.includes(formatted);
     const isPast = date.isBefore(dayjs(), "day");
+    const isTooSoon = date.isBefore(dayjs().add(15, "days"), "day");
 
     if (isPast) {
       toast.error("Cannot select past dates");
+      return;
+    }
+
+    if (isTooSoon) {
+      toast.error("Bookings must be made at least 15 days in advance");
       return;
     }
 
@@ -70,8 +79,10 @@ export default function DatePickerCalendar({
       const formatted = current.format("YYYY-MM-DD");
       const isBooked = bookedDates.includes(formatted);
       const isPast = current.isBefore(dayjs(), "day");
+      const isTooSoon = current.isBefore(dayjs().add(15, "days"), "day");
       const isToday = formatted === today;
       const isSelected = formatted === selectedDate;
+      const isUnavailable = isPast || isTooSoon || isBooked;
 
       const baseClasses =
         "aspect-square relative flex items-center justify-center rounded-lg transition-all duration-100 cursor-pointer";
@@ -79,6 +90,9 @@ export default function DatePickerCalendar({
       if (isPast) {
         stateClass =
           "bg-base-100 text-base-content/20 cursor-not-allowed opacity-40";
+      } else if (isTooSoon) {
+        stateClass =
+          "bg-base-100 text-base-content/30 cursor-not-allowed opacity-50";
       } else if (isBooked) {
         stateClass =
           "bg-base-200 text-base-content/40 line-through cursor-not-allowed";
@@ -94,11 +108,13 @@ export default function DatePickerCalendar({
           key={d}
           type="button"
           onClick={() => handleDateClick(current)}
-          disabled={isPast || isBooked}
-          tabIndex={isPast ? -1 : 0}
+          disabled={isUnavailable}
+          tabIndex={isUnavailable ? -1 : 0}
           title={
             isPast
               ? "Past date - not available"
+              : isTooSoon
+              ? "Bookings must be made at least 15 days in advance"
               : isBooked
               ? "Already booked - not available"
               : isSelected

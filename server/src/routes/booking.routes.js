@@ -4,6 +4,7 @@ import {
   createBooking,
   getMyBookings,
   cancelBooking,
+  updateBooking,
   approveBooking,
   rejectBooking,
   getBookedDates,
@@ -20,6 +21,7 @@ router.get('/availability', getBookedDates);
 router.post('/', protect, createBooking);
 router.get('/me', protect, getMyBookings);
 router.post('/cancel/:id', protect, cancelBooking);
+router.patch('/:id', protect, updateBooking);
 
 // Admin actions
 router.get('/all', protect, authorize('admin'), getAllBookings);
