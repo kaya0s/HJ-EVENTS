@@ -36,15 +36,15 @@ const Home = () => {
 
   return (
     <section className="bg-linear-to-b from-base-100 via-base-200/60 to-base-100">
-      <div className="container mx-auto flex min-h-[calc(100vh-4rem)] flex-col justify-center gap-12 w-full max-w-screen-2xl px-2 md:px-10 py-10 lg:flex-row lg:items-center">
-        <div className="max-w-2xl mx-auto space-y-6 text-center lg:text-left lg:mx-0">
+      <div className="container mx-auto flex min-h-[calc(100vh-4rem)] flex-col justify-center gap-8 md:gap-12 w-full max-w-screen-2xl px-4 md:px-10 py-8 md:py-10 lg:flex-row lg:items-center">
+        <div className="max-w-2xl mx-auto space-y-4 md:space-y-6 text-center lg:text-left lg:mx-0">
           <p className="text-sm font-semibold uppercase tracking-[0.3em] text-primary/70">
             Wedding Coordination Studio
           </p>
-          <h1 className="text-4xl font-bold text-base-content sm:text-5xl lg:text-6xl">
+          <h1 className="text-3xl md:text-4xl font-bold text-base-content sm:text-5xl lg:text-6xl">
             Celebrate a love story that feels exclusively yours.
           </h1>
-          <p className="text-lg text-base-content/70">
+          <p className="text-base md:text-lg text-base-content/70">
             HJ Weddings blends heartfelt planning with refined styling to craft
             ceremonies that are rich with meaning. Let our team handle every
             timeline, supplier, and surprise so you can live every moment.
@@ -65,7 +65,7 @@ const Home = () => {
             </a>
           </div>
         </div>
-        <div className="scale-100 mx-auto mt-8 lg:mt-0">
+        <div className="scale-100 mx-auto mt-6 md:mt-8 lg:mt-0">
           <DatePickerCalendar bookedDates={bookedDates} />
         </div>
       </div>
