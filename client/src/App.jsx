@@ -2,9 +2,11 @@ import { useEffect } from "react";
 import { Routes, Route, Navigate } from "react-router-dom";
 import { Loader } from "lucide-react";
 import { Toaster } from "react-hot-toast";
+import { useLocation } from "react-router-dom";
 
 import Navbar from "./components/Navbar";
 import Footer from "./components/Footer";
+import BackgroundVideo from "./components/BackgroundVideo";
 
 import { useAuthStore } from "./store/useAuthStore";
 import { useThemeStore } from "./store/useThemeStore";
@@ -17,6 +19,7 @@ import {
 } from "./routes";
 
 const App = () => {
+  const location = useLocation();
   const { authUser, checkAuth, isCheckingAuth } = useAuthStore();
   const { theme } = useThemeStore();
 
@@ -33,11 +36,10 @@ const App = () => {
       </div>
     );
 
-  return (
-    <div
-      data-theme={theme}
-      className="min-h-screen bg-base-100 text-base-content flex flex-col"
-    >
+  const showBackgroundVideo = !authUser || authUser.role === "user";
+
+  const content = (
+    <>
       <Navbar />
 
       <main className="flex-1 pt-16">
@@ -49,8 +51,24 @@ const App = () => {
           {SupplierRoutes({ authUser })}
         </Routes>
       </main>
-      {authUser?.role !== "admin" && <Footer />}
+
+      {location.pathname === "/" && <Footer />}
       <Toaster />
+    </>
+  );
+
+  return (
+    <div
+      data-theme={theme}
+      className="min-h-screen bg-base-100 text-base-content flex flex-col"
+    >
+      {showBackgroundVideo ? (
+        <BackgroundVideo videoSrc="https://www.pexels.com/download/video/34506425/">
+          {content}
+        </BackgroundVideo>
+      ) : (
+        content
+      )}
     </div>
   );
 };

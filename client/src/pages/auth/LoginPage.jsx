@@ -75,8 +75,8 @@ const LoginPage = () => {
   };
 
   return (
-    <section className="bg-linear-to-b from-base-100 via-base-200/60 to-base-100">
-      <div className="min-h-[calc(100vh-4rem)] flex items-center justify-center p-4">
+    <section className="bg-gradient-to-b from-base-100/80 via-base-200/40 to-base-100/80">
+      <div className="container mx-auto flex min-h-[calc(100vh-4rem)] flex-col justify-center gap-8 md:gap-12 w-full max-w-screen-2xl px-4 md:px-10 py-8 md:py-10 lg:flex-row lg:items-center">
         <div className="w-full max-w-md bg-base-100 rounded-2xl shadow-lg p-8 space-y-8 flex flex-col justify-center mx-auto">
           {/* Logo */}
           <div className="text-center mb-4">
