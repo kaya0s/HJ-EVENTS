@@ -42,7 +42,7 @@ export const createBooking = async (req, res) => {
         $gte: startOfDay,
         $lte: endOfDay,
       },
-      status: { $ne: 'Cancelled' },
+      status: { $nin: ['Cancelled', 'Rejected'] },
     });
 
     if (existingBooking) {
@@ -186,7 +186,7 @@ export const rejectBooking = async (req, res) => {
       .populate('package');
     if (!booking) return res.status(404).json({ message: 'Booking not found' });
 
-    booking.status = 'Cancelled';
+    booking.status = 'Rejected';
     await booking.save();
 
     // Send email notification to client
@@ -320,7 +320,7 @@ export const getBookedDates = async (req, res) => {
 
     // Get all bookings that are not cancelled
     const bookings = await Booking.find({
-      status: { $ne: 'Cancelled' },
+      status: { $nin: ['Cancelled', 'Rejected'] },
     })
       .select('weddingDate prenuptDate')
       .lean();

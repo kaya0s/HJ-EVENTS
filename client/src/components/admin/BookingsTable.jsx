@@ -36,6 +36,7 @@ const BookingsTable = ({ bookings, onViewDetails }) => {
       Accepted: "badge-success",
       Completed: "badge-info",
       Cancelled: "badge-error",
+      Rejected: "badge-error",
     };
     return (
       <span className={`badge ${statusConfig[status] || "badge-ghost"}`}>

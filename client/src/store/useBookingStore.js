@@ -11,6 +11,7 @@ export const useBookingStore = create((set) => ({
     accepted: 0,
     completed: 0,
     cancelled: 0,
+    rejected: 0,
   },
 
   /**
@@ -53,6 +54,7 @@ export const useBookingStore = create((set) => ({
         accepted: bookings.filter((b) => b.status === "Accepted").length,
         completed: bookings.filter((b) => b.status === "Completed").length,
         cancelled: bookings.filter((b) => b.status === "Cancelled").length,
+        rejected: bookings.filter((b) => b.status === "Rejected").length,
       };
 
       set({ bookings, statistics: stats });
@@ -75,6 +77,7 @@ export const useBookingStore = create((set) => ({
           accepted: 0,
           completed: 0,
           cancelled: 0,
+          rejected: 0,
         },
       });
     } finally {
@@ -115,7 +118,7 @@ export const useBookingStore = create((set) => ({
       await axiosInstance.post(`/bookings/reject/${bookingId}`);
       set((state) => ({
         bookings: state.bookings.map((b) =>
-          b._id === bookingId ? { ...b, status: "Cancelled" } : b
+          b._id === bookingId ? { ...b, status: "Rejected" } : b
         ),
       }));
       toast.success("Booking rejected");
@@ -196,6 +199,23 @@ export const useBookingStore = create((set) => ({
       return [];
     } finally {
       set({ isLoading: false });
+    }
+  },
+  /**
+   * Cancels a booking (client initiated)
+   */
+  cancelMyBooking: async (bookingId) => {
+    try {
+      const res = await axiosInstance.post(`/bookings/cancel/${bookingId}`);
+      toast.success("Booking cancelled");
+      return res.data?.booking;
+    } catch (error) {
+      let msg =
+        error?.response?.data?.message ||
+        error?.message ||
+        "Failed to cancel booking";
+      toast.error(msg);
+      throw error;
     }
   },
 }));

@@ -8,11 +8,13 @@ const statusStyles = {
   Pending: "badge-warning",
   Completed: "badge-info",
   Cancelled: "badge-error",
+  Rejected: "badge-error",
 };
 
 const MyBookings = () => {
-  const { fetchMyBookings, isLoading } = useBookingStore();
+  const { fetchMyBookings, isLoading, cancelMyBooking } = useBookingStore();
   const [bookings, setBookings] = useState([]);
+  const [cancellingId, setCancellingId] = useState(null);
 
   useEffect(() => {
     const loadBookings = async () => {
@@ -27,12 +29,29 @@ const MyBookings = () => {
     return dayjs(date).format("MMMM DD, YYYY");
   };
 
-  const getStatusBadge = (status) => {
-    return (
-      <span className={`badge ${statusStyles[status] || "badge-ghost"}`}>
-        {status}
-      </span>
-    );
+  const getStatusBadge = (status) => (
+    <span className={`badge ${statusStyles[status] || "badge-ghost"}`}>
+      {status}
+    </span>
+  );
+
+  const handleCancel = async (bookingId) => {
+    if (!confirm("Are you sure you want to cancel this booking?")) return;
+    setCancellingId(bookingId);
+    try {
+      const updated = await cancelMyBooking(bookingId);
+      setBookings((prev) =>
+        prev.map((booking) =>
+          booking._id === bookingId
+            ? { ...booking, status: updated?.status || "Cancelled" }
+            : booking
+        )
+      );
+    } catch {
+      // toast handled in store
+    } finally {
+      setCancellingId(null);
+    }
   };
 
   return (
@@ -73,6 +92,7 @@ const MyBookings = () => {
                 <th className="px-6 py-4 font-semibold">Wedding Title</th>
                 <th className="px-6 py-4 font-semibold">Venue</th>
                 <th className="px-6 py-4 font-semibold">Status</th>
+                <th className="px-6 py-4 font-semibold">Actions</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-base-300">
@@ -92,6 +112,21 @@ const MyBookings = () => {
                   </td>
                   <td className="px-6 py-4">
                     {getStatusBadge(booking.status)}
+                  </td>
+                  <td className="px-6 py-4">
+                    {booking.status === "Pending" && (
+                      <button
+                        className="btn btn-sm btn-outline btn-error"
+                        onClick={() => handleCancel(booking._id)}
+                        disabled={cancellingId === booking._id}
+                      >
+                        {cancellingId === booking._id ? (
+                          <Loader className="animate-spin" size={16} />
+                        ) : (
+                          "Cancel Booking"
+                        )}
+                      </button>
+                    )}
                   </td>
                 </tr>
               ))}
@@ -127,6 +162,19 @@ const MyBookings = () => {
                     {booking.venue || "N/A"}
                   </p>
                 </div>
+                {booking.status === "Pending" && (
+                  <button
+                    className="btn btn-sm btn-outline btn-error w-full mt-3"
+                    onClick={() => handleCancel(booking._id)}
+                    disabled={cancellingId === booking._id}
+                  >
+                    {cancellingId === booking._id ? (
+                      <Loader className="animate-spin" size={16} />
+                    ) : (
+                      "Cancel Booking"
+                    )}
+                  </button>
+                )}
               </div>
             ))}
           </div>
