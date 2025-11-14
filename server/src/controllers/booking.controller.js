@@ -42,7 +42,7 @@ export const createBooking = async (req, res) => {
         $gte: startOfDay,
         $lte: endOfDay,
       },
-      status: { $nin: ['Cancelled', 'Rejected'] },
+      status: { $nin: ['cancelled', 'rejected'] },
     });
 
     if (existingBooking) {
@@ -109,11 +109,11 @@ export const getMyBookings = async (req, res) => {
  */
 export const cancelBooking = async (req, res) => {
   try {
-    const booking = await Booking.findOne({ _id: req.params.id, user: req.user._id });
+    const booking = await Booking.findOne({ _id: req.params.id, 'user.id': req.user._id });
     if (!booking) return res.status(404).json({ message: 'Booking not found' });
-    if (booking.status === 'Accepted')
+    if (booking.status === 'accepted')
       return res.status(400).json({ message: 'Cannot cancel an accepted booking' });
-    booking.status = 'Cancelled';
+    booking.status = 'cancelled';
     await booking.save();
     res.json({ booking });
   } catch (error) {
@@ -133,7 +133,7 @@ export const approveBooking = async (req, res) => {
       .populate('package');
     if (!booking) return res.status(404).json({ message: 'Booking not found' });
 
-    booking.status = 'Accepted';
+    booking.status = 'accepted';
     await booking.save();
 
     await ActivityLog.create({
@@ -186,7 +186,7 @@ export const rejectBooking = async (req, res) => {
       .populate('package');
     if (!booking) return res.status(404).json({ message: 'Booking not found' });
 
-    booking.status = 'Rejected';
+    booking.status = 'rejected';
     await booking.save();
 
     // Send email notification to client
@@ -310,6 +310,46 @@ export const assignSuppliersToBooking = async (req, res) => {
 };
 
 /**
+ * @desc   Update booking (client only)
+ * @method  PATCH
+ * @access Client
+ */
+export const updateBooking = async (req, res) => {
+  try {
+    const { title, venue } = req.body;
+    const booking = await Booking.findOne({ _id: req.params.id, 'user.id': req.user._id })
+      .populate('package')
+      .populate('suppliers', 'name category rating');
+
+    if (!booking) return res.status(404).json({ message: 'Booking not found' });
+
+    // Cannot edit accepted bookings
+    if (booking.status === 'accepted') {
+      return res.status(400).json({ message: 'Cannot edit an accepted booking' });
+    }
+
+    // Update only allowed fields (not weddingDate)
+    if (title !== undefined) booking.title = title.trim();
+    if (venue !== undefined) booking.venue = venue.trim();
+
+    await booking.save();
+
+    // Log activity
+    await ActivityLog.create({
+      actor: req.user._id,
+      actorName: req.user.fullName,
+      action: 'Update booking',
+      details: `Booking ${booking._id}`,
+    });
+
+    res.json({ booking });
+  } catch (error) {
+    console.error('Update booking error:', error);
+    res.status(500).json({ message: 'Server error', error: error.message });
+  }
+};
+
+/**
  * @desc   Get booked dates for availability calendar
  * @method  GET
  * @access Public
@@ -320,7 +360,7 @@ export const getBookedDates = async (req, res) => {
 
     // Get all bookings that are not cancelled
     const bookings = await Booking.find({
-      status: { $nin: ['Cancelled', 'Rejected'] },
+      status: { $nin: ['cancelled', 'rejected'] },
     })
       .select('weddingDate prenuptDate')
       .lean();

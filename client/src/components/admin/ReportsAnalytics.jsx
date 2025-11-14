@@ -133,21 +133,22 @@ const ReportsAnalytics = () => {
     useMemo(() => {
       let revenue = 0;
       const statusMap = {
-        Pending: 0,
-        Accepted: 0,
-        Completed: 0,
-        Cancelled: 0,
+        pending: 0,
+        accepted: 0,
+        completed: 0,
+        cancelled: 0,
+        rejected: 0,
       };
       const packageCountMap = new Map();
       const upcoming = [];
 
       for (const booking of bookings) {
-        const status = booking?.status;
+        const status = booking?.status?.toLowerCase();
         if (status && Object.prototype.hasOwnProperty.call(statusMap, status)) {
           statusMap[status] += 1;
         }
 
-        if (status === "Accepted" || status === "Completed") {
+        if (status === "accepted" || status === "completed") {
           const price =
             typeof booking?.package?.price === "number"
               ? booking.package.price

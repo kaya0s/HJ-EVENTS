@@ -37,10 +37,10 @@ const Dashboard = () => {
       dayjs(booking.weddingDate).isAfter(dayjs(), "day")
     ).length;
     const completed = bookings.filter(
-      (booking) => booking.status === "Completed"
+      (booking) => booking.status?.toLowerCase() === "completed"
     ).length;
     const pending = bookings.filter(
-      (booking) => booking.status === "Pending"
+      (booking) => booking.status?.toLowerCase() === "pending"
     ).length;
 
     return [
