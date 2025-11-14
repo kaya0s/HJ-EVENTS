@@ -8,9 +8,6 @@ export const SharedRoutes = ({ authUser }) => (
       path="/profile"
       element={authUser ? <Profile /> : <Navigate to="/login" replace />}
     />
-    <Route
-      path="/themes"
-      element={authUser ? <ThemesPage /> : <Navigate to="/login" replace />}
-    />
+    <Route path="/themes" element={<ThemesPage />} />
   </>
 );
