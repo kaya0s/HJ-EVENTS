@@ -10,7 +10,7 @@ import supplierRoutes from './routes/supplier.routes.js';
 import bookingRoutes from './routes/booking.routes.js';
 import adminRoutes from './routes/admin.routes.js';
 import userRoutes from './routes/user.routes.js';
-import ReviewRoutes from './routes/Review.routes.js';
+import ReviewRoutes from './routes/review.routes.js';
 import packageRoutes from './routes/package.routes.js';
 import path from 'path';
 import { fileURLToPath } from 'url';
