@@ -1,5 +1,5 @@
 import Booking from '../models/booking.model.js';
-import Feedback from '../models/feedback.model.js';
+import Review from '../models/review.model.js';
 
 // Return counts and popular suppliers
 export const getDashboard = async (req, res) => {
@@ -8,8 +8,8 @@ export const getDashboard = async (req, res) => {
     const pending = await Booking.countDocuments({ status: 'Pending' });
     const approved = await Booking.countDocuments({ status: 'Approved' });
 
-    // Popular suppliers by feedback count
-    const popular = await Feedback.aggregate([
+    // Popular suppliers by Review count
+    const popular = await Review.aggregate([
       { $group: { _id: '$supplier', count: { $sum: 1 }, avgRating: { $avg: '$rating' } } },
       { $sort: { count: -1 } },
       { $limit: 5 },

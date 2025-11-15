@@ -212,7 +212,11 @@ export const Login = async (req, res) => {
       return res.status(400).json({ message: 'Invalid credentials' });
     }
     generateToken(user._id, res);
-    return res.status(200).json({ message: 'Successfully Logged in!', user });
+    res.status(200).json({
+      email: user.email,
+      fullName: user.fullName,
+      role: user.role,
+    });
   } catch (error) {
     console.error(error.message);
     res.status(500).send('Server error');
