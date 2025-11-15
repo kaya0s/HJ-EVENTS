@@ -6,6 +6,7 @@ import SupplierCarousel from "../../components/SupplierCarousel";
 import DatePickerCalendar from "../../components/DatePickerCalendar";
 import axiosInstance from "../../lib/axios";
 import { Link } from "react-router-dom";
+import Reviews from "../../components/Reviews";
 
 const Home = () => {
   const { authUser } = useAuthStore();
@@ -74,6 +75,10 @@ const Home = () => {
 
       <div id="packages" ref={packagesRef} className="py-8 md:py-12">
         <Packages />
+      </div>
+
+      <div>
+        <Reviews />
       </div>
     </section>
   );
