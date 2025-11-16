@@ -69,14 +69,13 @@ const Home = () => {
         </div>
       </div>
 
-      <div className="py-8 md:py-12">
-        <SupplierCarousel />
-      </div>
-
       <div id="packages" ref={packagesRef} className="py-8 md:py-12">
         <Packages />
       </div>
 
+      <div className="pb-8 md:pb-12">
+        <SupplierCarousel />
+      </div>
       <div>
         <Reviews />
       </div>
