@@ -29,7 +29,8 @@ const Dashboard = () => {
     }
     fetchSupplierProfile();
     fetchSupplierBookings();
-  }, [authUser, navigate, fetchSupplierProfile, fetchSupplierBookings]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [authUser?.role, navigate]);
 
   const stats = useMemo(() => {
     const total = bookings.length;
@@ -92,9 +93,9 @@ const Dashboard = () => {
   const isLoading = isLoadingBookings || isLoadingProfile;
 
   return (
-    <div className="min-h-screen bg-base-100">
+    <div className="min-h-screen bg-base-100 lg:flex">
       <SupplierSidebar />
-      <main className="lg:ml-64 p-6">
+      <main className="flex-1 p-6 transition-all duration-300">
         <div className="max-w-6xl mx-auto space-y-6">
           <header>
             <h1 className="text-3xl font-bold mb-2">

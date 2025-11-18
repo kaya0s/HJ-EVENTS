@@ -54,7 +54,7 @@ const Contact = () => {
               @hjweddings
             </a>
             <a
-              href="https://facebook.com/hjweddings"
+              href="https://www.facebook.com/profile.php?id=100064771667953"
               target="_blank"
               rel="noopener noreferrer"
               className="flex items-center gap-3 hover:text-primary transition"
