@@ -6,20 +6,45 @@ import BookingsTable from "../../components/admin/BookingsTable";
 import BookingDetailsModal from "../../components/admin/BookingDetailsModal";
 import { useAuthStore } from "../../store/useAuthStore";
 import { useBookingStore } from "../../store/useBookingStore";
+import BookingFilters from "../../components/admin/BookingFilters";
 
 const Bookings = () => {
   const navigate = useNavigate();
   const { authUser } = useAuthStore();
-  const { bookings, isLoading, fetchAllBookings } = useBookingStore();
+  const { bookings, isLoading, fetchAllBookings, lastFilters } =
+    useBookingStore();
   const [selectedBooking, setSelectedBooking] = useState(null);
+  const [filters, setFilters] = useState({
+    search: "",
+    status: "all",
+    startDate: "",
+    endDate: "",
+  });
 
   useEffect(() => {
     if (authUser?.role !== "admin") {
       navigate("/");
       return;
     }
-    fetchAllBookings();
+    fetchAllBookings(filters);
+    // intentionally run only when auth context changes
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [authUser, navigate, fetchAllBookings]);
+  const handleApplyFilters = async (nextFilters) => {
+    setFilters(nextFilters);
+    await fetchAllBookings(nextFilters);
+  };
+
+  const handleResetFilters = async () => {
+    const reset = {
+      search: "",
+      status: "all",
+      startDate: "",
+      endDate: "",
+    };
+    setFilters(reset);
+    await fetchAllBookings(reset);
+  };
 
   const showModal = Boolean(selectedBooking);
 
@@ -37,9 +62,9 @@ const Bookings = () => {
   }
 
   return (
-    <div className="min-h-screen bg-base-100">
+    <div className="min-h-screen bg-base-100 lg:flex">
       <AdminSidebar />
-      <main className="lg:ml-64 p-6">
+      <main className="flex-1 p-6 transition-all duration-300">
         <div className="max-w-7xl mx-auto space-y-6">
           <header>
             <h1 className="text-3xl font-bold mb-2">Bookings</h1>
@@ -56,6 +81,12 @@ const Bookings = () => {
                   {bookings.length} total
                 </span>
               </div>
+
+              <BookingFilters
+                initialFilters={lastFilters || filters}
+                onApply={handleApplyFilters}
+                onReset={handleResetFilters}
+              />
 
               {isLoading ? (
                 <div className="text-center py-12">

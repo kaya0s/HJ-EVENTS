@@ -10,6 +10,7 @@ import {
   getBookedDates,
   getAllBookings,
   assignSuppliersToBooking,
+  completeBooking,
 } from '../controllers/booking.controller.js';
 
 const router = express.Router();
@@ -27,6 +28,7 @@ router.patch('/:id', protect, updateBooking);
 router.get('/all', protect, authorize('admin'), getAllBookings);
 router.post('/approve/:id', protect, authorize('admin'), approveBooking);
 router.post('/reject/:id', protect, authorize('admin'), rejectBooking);
+router.post('/complete/:id', protect, authorize('admin'), completeBooking);
 router.patch('/:id/suppliers', protect, authorize('admin'), assignSuppliersToBooking);
 
 export default router;

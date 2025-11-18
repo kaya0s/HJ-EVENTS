@@ -1,7 +1,31 @@
 import Booking from '../models/booking.model.js';
 import Package from '../models/package.model.js';
 import ActivityLog from '../models/activityLog.model.js';
+import ExternalSupplierDeduction from '../models/externalSupplierDeduction.model.js';
 import { sendBookingApprovalEmail, sendBookingRejectionEmail } from '../utils/email.js';
+
+const normalizeCategoryKey = (value = '') => value.trim().toLowerCase();
+
+const ensureBookingTitle = (booking) => {
+  if (!booking) return;
+  if (!booking.title) {
+    const fallbackTitle =
+      booking.package?.name ||
+      (booking.user?.fullName ? `${booking.user.fullName}'s Wedding` : 'Untitled Wedding');
+    booking.title = fallbackTitle;
+  }
+};
+
+const autoExpirePendingBookings = async (extraFilter = {}) => {
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const filter = {
+    status: 'pending',
+    weddingDate: { $lt: today },
+    ...extraFilter,
+  };
+  await Booking.updateMany(filter, { status: 'expired' });
+};
 
 /**
  * @desc --
@@ -15,7 +39,7 @@ import { sendBookingApprovalEmail, sendBookingRejectionEmail } from '../utils/em
  */
 export const createBooking = async (req, res) => {
   try {
-    const { packageId, eventDate, title, venue, suppliers } = req.body;
+    const { packageId, eventDate, title, venue, suppliers, externalSuppliers } = req.body;
 
     if (!packageId || !eventDate || !title || !venue) {
       return res.status(400).json({
@@ -61,16 +85,68 @@ export const createBooking = async (req, res) => {
       return res.status(400).json({ message: 'This date is already booked' });
     }
 
+    const rawExternalSelections = Array.isArray(externalSuppliers)
+      ? externalSuppliers
+          .map((category) => {
+            const label = typeof category === 'string' ? category.trim() : '';
+            const key = normalizeCategoryKey(label);
+            if (!key) return null;
+            return { key, label: label || key };
+          })
+          .filter(Boolean)
+      : [];
+
+    const uniqueExternalSelections = [];
+    const seenExternalKeys = new Set();
+    rawExternalSelections.forEach((selection) => {
+      if (seenExternalKeys.has(selection.key)) return;
+      seenExternalKeys.add(selection.key);
+      uniqueExternalSelections.push(selection);
+    });
+
+    let externalSelectionEntries = [];
+    if (uniqueExternalSelections.length > 0) {
+      const docs = await ExternalSupplierDeduction.find({
+        categoryKey: { $in: uniqueExternalSelections.map((sel) => sel.key) },
+      }).lean();
+
+      const docMap = docs.reduce((acc, doc) => {
+        acc[doc.categoryKey] = doc;
+        return acc;
+      }, {});
+
+      externalSelectionEntries = uniqueExternalSelections.map((selection) => {
+        const matched = docMap[selection.key];
+        return {
+          category: selection.label || matched?.label || selection.key,
+          deductionAmount: matched?.amount || 0,
+        };
+      });
+    }
+
+    const basePrice = Number(pkg.price) || 0;
+    const totalDeduction = externalSelectionEntries.reduce(
+      (sum, entry) => sum + (Number(entry.deductionAmount) || 0),
+      0
+    );
+    const totalPrice = Math.max(0, basePrice - totalDeduction);
+
     const booking = new Booking({
       user: {
         id: req.user._id,
         fullName: req.user.fullName,
+        email: req.user.email || '',
+        phone: req.user.phone || '',
+        address: req.user.address || '',
       },
       title: title.trim(),
       venue: venue.trim(),
       package: pkg._id,
       weddingDate: new Date(eventDate),
       suppliers: Array.isArray(suppliers) ? suppliers : [],
+      basePrice,
+      totalPrice,
+      externalSupplierSelections: externalSelectionEntries,
     });
 
     await booking.save();
@@ -102,9 +178,11 @@ export const createBooking = async (req, res) => {
  */
 export const getMyBookings = async (req, res) => {
   try {
+    await autoExpirePendingBookings({ 'user.id': req.user._id });
     const bookings = await Booking.find({ 'user.id': req.user._id })
       .populate('package')
       .populate('suppliers', 'name category rating')
+      .populate('review', 'rating comment createdAt')
       .sort('-createdAt');
     res.json({ bookings });
     console.log(bookings);
@@ -141,11 +219,12 @@ export const cancelBooking = async (req, res) => {
 export const approveBooking = async (req, res) => {
   try {
     const booking = await Booking.findById(req.params.id)
-      .populate('user.id', 'email fullName')
+      .populate('user.id', 'email fullName phone')
       .populate('package');
     if (!booking) return res.status(404).json({ message: 'Booking not found' });
 
     booking.status = 'accepted';
+    ensureBookingTitle(booking);
     await booking.save();
 
     await ActivityLog.create({
@@ -193,11 +272,12 @@ export const rejectBooking = async (req, res) => {
   try {
     const { reason } = req.body;
     const booking = await Booking.findById(req.params.id)
-      .populate('user.id', 'email fullName')
+      .populate('user.id', 'email fullName phone')
       .populate('package');
     if (!booking) return res.status(404).json({ message: 'Booking not found' });
 
     booking.status = 'rejected';
+    ensureBookingTitle(booking);
     await booking.save();
 
     // Send email notification to client
@@ -228,6 +308,35 @@ export const rejectBooking = async (req, res) => {
   }
 };
 
+export const completeBooking = async (req, res) => {
+  try {
+    const booking = await Booking.findById(req.params.id)
+      .populate('user.id', 'email fullName phone')
+      .populate('package');
+    if (!booking) return res.status(404).json({ message: 'Booking not found' });
+
+    if (booking.status !== 'accepted') {
+      return res.status(400).json({ message: 'Only accepted bookings can be marked as completed' });
+    }
+
+    booking.status = 'completed';
+    ensureBookingTitle(booking);
+    await booking.save();
+
+    await ActivityLog.create({
+      actor: req.user._id,
+      actorName: req.user.fullName,
+      action: 'Complete booking',
+      details: `Booking ${booking._id}`,
+    });
+
+    res.json({ booking });
+  } catch (error) {
+    console.error('Complete booking error:', error);
+    res.status(500).json({ message: `server error ${error.message}` });
+  }
+};
+
 /**
  * @desc   Get all bookings (Admin only)
  * @method  GET
@@ -235,27 +344,67 @@ export const rejectBooking = async (req, res) => {
  */
 export const getAllBookings = async (req, res) => {
   try {
-    // Get all bookings and populate references
-    const bookings = await Booking.find({})
+    await autoExpirePendingBookings();
+    const { status, search, startDate, endDate } = req.query;
+
+    const query = {};
+
+    if (status && status !== 'all') {
+      query.status = status.toLowerCase();
+    }
+
+    if (startDate || endDate) {
+      query.weddingDate = {};
+      if (startDate) {
+        const start = new Date(startDate);
+        if (!Number.isNaN(start.getTime())) {
+          query.weddingDate.$gte = start;
+        }
+      }
+      if (endDate) {
+        const end = new Date(endDate);
+        if (!Number.isNaN(end.getTime())) {
+          query.weddingDate.$lte = end;
+        }
+      }
+      if (Object.keys(query.weddingDate).length === 0) {
+        delete query.weddingDate;
+      }
+    }
+
+    if (search) {
+      const regex = new RegExp(search, 'i');
+      query.$or = [
+        { 'user.fullName': regex },
+        { 'user.email': regex },
+        { 'user.phone': regex },
+        { 'user.address': regex },
+        { title: regex },
+        { venue: regex },
+      ];
+    }
+
+    const bookings = await Booking.find(query)
       .populate({
         path: 'user.id',
-        select: 'fullName email',
+        select: 'fullName email phone',
       })
       .populate('package')
       .populate('suppliers', 'name category rating')
+      .populate('review', 'rating comment createdAt user')
       .sort('-createdAt')
       .lean();
 
     // Transform bookings to ensure consistent user data structure
     const transformedBookings = bookings.map((booking) => {
       if (booking.user) {
-        if (booking.user.id) {
-          if (typeof booking.user.id === 'object' && booking.user.id._id) {
-            booking.user.email = booking.user.id.email || null;
-            // Keep the fullName from booking document (it's already stored there)
-          } // Removed warning log
-        }
-        if (!booking.user.fullName) {
+        if (booking.user.id && typeof booking.user.id === 'object' && booking.user.id._id) {
+          booking.user.email = booking.user.email || booking.user.id.email || null;
+          booking.user.phone = booking.user.phone || booking.user.id.phone || '';
+          if (!booking.user.fullName) {
+            booking.user.fullName = booking.user.id.fullName || 'Unknown User';
+          }
+        } else if (!booking.user.fullName) {
           booking.user.fullName = 'Unknown User';
         }
       }
@@ -300,17 +449,23 @@ export const assignSuppliersToBooking = async (req, res) => {
     });
 
     const populatedBooking = await Booking.findById(booking._id)
-      .populate('user.id', 'fullName email')
+      .populate('user.id', 'fullName email phone')
       .populate('package')
       .populate('suppliers', 'name category rating')
       .lean();
 
     // Transform booking to ensure user data is accessible
     if (populatedBooking && populatedBooking.user) {
-      // user.fullName is already stored in booking document
-      // user.id is populated User document with fullName and email
       if (populatedBooking.user.id && typeof populatedBooking.user.id === 'object') {
-        populatedBooking.user.email = populatedBooking.user.id.email || null;
+        populatedBooking.user.email =
+          populatedBooking.user.email || populatedBooking.user.id.email || null;
+        populatedBooking.user.phone =
+          populatedBooking.user.phone || populatedBooking.user.id.phone || '';
+        if (!populatedBooking.user.fullName) {
+          populatedBooking.user.fullName = populatedBooking.user.id.fullName || 'Unknown User';
+        }
+      } else if (!populatedBooking.user.fullName) {
+        populatedBooking.user.fullName = 'Unknown User';
       }
     }
 

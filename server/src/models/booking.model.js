@@ -11,6 +11,18 @@ const bookingSchema = new mongoose.Schema(
         type: String,
         required: true,
       },
+      email: {
+        type: String,
+        default: '',
+      },
+      phone: {
+        type: String,
+        default: '',
+      },
+      address: {
+        type: String,
+        default: '',
+      },
     },
     title: {
       type: String,
@@ -42,9 +54,37 @@ const bookingSchema = new mongoose.Schema(
     },
     status: {
       type: String,
-      enum: ['pending', 'accepted', 'completed', 'cancelled', 'rejected'],
+      enum: ['pending', 'accepted', 'completed', 'cancelled', 'rejected', 'expired'],
       default: 'pending',
     },
+    review: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'review',
+      default: null,
+    },
+    basePrice: {
+      type: Number,
+      default: 0,
+      min: 0,
+    },
+    totalPrice: {
+      type: Number,
+      default: 0,
+      min: 0,
+    },
+    externalSupplierSelections: [
+      {
+        category: {
+          type: String,
+          required: true,
+        },
+        deductionAmount: {
+          type: Number,
+          default: 0,
+          min: 0,
+        },
+      },
+    ],
   },
   { timestamps: true }
 );
