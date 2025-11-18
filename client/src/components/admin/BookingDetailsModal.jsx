@@ -1,5 +1,17 @@
 import { useState, useEffect } from "react";
-import { X, Calendar, MapPin, Tag, User, FileText } from "lucide-react";
+import {
+  X,
+  Calendar,
+  MapPin,
+  Tag,
+  User,
+  FileText,
+  Mail,
+  Phone,
+  Home,
+  DollarSign,
+  Info,
+} from "lucide-react";
 import dayjs from "dayjs";
 import { useBookingStore } from "../../store/useBookingStore";
 import { useSupplierStore } from "../../store/useSupplierStore";
@@ -102,6 +114,108 @@ const BookingDetailsModal = ({ booking, isOpen, onClose }) => {
                 <p className="text-sm text-base-content/60">Venue</p>
                 <p className="font-semibold">{booking.venue || "N/A"}</p>
               </div>
+            </div>
+            <div className="flex items-start gap-3">
+              <Mail className="mt-1 text-primary" size={20} />
+              <div>
+                <p className="text-sm text-base-content/60">Client Email</p>
+                <p className="font-semibold break-all">
+                  {booking.user?.email ||
+                    booking.user?.id?.email ||
+                    "Not provided"}
+                </p>
+              </div>
+            </div>
+            <div className="flex items-start gap-3">
+              <Phone className="mt-1 text-primary" size={20} />
+              <div>
+                <p className="text-sm text-base-content/60">Contact Number</p>
+                <p className="font-semibold">
+                  {booking.user?.phone ||
+                    booking.user?.id?.phone ||
+                    "Not provided"}
+                </p>
+              </div>
+            </div>
+            <div className="flex items-start gap-3">
+              <Home className="mt-1 text-primary" size={20} />
+              <div>
+                <p className="text-sm text-base-content/60">Client Address</p>
+                <p className="font-semibold">
+                  {booking.user?.address ||
+                    booking.user?.id?.address ||
+                    "Not provided"}
+                </p>
+              </div>
+            </div>
+          </div>
+
+          {/* Financial Summary */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 bg-base-200 rounded-xl p-4">
+            <div>
+              <p className="text-sm text-base-content/60 flex items-center gap-2">
+                <DollarSign size={18} className="text-primary" />
+                Base Price
+              </p>
+              <p className="text-xl font-semibold">
+                ₱{Number(booking.basePrice || 0).toLocaleString()}
+              </p>
+            </div>
+            <div>
+              <p className="text-sm text-base-content/60 flex items-center gap-2">
+                <DollarSign size={18} className="text-primary" />
+                Adjusted Total
+              </p>
+              <p className="text-xl font-semibold">
+                ₱{Number(booking.totalPrice || 0).toLocaleString()}
+              </p>
+            </div>
+            <div>
+              <p className="text-sm text-base-content/60 flex items-center gap-2">
+                <Info size={18} className="text-primary" />
+                Status
+              </p>
+              <p className="text-xl font-semibold capitalize">
+                {booking.status}
+              </p>
+            </div>
+          </div>
+
+          {booking.externalSupplierSelections?.length > 0 && (
+            <div>
+              <p className="text-sm font-semibold mb-2">
+                External Supplier Deductions
+              </p>
+              <div className="space-y-2">
+                {booking.externalSupplierSelections.map((entry) => (
+                  <div
+                    key={`${entry.category}-${entry.deductionAmount}`}
+                    className="flex items-center justify-between rounded-lg border border-base-300 px-4 py-2"
+                  >
+                    <span className="capitalize">{entry.category}</span>
+                    <span className="font-semibold text-success">
+                      -₱{Number(entry.deductionAmount || 0).toLocaleString()}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm text-base-content/70">
+            <div>
+              <p className="font-semibold">Created At</p>
+              <p>
+                {dayjs(booking.createdAt).format("MMMM DD, YYYY hh:mm A") ||
+                  "N/A"}
+              </p>
+            </div>
+            <div>
+              <p className="font-semibold">Last Updated</p>
+              <p>
+                {dayjs(booking.updatedAt).format("MMMM DD, YYYY hh:mm A") ||
+                  "N/A"}
+              </p>
             </div>
           </div>
 

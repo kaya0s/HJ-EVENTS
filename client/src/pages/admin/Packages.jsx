@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useAuthStore } from "../../store/useAuthStore";
 import { usePackageStore } from "../../store/usePackageStore";
 import AdminSidebar from "../../components/admin/AdminSidebar";
+import ExternalSupplierSettings from "../../components/admin/ExternalSupplierSettings";
 import {
   Loader,
   Plus,
@@ -116,6 +117,8 @@ const Packages = ({ showSidebar = true }) => {
           </div>
         </div>
       </div>
+
+      <ExternalSupplierSettings />
 
       <div className="card bg-base-100 shadow-lg">
         <div className="card-body">
@@ -312,9 +315,11 @@ const Packages = ({ showSidebar = true }) => {
 
   if (showSidebar) {
     return (
-      <div className="min-h-screen bg-base-100">
+      <div className="min-h-screen bg-base-100 lg:flex">
         <AdminSidebar />
-        <main className="lg:ml-64 p-6">{content}</main>
+        <main className="flex-1 p-6 transition-all duration-300">
+          {content}
+        </main>
         {modal}
       </div>
     );

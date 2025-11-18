@@ -19,9 +19,9 @@ const ManageSuppliers = () => {
   }
 
   return (
-    <div className="min-h-screen bg-base-100">
+    <div className="min-h-screen bg-base-100 lg:flex">
       <AdminSidebar />
-      <main className="lg:ml-64 p-6">
+      <main className="flex-1 p-6 transition-all duration-300">
         <div className="max-w-7xl mx-auto space-y-6">
           <header>
             <h1 className="text-3xl font-bold mb-2">Manage Suppliers</h1>
