@@ -6,6 +6,7 @@ import Reports from "../pages/admin/Reports";
 import Packages from "../pages/admin/Packages";
 import Bookings from "../pages/admin/Bookings";
 import Calendar from "../pages/admin/Calendar";
+import FaqManager from "../pages/admin/FaqManager";
 
 export const AdminRoutes = ({ authUser }) => (
   <>
@@ -61,6 +62,16 @@ export const AdminRoutes = ({ authUser }) => (
       path="/admin/packages"
       element={
         authUser?.role === "admin" ? <Packages /> : <Navigate to="/" replace />
+      }
+    />
+    <Route
+      path="/admin/faqs"
+      element={
+        authUser?.role === "admin" ? (
+          <FaqManager />
+        ) : (
+          <Navigate to="/" replace />
+        )
       }
     />
   </>
