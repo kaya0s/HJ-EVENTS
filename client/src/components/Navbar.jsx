@@ -1,5 +1,5 @@
 import { Link, useLocation, NavLink } from "react-router-dom";
-import { useMemo, useState } from "react";
+import { useMemo, useState, useEffect } from "react";
 import { useAuthStore } from "../store/useAuthStore";
 import {
   LogOut,
@@ -20,14 +20,36 @@ import {
   Info,
   Mail,
   CalendarCheck,
+  HelpCircle,
 } from "lucide-react";
 import Logo from "./Logo";
+
+// Custom hook to detect window width
+function useBreakpoint(breakpoint = 1020) {
+  const [isBelow, setIsBelow] = useState(
+    typeof window !== "undefined" ? window.innerWidth < breakpoint : false
+  );
+
+  useEffect(() => {
+    const handleResize = () => {
+      setIsBelow(window.innerWidth < breakpoint);
+    };
+    window.addEventListener("resize", handleResize);
+    // also handle mount edge-case
+    handleResize();
+    return () => window.removeEventListener("resize", handleResize);
+  }, [breakpoint]);
+  return isBelow;
+}
 
 const Navbar = () => {
   const { logout, authUser } = useAuthStore();
   const location = useLocation();
   const [isAdminDropdownOpen, setIsAdminDropdownOpen] = useState(false);
   const [isUserDropdownOpen, setIsUserDropdownOpen] = useState(false);
+
+  // We want dropdown if < 1020px, otherwise nav links are visible
+  const isDropdown = useBreakpoint(1020);
 
   const adminNavItems = [
     {
@@ -65,6 +87,11 @@ const Navbar = () => {
       path: "/admin/reports",
       label: "Reports & Analytics",
       icon: FileText,
+    },
+    {
+      path: "/admin/faqs",
+      label: "FAQs",
+      icon: HelpCircle,
     },
   ];
 
@@ -109,11 +136,9 @@ const Navbar = () => {
     if (!authUser) {
       return [];
     }
-
     if (authUser.role === "admin") {
       return [];
     }
-
     if (authUser.role === "supplier") {
       return [
         { label: "Dashboard", to: "/supplier" },
@@ -130,12 +155,26 @@ const Navbar = () => {
     ];
   }, [authUser]);
 
+  // --- HANDLERS FOR ESC KEY CLOSE DROPDOWN
+  useEffect(() => {
+    const listener = (e) => {
+      if (e.key === "Escape") {
+        setIsAdminDropdownOpen(false);
+        setIsUserDropdownOpen(false);
+      }
+    };
+    if (isAdminDropdownOpen || isUserDropdownOpen) {
+      window.addEventListener("keydown", listener);
+      return () => window.removeEventListener("keydown", listener);
+    }
+  }, [isAdminDropdownOpen, isUserDropdownOpen]);
+
   return (
     <header className="fixed top-0 z-40 w-full border-b border-base-300 bg-base-100/90 backdrop-blur-lg">
       <div className="container mx-auto flex h-16 items-center justify-between w-full max-w-screen-2xl px-4 md:px-10">
-        {/* Mobile: Dropdown on left of logo; Desktop: hidden */}
-        {authUser?.role === "admin" && (
-          <div className="relative flex md:hidden">
+        {/* Dropdown on left of logo if <1020px and role is admin */}
+        {authUser?.role === "admin" && isDropdown && (
+          <div className="relative flex">
             <button
               onClick={() => setIsAdminDropdownOpen(!isAdminDropdownOpen)}
               className="btn btn-ghost btn-sm flex items-center gap-2"
@@ -262,7 +301,7 @@ const Navbar = () => {
           <div className="leading-tight">
             <p className="text-lg font-bold">
               <span className="sm:hidden">HJ Weddings</span>
-              <span className="hidden sm:inline">HJ Weddings Events</span>
+              <span className="hidden sm:inline">HJ Wedding Events</span>
             </p>
           </div>
         </Link>
