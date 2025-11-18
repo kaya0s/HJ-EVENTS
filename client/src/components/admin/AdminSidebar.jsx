@@ -96,17 +96,17 @@ const AdminSidebar = () => {
 
   return (
     <aside
-      className={`hidden lg:block sticky top-0 h-screen bg-base-200 border-r border-base-300 transition-all duration-300 overflow-hidden ${
+      className={`hidden lg:block fixed left-0 top-16 h-[calc(100vh-4rem)] bg-base-200 border-r border-base-300 transition-all duration-300 z-30 ${
         isCollapsed ? "w-20" : "w-64"
       }`}
       onMouseEnter={() => setIsCollapsed(false)}
       onMouseLeave={() => setIsCollapsed(true)}
     >
-      <div className="h-full flex flex-col">
+      <div className="h-full flex flex-col overflow-hidden">
         {/* Header - icon is fixed left, label slides in/out */}
 
-        {/* Navigation - reduced padding, no scroll */}
-        <nav className="space-y-1 px-2 flex-1">
+        {/* Navigation - reduced padding, scrollable if needed */}
+        <nav className="space-y-1 px-2 flex-1 overflow-y-auto">
           {navItems.map(renderNavLink)}
         </nav>
       </div>

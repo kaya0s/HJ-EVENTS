@@ -69,11 +69,11 @@ const Dashboard = () => {
     return null;
   }
   return (
-    <div className="min-h-screen bg-base-100 lg:flex">
+    <div className="min-h-screen bg-base-100">
       <AdminSidebar />
 
       {/* Main Content */}
-      <main className="flex-1 p-6 transition-all duration-300">
+      <main className="lg:ml-20 p-6 transition-all duration-300">
         <div className="max-w-7xl mx-auto">
           {/* Header */}
           <div className="mb-8">
