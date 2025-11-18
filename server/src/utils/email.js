@@ -19,36 +19,102 @@ export const sendPasswordResetEmail = async (email, resetCode) => {
     const transporter = createTransporter();
 
     const mailOptions = {
-      from: process.env.EMAIL_USER, // use the configured sender address
+      from: process.env.EMAIL_USER,
       to: email,
-      subject: 'Password Reset Code - Your App',
+      subject: 'Password Reset Code — HJ Events',
       html: `
-        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-          <h2 style="color: #333;">Password Reset Request</h2>
-          <p>You have requested to reset your password. Use the code below to reset your password:</p>
-          
-          <div style="background-color: #f4f4f4; padding: 20px; text-align: center; margin: 20px 0;">
-            <h1 style="color: #007bff; font-size: 32px; letter-spacing: 5px; margin: 0;">${resetCode}</h1>
+        <div style="font-family: Arial, sans-serif; background-color: #fff7f7; padding: 30px;">
+          <div style="max-width: 600px; margin: 0 auto; background: #ffffff; border-radius: 8px; overflow: hidden; box-shadow: 0 2px 8px rgba(0,0,0,0.06);">
+            <div style="padding: 24px 24px 0; text-align: center;">
+              <img
+                src="${process.env.BUSINESS_LOGO_URL || `${process.env.CLIENT_URL}/assets/logo.png`}"
+                alt="HJ Events Logo"
+                style="max-width: 140px; height: auto; display: inline-block; margin-bottom: 12px;"
+              />
+            </div>
+            <div style="padding: 0 24px 24px;">
+              <h1 style="color: #6b2635; font-size: 22px; margin: 8px 0 12px; text-align: center;">
+                Password Reset Request
+              </h1>
+              <p style="color: #555; line-height: 1.6; text-align: center; margin-bottom: 18px;">
+                You have requested to reset your password. Use the verification code below to reset your password.
+              </p>
+              <div style="background: #fff2f2; border-radius: 10px; padding: 18px; margin: 0 auto 20px; text-align: center; max-width: 320px;">
+                <span style="font-size: 30px; letter-spacing: 8px; color: #b14d58; font-weight: 700;">${resetCode}</span>
+              </div>
+              <p style="color: #777; font-size: 14px; text-align: center; margin-bottom: 24px;">
+                This code expires in <strong>15 minutes</strong>. If you didn't request this password reset, please ignore this email.
+              </p>
+              <hr style="border: none; border-top: 1px solid #f0e6e6; margin: 20px 0;">
+              <p style="color: #999; font-size: 12px; text-align: center; margin: 0 0 18px;">
+                HJ Events • Wedding coordination & planning
+              </p>
+              <p style="color: #aaa; font-size: 11px; text-align: center; margin: 0;">
+                This is an automated message, please do not reply to this email.
+              </p>
+            </div>
           </div>
-          
-          <p><strong>This code will expire in 15 minutes.</strong></p>
-          
-          <p>If you didn't request this password reset, please ignore this email.</p>
-          
-          <hr style="margin: 30px 0; border: none; border-top: 1px solid #eee;">
-          <p style="color: #666; font-size: 12px;">
-            This is an automated message, please do not reply to this email.
-          </p>
         </div>
       `,
     };
 
     const result = await transporter.sendMail(mailOptions);
-    console.log('Password reset email sent:', result.response);
     console.log('Password reset email sent:', result.messageId);
     return { success: true, messageId: result.messageId };
   } catch (error) {
     console.error('Error sending password reset email:', error);
+    return { success: false, error: error.message };
+  }
+};
+
+export const sendEmailVerificationEmail = async (email, fullName, code) => {
+  try {
+    const transporter = createTransporter();
+    const mailOptions = {
+      from: process.env.EMAIL_USER,
+      to: email,
+      subject: 'Verify your email — HJ Events',
+      html: `
+        <div style="font-family: Arial, sans-serif; background-color: #fff7f7; padding: 30px;">
+          <div style="max-width: 600px; margin: 0 auto; background: #ffffff; border-radius: 8px; overflow: hidden; box-shadow: 0 2px 8px rgba(0,0,0,0.06);">
+            <div style="padding: 24px 24px 0; text-align: center;">
+              <img
+                src="${process.env.BUSINESS_LOGO_URL || `${process.env.CLIENT_URL}/assets/logo.png`}"
+                alt="HJ Events Logo"
+                style="max-width: 140px; height: auto; display: inline-block; margin-bottom: 12px;"
+              />
+            </div>
+            <div style="padding: 0 24px 24px;">
+              <h1 style="color: #6b2635; font-size: 22px; margin: 8px 0 12px; text-align: center;">
+                Hey ${fullName || 'there'}!
+              </h1>
+              <p style="color: #555; line-height: 1.6; text-align: center; margin-bottom: 18px;">
+                Use the verification code below to activate your HJ Events account.
+              </p>
+              <div style="background: #fff2f2; border-radius: 10px; padding: 18px; margin: 0 auto 20px; text-align: center; max-width: 320px;">
+                <span style="font-size: 30px; letter-spacing: 8px; color: #b14d58; font-weight: 700;">${code}</span>
+              </div>
+              <p style="color: #777; font-size: 14px; text-align: center; margin-bottom: 24px;">
+                The code expires in <strong>15 minutes</strong>. If you didn't create an account, feel free to ignore this message.
+              </p>
+              <hr style="border: none; border-top: 1px solid #f0e6e6; margin: 20px 0;">
+              <p style="color: #999; font-size: 12px; text-align: center; margin: 0 0 18px;">
+                HJ Events • Wedding coordination & planning
+              </p>
+              <p style="color: #aaa; font-size: 11px; text-align: center; margin: 0;">
+                This is an automated message, please do not reply to this email.
+              </p>
+            </div>
+          </div>
+        </div>
+      `,
+    };
+
+    const result = await transporter.sendMail(mailOptions);
+    console.log('Verification email sent:', result.messageId);
+    return { success: true, messageId: result.messageId };
+  } catch (error) {
+    console.error('Error sending verification email:', error);
     return { success: false, error: error.message };
   }
 };
@@ -179,6 +245,10 @@ export const sendBookingApprovalEmail = async (email, fullName, bookingId, event
           <p style="color: #999; font-size: 12px; text-align: center; margin: 0 0 18px;">
             HJ Events • Wedding coordination & planning
           </p>
+
+          <p style="color: #aaa; font-size: 11px; text-align: center; margin: 0;">
+            This is an automated message, please do not reply to this email.
+          </p>
         </div>
         </div>
       </div>
@@ -233,19 +303,25 @@ export const sendBookingRejectionEmail = async (email, fullName, bookingId, reas
               : ''
           }
 
-          <p style="color: #666; font-size: 14px; text-align: center; margin: 16px 0;">
+          <p style="color: #666; font-size: 14px; text-align: center; margin: 16px 0 12px;">
             You can contact our support team if you'd like to discuss this decision or reschedule.
           </p>
 
-          <a href="mailto:${process.env.SUPPORT_EMAIL || process.env.EMAIL_USER}"
-             style="display: inline-block; background-color: #b76e79; color: #fff; padding: 12px 20px; border-radius: 5px; text-decoration: none; font-weight: 600;">
-            Contact Support
-          </a>
+          <div style="text-align: center; margin: 24px 0;">
+            <a href="mailto:${process.env.SUPPORT_EMAIL || process.env.EMAIL_USER}"
+               style="display: inline-block; background-color: #b76e79; color: #fff; padding: 12px 20px; border-radius: 5px; text-decoration: none; font-weight: 600;">
+              Contact Support
+            </a>
+          </div>
 
           <hr style="border: none; border-top: 1px solid #f0e6e6; margin: 20px 0;">
 
           <p style="color: #999; font-size: 12px; text-align: center; margin: 0 0 18px;">
             HJ Events • Wedding coordination & planning
+          </p>
+
+          <p style="color: #aaa; font-size: 11px; text-align: center; margin: 0;">
+            This is an automated message, please do not reply to this email.
           </p>
         </div>
         </div>
@@ -323,6 +399,9 @@ export const sendSupplierCredentialsEmail = async ({
               <hr style="border: none; border-top: 1px solid #f0e6e6; margin: 20px 0;">
               <p style="color: #999; font-size: 12px; text-align: center; margin: 0 0 18px;">
                 ${companyName} • Wedding coordination & planning
+              </p>
+              <p style="color: #aaa; font-size: 11px; text-align: center; margin: 0;">
+                This is an automated message, please do not reply to this email.
               </p>
             </div>
           </div>

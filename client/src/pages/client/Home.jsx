@@ -15,12 +15,7 @@ const Home = () => {
   const packagesRef = useRef(null);
   const [bookedDates, setBookedDates] = useState([]);
   const { faqs, isLoading: isLoadingFaqs, fetchFaqs } = useFaqStore();
-  const {
-    reviews,
-    averageRating,
-    loading: reviewsLoading,
-    refetchReviews,
-  } = useReviewsStore();
+  const { refetchReviews } = useReviewsStore();
 
   // Fetch booked dates for availability calendar
   useEffect(() => {
@@ -87,33 +82,13 @@ const Home = () => {
       <div className="pb-8 md:pb-12">
         <SupplierCarousel />
       </div>
-      <div className="bg-base-100">
+      <div>
         <div className="container mx-auto w-full max-w-screen-2xl px-6 md:px-10 py-10 space-y-8">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div className="p-5 rounded-lg border border-base-200 bg-base-100 shadow-sm">
-              <p className="text-sm text-base-content/60">Average rating</p>
-              <p className="text-3xl font-bold mt-2">
-                {reviewsLoading ? "—" : `${averageRating} / 5`}
-              </p>
-            </div>
-            <div className="p-5 rounded-lg border border-base-200 bg-base-100 shadow-sm">
-              <p className="text-sm text-base-content/60">
-                Verified testimonials
-              </p>
-              <p className="text-3xl font-bold mt-2">
-                {reviewsLoading ? "—" : reviews.length}
-              </p>
-            </div>
-            <div className="p-5 rounded-lg border border-base-200 bg-base-100 shadow-sm">
-              <p className="text-sm text-base-content/60">Happy couples</p>
-              <p className="text-3xl font-bold mt-2">100%</p>
-            </div>
-          </div>
           <Reviews />
         </div>
       </div>
 
-      <section className="bg-base-200 py-12">
+      <section className="py-12">
         <div className="container mx-auto w-full max-w-screen-2xl px-6 md:px-10">
           <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-6">
             <div>
@@ -136,7 +111,10 @@ const Home = () => {
           ) : (
             <div className="space-y-4">
               {faqs.map((faq) => (
-                <details key={faq._id} className="bg-base-100 rounded-lg p-4">
+                <details
+                  key={faq._id}
+                  className="bg-base-100/50 backdrop-blur-sm rounded-lg p-4"
+                >
                   <summary className="font-semibold cursor-pointer">
                     {faq.question}
                   </summary>

@@ -226,7 +226,7 @@ const Reviews = () => {
         </div>
 
         {/* Share Review CTA */}
-        <div className="bg-base-200 rounded-2xl p-6 flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+        <div className="bg-base-200/50 backdrop-blur-sm rounded-2xl p-6 flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
           <div>
             <p className="text-sm font-semibold text-primary uppercase tracking-[0.2em]">
               Share your experience
@@ -251,7 +251,7 @@ const Reviews = () => {
         <div className="relative">
           <div
             key={currentReview.id}
-            className={`bg-base-200 rounded-2xl p-8 md:p-10 transition-opacity duration-300 ${
+            className={`bg-base-200/50 backdrop-blur-sm rounded-2xl p-8 md:p-10 transition-opacity duration-300 ${
               isAnimating ? "opacity-0" : "opacity-100"
             }`}
           >
