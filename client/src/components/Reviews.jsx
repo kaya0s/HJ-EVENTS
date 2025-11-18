@@ -1,13 +1,33 @@
 import React, { useState, useEffect } from "react";
-import { Star, ChevronLeft, ChevronRight, Loader2 } from "lucide-react";
+import {
+  Star,
+  ChevronLeft,
+  ChevronRight,
+  Loader2,
+  PlusCircle,
+} from "lucide-react";
+import { useNavigate } from "react-router-dom";
+import toast from "react-hot-toast";
+
 import { useReviewsStore } from "../store/useReviewsStore";
+import { useAuthStore } from "../store/useAuthStore";
+import axiosInstance from "../lib/axios";
 
 const Reviews = () => {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isAnimating, setIsAnimating] = useState(false);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isFetchingBookings, setIsFetchingBookings] = useState(false);
+  const [eligibleBookings, setEligibleBookings] = useState([]);
+  const [selectedBookingId, setSelectedBookingId] = useState("");
+  const [reviewForm, setReviewForm] = useState({ rating: 5, comment: "" });
+
+  const navigate = useNavigate();
+  const { authUser } = useAuthStore();
 
   // Fetch reviews from store
-  const { reviews, loading, error } = useReviewsStore();
+  const { reviews, loading, error, submitReview, isSubmitting } =
+    useReviewsStore();
 
   useEffect(() => {
     if (reviews.length === 0) return;
@@ -16,7 +36,19 @@ const Reviews = () => {
       handleNext();
     }, 5000);
     return () => clearInterval(timer);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentIndex, reviews.length]);
+
+  useEffect(() => {
+    if (!selectedBookingId) return;
+    const booking = eligibleBookings.find((b) => b._id === selectedBookingId);
+    if (booking) {
+      setReviewForm({
+        rating: booking.review?.rating ?? 5,
+        comment: booking.review?.comment ?? "",
+      });
+    }
+  }, [selectedBookingId, eligibleBookings]);
 
   const handleNext = () => {
     if (!isAnimating) {
@@ -48,6 +80,90 @@ const Reviews = () => {
           reviews.reduce((acc, r) => acc + r.rating, 0) / reviews.length
         ).toFixed(1)
       : "0.0";
+
+  const handleOpenReviewModal = async () => {
+    if (!authUser) {
+      toast.error("Sign in to share your experience.");
+      navigate("/login");
+      return;
+    }
+    if (authUser.role !== "user") {
+      toast.error("Only clients can create reviews.");
+      return;
+    }
+    setIsModalOpen(true);
+    await fetchEligibleBookings();
+  };
+
+  const fetchEligibleBookings = async () => {
+    setIsFetchingBookings(true);
+    try {
+      const res = await axiosInstance.get("/bookings/me");
+      const bookings = Array.isArray(res.data?.bookings)
+        ? res.data.bookings
+        : [];
+      const eligible = bookings.filter(
+        (booking) => booking.status?.toLowerCase() === "completed"
+      );
+      setEligibleBookings(eligible);
+      if (eligible.length > 0) {
+        setSelectedBookingId(eligible[0]._id);
+      } else {
+        setSelectedBookingId("");
+      }
+    } catch (err) {
+      toast.error(
+        err.response?.data?.message ||
+          err.message ||
+          "Failed to load your bookings."
+      );
+    } finally {
+      setIsFetchingBookings(false);
+    }
+  };
+
+  const handleSubmitReview = async (event) => {
+    event.preventDefault();
+    if (!selectedBookingId) {
+      toast.error("Select a completed booking to review.");
+      return;
+    }
+    const booking = eligibleBookings.find((b) => b._id === selectedBookingId);
+    const existingReviewId =
+      (typeof booking?.review === "string" && booking?.review) ||
+      booking?.review?._id ||
+      booking?.review?.reviewId;
+    try {
+      const result = await submitReview({
+        bookingId: selectedBookingId,
+        rating: Number(reviewForm.rating) || 5,
+        comment: reviewForm.comment.trim(),
+        reviewId: existingReviewId,
+      });
+      toast.success(
+        existingReviewId
+          ? "Your review has been updated."
+          : "Thanks for sharing your experience!"
+      );
+      setEligibleBookings((prev) =>
+        prev.map((b) =>
+          b._id === selectedBookingId
+            ? {
+                ...b,
+                review: {
+                  _id: result?.reviewId || existingReviewId,
+                  rating: result?.rating ?? reviewForm.rating,
+                  comment: result?.comment ?? reviewForm.comment,
+                },
+              }
+            : b
+        )
+      );
+      setIsModalOpen(false);
+    } catch {
+      // errors already toasted in store
+    }
+  };
 
   // Show loading state
   if (loading) {
@@ -107,6 +223,28 @@ const Reviews = () => {
           <p className="text-base text-base-content/60 max-w-lg mx-auto">
             Real stories from real weddings we've coordinated
           </p>
+        </div>
+
+        {/* Share Review CTA */}
+        <div className="bg-base-200 rounded-2xl p-6 flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+          <div>
+            <p className="text-sm font-semibold text-primary uppercase tracking-[0.2em]">
+              Share your experience
+            </p>
+            <p className="text-base-content text-lg">
+              {authUser
+                ? "Tell future couples how we helped make your day special."
+                : "Sign in to leave a review about your celebration."}
+            </p>
+          </div>
+          <button
+            type="button"
+            className="btn btn-primary gap-2"
+            onClick={handleOpenReviewModal}
+          >
+            <PlusCircle className="w-4 h-4" />
+            Write a review
+          </button>
         </div>
 
         {/* Review Card */}
@@ -215,6 +353,118 @@ const Reviews = () => {
           </div>
         </div>
       </div>
+
+      {isModalOpen && (
+        <dialog className="modal modal-open">
+          <div className="modal-box max-w-lg">
+            <form method="dialog">
+              <button
+                className="btn btn-sm btn-circle btn-ghost absolute right-2 top-2"
+                onClick={() => setIsModalOpen(false)}
+              >
+                ✕
+              </button>
+            </form>
+            <h3 className="font-bold text-xl mb-4">Write a review</h3>
+            {isFetchingBookings ? (
+              <div className="flex items-center gap-3 py-10 justify-center">
+                <Loader2 className="w-5 h-5 animate-spin" />
+                Loading your bookings...
+              </div>
+            ) : eligibleBookings.length === 0 ? (
+              <p className="text-base-content/70">
+                You need at least one completed booking to leave a review.
+              </p>
+            ) : (
+              <form className="space-y-4" onSubmit={handleSubmitReview}>
+                <div className="form-control">
+                  <label className="label">
+                    <span className="label-text font-medium">
+                      Select booking
+                    </span>
+                  </label>
+                  <select
+                    className="select select-bordered"
+                    value={selectedBookingId}
+                    onChange={(e) => setSelectedBookingId(e.target.value)}
+                  >
+                    {eligibleBookings.map((booking) => (
+                      <option key={booking._id} value={booking._id}>
+                        {booking.title || "Untitled Wedding"}{" "}
+                        {booking.review ? "(Reviewed)" : "(New)"}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                <div className="form-control">
+                  <label className="label">
+                    <span className="label-text font-medium">Rating</span>
+                  </label>
+                  <input
+                    type="number"
+                    min="1"
+                    max="5"
+                    className="input input-bordered w-24"
+                    value={reviewForm.rating}
+                    onChange={(e) =>
+                      setReviewForm((prev) => ({
+                        ...prev,
+                        rating: Math.min(
+                          5,
+                          Math.max(1, Number(e.target.value) || 5)
+                        ),
+                      }))
+                    }
+                  />
+                </div>
+                <div className="form-control">
+                  <label className="label">
+                    <span className="label-text font-medium">Comments</span>
+                  </label>
+                  <textarea
+                    className="textarea textarea-bordered"
+                    rows={4}
+                    placeholder="Share details about your experience..."
+                    value={reviewForm.comment}
+                    onChange={(e) =>
+                      setReviewForm((prev) => ({
+                        ...prev,
+                        comment: e.target.value,
+                      }))
+                    }
+                  />
+                </div>
+                <div className="modal-action">
+                  <button
+                    type="button"
+                    className="btn btn-ghost"
+                    onClick={() => setIsModalOpen(false)}
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    className="btn btn-primary"
+                    disabled={isSubmitting}
+                  >
+                    {isSubmitting ? (
+                      <>
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                        Saving...
+                      </>
+                    ) : (
+                      "Submit Review"
+                    )}
+                  </button>
+                </div>
+              </form>
+            )}
+          </div>
+          <form method="dialog" className="modal-backdrop">
+            <button onClick={() => setIsModalOpen(false)}>close</button>
+          </form>
+        </dialog>
+      )}
     </div>
   );
 };

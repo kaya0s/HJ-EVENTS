@@ -36,6 +36,17 @@ const ReviewsSchema = new Schema(
       required: true,
       trim: true,
     },
+    booking: {
+      type: Schema.Types.ObjectId,
+      ref: 'Booking',
+      required: true,
+      unique: true,
+    },
+    user: {
+      type: Schema.Types.ObjectId,
+      ref: 'user',
+      required: true,
+    },
   },
   { timestamps: true }
 );
