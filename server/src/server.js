@@ -12,6 +12,8 @@ import adminRoutes from './routes/admin.routes.js';
 import userRoutes from './routes/user.routes.js';
 import ReviewRoutes from './routes/review.routes.js';
 import packageRoutes from './routes/package.routes.js';
+import faqRoutes from './routes/faq.routes.js';
+import deductionRoutes from './routes/deduction.routes.js';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import { dirname } from 'path';
@@ -56,8 +58,10 @@ app.use('/api/suppliers', supplierRoutes);
 app.use('/api/bookings', bookingRoutes);
 app.use('/api/reviews', ReviewRoutes);
 app.use('/api/packages', packageRoutes);
+app.use('/api/faqs', faqRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/users', userRoutes);
+app.use('/api/deductions', deductionRoutes);
 
 // API routes
 app.use('/api/auth', authRoutes);
