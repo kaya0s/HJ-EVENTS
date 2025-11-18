@@ -11,6 +11,8 @@ import {
   getAllBookings,
   assignSuppliersToBooking,
   completeBooking,
+  sendBookingVerificationCode,
+  verifyBookingCode,
 } from '../controllers/booking.controller.js';
 
 const router = express.Router();
@@ -18,7 +20,11 @@ const router = express.Router();
 // Public route for availability calendar
 router.get('/availability', getBookedDates);
 
-// User can create bookings (client role)
+// Booking verification endpoints
+router.post('/send-verification', protect, sendBookingVerificationCode);
+router.post('/verify-code', protect, verifyBookingCode);
+
+// User can create bookings (client role) - kept for backward compatibility but will be deprecated
 router.post('/', protect, createBooking);
 router.get('/me', protect, getMyBookings);
 router.post('/cancel/:id', protect, cancelBooking);

@@ -2,9 +2,31 @@ import Booking from '../models/booking.model.js';
 import Package from '../models/package.model.js';
 import ActivityLog from '../models/activityLog.model.js';
 import ExternalSupplierDeduction from '../models/externalSupplierDeduction.model.js';
-import { sendBookingApprovalEmail, sendBookingRejectionEmail } from '../utils/email.js';
+import {
+  sendBookingApprovalEmail,
+  sendBookingRejectionEmail,
+  sendBookingVerificationEmail,
+} from '../utils/email.js';
+import { generateResetCode } from '../utils/passwordReset.js';
 
 const normalizeCategoryKey = (value = '') => value.trim().toLowerCase();
+
+// In-memory store for booking verification codes
+// Format: { userId: { code: string, expiresAt: Date, bookingData: object } }
+const bookingVerificationStore = new Map();
+
+// Clean up expired codes every 5 minutes
+setInterval(
+  () => {
+    const now = new Date();
+    for (const [userId, data] of bookingVerificationStore.entries()) {
+      if (data.expiresAt < now) {
+        bookingVerificationStore.delete(userId);
+      }
+    }
+  },
+  5 * 60 * 1000
+);
 
 const ensureBookingTitle = (booking) => {
   if (!booking) return;
@@ -569,6 +591,239 @@ export const getBookedDates = async (req, res) => {
     res.json({ bookedDates: datesArray });
   } catch (error) {
     console.error('Get booked dates error:', error);
+    res.status(500).json({ message: 'Server error', error: error.message });
+  }
+};
+
+/**
+ * @desc   Send booking verification code
+ * @method  POST
+ * @access client
+ */
+export const sendBookingVerificationCode = async (req, res) => {
+  try {
+    if (req.user.role !== 'user') {
+      return res.status(403).json({ message: 'Only clients can request booking verification' });
+    }
+
+    const { packageId, eventDate, title, venue, suppliers, externalSuppliers } = req.body;
+
+    if (!packageId || !eventDate || !title || !venue) {
+      return res.status(400).json({
+        message: 'Missing required fields: packageId, eventDate, title, and venue are required',
+      });
+    }
+
+    // Generate verification code
+    const verificationCode = generateResetCode();
+    const expiresAt = new Date(Date.now() + 15 * 60 * 1000); // 15 minutes
+
+    // Store verification data
+    bookingVerificationStore.set(req.user._id.toString(), {
+      code: verificationCode,
+      expiresAt,
+      bookingData: {
+        packageId,
+        eventDate,
+        title: title.trim(),
+        venue: venue.trim(),
+        suppliers: Array.isArray(suppliers) ? suppliers : [],
+        externalSuppliers: Array.isArray(externalSuppliers) ? externalSuppliers : [],
+      },
+    });
+
+    // Send verification email
+    const emailResult = await sendBookingVerificationEmail(
+      req.user.email,
+      req.user.fullName,
+      verificationCode
+    );
+
+    if (!emailResult.success) {
+      bookingVerificationStore.delete(req.user._id.toString());
+      return res.status(500).json({ message: 'Failed to send verification email' });
+    }
+
+    res.json({
+      message: 'Verification code sent to your email',
+      expiresIn: 15, // minutes
+    });
+  } catch (error) {
+    console.error('Send booking verification code error:', error);
+    res.status(500).json({ message: 'Server error', error: error.message });
+  }
+};
+
+/**
+ * @desc   Verify booking code and create booking
+ * @method  POST
+ * @access client
+ */
+export const verifyBookingCode = async (req, res) => {
+  try {
+    if (req.user.role !== 'user') {
+      return res.status(403).json({ message: 'Only clients can verify booking codes' });
+    }
+
+    const { verificationCode } = req.body;
+
+    if (!verificationCode) {
+      return res.status(400).json({ message: 'Verification code is required' });
+    }
+
+    const userId = req.user._id.toString();
+    const storedData = bookingVerificationStore.get(userId);
+
+    if (!storedData) {
+      return res
+        .status(400)
+        .json({ message: 'No verification code found. Please request a new one.' });
+    }
+
+    if (storedData.expiresAt < new Date()) {
+      bookingVerificationStore.delete(userId);
+      return res
+        .status(400)
+        .json({ message: 'Verification code has expired. Please request a new one.' });
+    }
+
+    if (storedData.code !== verificationCode.trim()) {
+      return res.status(400).json({ message: 'Invalid verification code' });
+    }
+
+    // Code is valid, proceed with booking creation
+    const { packageId, eventDate, title, venue, suppliers, externalSuppliers } =
+      storedData.bookingData;
+
+    const pkg = await Package.findById(packageId);
+    if (!pkg) {
+      bookingVerificationStore.delete(userId);
+      return res.status(404).json({ message: 'Package not found' });
+    }
+
+    // Check if date is at least 15 days in advance
+    const eventDateObj = new Date(eventDate);
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const minDate = new Date(today);
+    minDate.setDate(minDate.getDate() + 15);
+
+    if (eventDateObj < minDate) {
+      bookingVerificationStore.delete(userId);
+      return res.status(400).json({
+        message: 'Bookings must be made at least 15 days in advance',
+      });
+    }
+
+    // Check if date is already booked
+    const startOfDay = new Date(eventDateObj);
+    startOfDay.setHours(0, 0, 0, 0);
+    const endOfDay = new Date(eventDateObj);
+    endOfDay.setHours(23, 59, 59, 999);
+
+    const existingBooking = await Booking.findOne({
+      weddingDate: {
+        $gte: startOfDay,
+        $lte: endOfDay,
+      },
+      status: 'accepted',
+    });
+
+    if (existingBooking) {
+      bookingVerificationStore.delete(userId);
+      return res.status(400).json({ message: 'This date is already booked' });
+    }
+
+    // Process external suppliers
+    const rawExternalSelections = Array.isArray(externalSuppliers)
+      ? externalSuppliers
+          .map((category) => {
+            const label = typeof category === 'string' ? category.trim() : '';
+            const key = normalizeCategoryKey(label);
+            if (!key) return null;
+            return { key, label: label || key };
+          })
+          .filter(Boolean)
+      : [];
+
+    const uniqueExternalSelections = [];
+    const seenExternalKeys = new Set();
+    rawExternalSelections.forEach((selection) => {
+      if (seenExternalKeys.has(selection.key)) return;
+      seenExternalKeys.add(selection.key);
+      uniqueExternalSelections.push(selection);
+    });
+
+    let externalSelectionEntries = [];
+    if (uniqueExternalSelections.length > 0) {
+      const docs = await ExternalSupplierDeduction.find({
+        categoryKey: { $in: uniqueExternalSelections.map((sel) => sel.key) },
+      }).lean();
+
+      const docMap = docs.reduce((acc, doc) => {
+        acc[doc.categoryKey] = doc;
+        return acc;
+      }, {});
+
+      externalSelectionEntries = uniqueExternalSelections.map((selection) => {
+        const matched = docMap[selection.key];
+        return {
+          category: selection.label || matched?.label || selection.key,
+          deductionAmount: matched?.amount || 0,
+        };
+      });
+    }
+
+    const basePrice = Number(pkg.price) || 0;
+    const totalDeduction = externalSelectionEntries.reduce(
+      (sum, entry) => sum + (Number(entry.deductionAmount) || 0),
+      0
+    );
+    const totalPrice = Math.max(0, basePrice - totalDeduction);
+
+    // Create booking
+    const booking = new Booking({
+      user: {
+        id: req.user._id,
+        fullName: req.user.fullName,
+        email: req.user.email || '',
+        phone: req.user.phone || '',
+        address: req.user.address || '',
+      },
+      title,
+      venue,
+      package: pkg._id,
+      weddingDate: eventDateObj,
+      suppliers: Array.isArray(suppliers) ? suppliers : [],
+      basePrice,
+      totalPrice,
+      externalSupplierSelections: externalSelectionEntries,
+    });
+
+    await booking.save();
+
+    // Log activity
+    await ActivityLog.create({
+      actor: req.user._id,
+      actorName: req.user.fullName,
+      action: 'Create booking',
+      details: `Booking ${booking._id}`,
+    });
+
+    // Clear verification code
+    bookingVerificationStore.delete(userId);
+
+    // Populate suppliers for response
+    const populatedBooking = await Booking.findById(booking._id)
+      .populate('suppliers', 'name category rating')
+      .populate('package');
+
+    res.status(201).json({
+      message: 'Booking created successfully',
+      booking: populatedBooking,
+    });
+  } catch (error) {
+    console.error('Verify booking code error:', error);
     res.status(500).json({ message: 'Server error', error: error.message });
   }
 };

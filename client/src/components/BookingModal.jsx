@@ -11,21 +11,29 @@ import {
   MinusCircle,
 } from "lucide-react";
 import toast from "react-hot-toast";
+import { useNavigate } from "react-router-dom";
 import DatePickerCalendar from "./DatePickerCalendar";
 import axiosInstance from "../lib/axios";
 import { useSupplierStore } from "../store/useSupplierStore";
 import { useDeductionStore } from "../store/useDeductionStore";
+import { useAuthStore } from "../store/useAuthStore";
 
 const normalizeCategoryKey = (value = "") => value.trim().toLowerCase();
 
-const BookingModal = ({ package: pkg, isOpen, onClose, onBook }) => {
+const BookingModal = ({ package: pkg, isOpen, onClose }) => {
+  const navigate = useNavigate();
+  const { authUser } = useAuthStore();
   const [selectedDate, setSelectedDate] = useState(null);
   const [title, setTitle] = useState("");
   const [venue, setVenue] = useState("");
   const [bookedDates, setBookedDates] = useState([]);
   const [selectedSuppliers, setSelectedSuppliers] = useState({});
   const [externalSelections, setExternalSelections] = useState({});
+  const [showVerification, setShowVerification] = useState(false);
   const [showConfirmation, setShowConfirmation] = useState(false);
+  const [verificationCode, setVerificationCode] = useState("");
+  const [isSendingCode, setIsSendingCode] = useState(false);
+  const [isVerifying, setIsVerifying] = useState(false);
   const {
     suppliers,
     categories,
@@ -38,9 +46,19 @@ const BookingModal = ({ package: pkg, isOpen, onClose, onBook }) => {
     isLoading: isLoadingDeductions,
   } = useDeductionStore();
 
+  // Check authentication when modal opens
+  useEffect(() => {
+    if (isOpen && !authUser) {
+      toast.error("Please login first to book a package");
+      onClose();
+      navigate("/login");
+      return;
+    }
+  }, [isOpen, authUser, onClose, navigate]);
+
   // Fetch booked dates and suppliers from server
   useEffect(() => {
-    if (isOpen) {
+    if (isOpen && authUser) {
       const fetchData = async () => {
         try {
           await Promise.all([fetchAllSuppliers(), fetchDeductions()]);
@@ -62,7 +80,7 @@ const BookingModal = ({ package: pkg, isOpen, onClose, onBook }) => {
       };
       fetchData();
     }
-  }, [isOpen, fetchAllSuppliers, fetchDeductions]);
+  }, [isOpen, authUser, fetchAllSuppliers, fetchDeductions]);
 
   // Reset form when modal closes
   useEffect(() => {
@@ -72,7 +90,9 @@ const BookingModal = ({ package: pkg, isOpen, onClose, onBook }) => {
       setVenue("");
       setSelectedSuppliers({});
       setExternalSelections({});
+      setShowVerification(false);
       setShowConfirmation(false);
+      setVerificationCode("");
     }
   }, [isOpen]);
 
@@ -162,6 +182,21 @@ const BookingModal = ({ package: pkg, isOpen, onClose, onBook }) => {
   const handleSubmit = async (e) => {
     e.preventDefault();
 
+    // Check if user is logged in
+    if (!authUser) {
+      toast.error("Please login first to book a package");
+      onClose();
+      navigate("/login");
+      return;
+    }
+
+    // Check if user is a client
+    if (authUser.role !== "user") {
+      toast.error("Only clients can book packages");
+      onClose();
+      return;
+    }
+
     if (!selectedDate) {
       toast.error("Please select an event date");
       return;
@@ -177,33 +212,164 @@ const BookingModal = ({ package: pkg, isOpen, onClose, onBook }) => {
       return;
     }
 
-    setShowConfirmation(true);
+    // Show verification step
+    await handleSendVerificationCode();
+  };
+
+  const handleSendVerificationCode = async () => {
+    setIsSendingCode(true);
+    try {
+      const supplierIds = Object.values(selectedSuppliers).filter(Boolean);
+      const externalSupplierCategories = Object.entries(externalSelections)
+        .filter(([, isUsing]) => isUsing)
+        .map(([category]) => category);
+
+      await axiosInstance.post("/bookings/send-verification", {
+        packageId: pkg._id,
+        eventDate: selectedDate,
+        title: title.trim(),
+        venue: venue.trim(),
+        suppliers: supplierIds,
+        externalSuppliers: externalSupplierCategories,
+      });
+
+      toast.success("Verification code sent to your email");
+      setShowVerification(true);
+    } catch (error) {
+      toast.error(
+        error.response?.data?.message ||
+          error.message ||
+          "Failed to send verification code"
+      );
+    } finally {
+      setIsSendingCode(false);
+    }
+  };
+
+  const handleVerifyCode = async (e) => {
+    e.preventDefault();
+    if (!verificationCode.trim()) {
+      toast.error("Please enter the verification code");
+      return;
+    }
+
+    setIsVerifying(true);
+    try {
+      const res = await axiosInstance.post("/bookings/verify-code", {
+        verificationCode: verificationCode.trim(),
+      });
+
+      toast.success(res.data.message || "Booking verified successfully");
+      setShowVerification(false);
+      setShowConfirmation(true);
+    } catch (error) {
+      toast.error(
+        error.response?.data?.message ||
+          error.message ||
+          "Invalid verification code"
+      );
+    } finally {
+      setIsVerifying(false);
+    }
   };
 
   const handleConfirmBooking = async () => {
-    const supplierIds = Object.values(selectedSuppliers).filter(Boolean);
-    const externalSupplierCategories = Object.entries(externalSelections)
-      .filter(([, isUsing]) => isUsing)
-      .map(([category]) => category);
-
-    await onBook({
-      packageId: pkg._id,
-      packageName: pkg.name,
-      eventDate: selectedDate,
-      title: title.trim(),
-      venue: venue.trim(),
-      suppliers: supplierIds,
-      externalSuppliers: externalSupplierCategories,
-    });
-
+    // Booking is already created after verification, just close and refresh
+    toast.success("Booking confirmed successfully!");
     onClose();
-  };
-
-  const handleBackFromConfirmation = () => {
-    setShowConfirmation(false);
+    // Refresh the page or navigate to bookings
+    window.location.href = "/my-bookings";
   };
 
   if (!isOpen) return null;
+
+  // Verification View
+  if (showVerification) {
+    return (
+      <dialog open={isOpen} className="modal modal-open">
+        <div className="modal-box max-w-md">
+          <div className="flex items-center justify-between mb-6">
+            <div>
+              <h3 className="font-bold text-2xl mb-1">Verify Your Booking</h3>
+              <p className="text-sm text-base-content/60">
+                Enter the code sent to your email
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={onClose}
+              className="btn btn-sm btn-circle btn-ghost"
+              aria-label="Close modal"
+            >
+              <X className="w-5 h-5" />
+            </button>
+          </div>
+
+          <form onSubmit={handleVerifyCode} className="space-y-4">
+            <div className="form-control">
+              <label className="label">
+                <span className="label-text font-medium">
+                  Verification Code
+                </span>
+              </label>
+              <input
+                type="text"
+                inputMode="numeric"
+                maxLength={6}
+                className="input input-bordered w-full tracking-widest text-center text-lg"
+                placeholder="••••••"
+                value={verificationCode}
+                onChange={(e) =>
+                  setVerificationCode(e.target.value.replace(/\D/g, ""))
+                }
+                required
+                autoFocus
+              />
+              <label className="label">
+                <span className="label-text-alt text-base-content/60">
+                  Check your email for the 6-digit code
+                </span>
+              </label>
+            </div>
+
+            <div className="flex gap-3 justify-end pt-4 border-t border-base-200">
+              <button
+                type="button"
+                className="btn btn-ghost"
+                onClick={() => {
+                  setShowVerification(false);
+                  setVerificationCode("");
+                }}
+              >
+                Back
+              </button>
+              <button
+                type="button"
+                className="btn btn-ghost btn-sm"
+                onClick={handleSendVerificationCode}
+                disabled={isSendingCode}
+              >
+                {isSendingCode ? "Sending..." : "Resend Code"}
+              </button>
+              <button
+                type="submit"
+                className="btn btn-primary min-w-[120px]"
+                disabled={!verificationCode.trim() || isVerifying}
+              >
+                {isVerifying ? "Verifying..." : "Verify"}
+              </button>
+            </div>
+          </form>
+        </div>
+
+        <form method="dialog" className="modal-backdrop">
+          <button type="button" onClick={onClose} aria-label="Close modal">
+            close
+          </button>
+        </form>
+      </dialog>
+    );
+  }
 
   // Confirmation View
   if (showConfirmation) {
@@ -220,9 +386,9 @@ const BookingModal = ({ package: pkg, isOpen, onClose, onBook }) => {
         <div className="modal-box max-w-2xl">
           <div className="flex items-center justify-between mb-6">
             <div>
-              <h3 className="font-bold text-2xl mb-1">Confirm Booking</h3>
+              <h3 className="font-bold text-2xl mb-1">Booking Confirmed!</h3>
               <p className="text-sm text-base-content/60">
-                Please review your booking details
+                Your booking has been successfully created
               </p>
             </div>
             <button
@@ -341,17 +507,10 @@ const BookingModal = ({ package: pkg, isOpen, onClose, onBook }) => {
             <div className="flex gap-3 justify-end pt-4 border-t border-base-200">
               <button
                 type="button"
-                className="btn btn-ghost"
-                onClick={handleBackFromConfirmation}
-              >
-                Back
-              </button>
-              <button
-                type="button"
                 className="btn btn-primary min-w-[120px]"
                 onClick={handleConfirmBooking}
               >
-                Confirm Booking
+                Done
               </button>
             </div>
           </div>

@@ -338,6 +338,59 @@ export const sendBookingRejectionEmail = async (email, fullName, bookingId, reas
   }
 };
 
+// Send booking verification email
+export const sendBookingVerificationEmail = async (email, fullName, verificationCode) => {
+  try {
+    const transporter = createTransporter();
+    const mailOptions = {
+      from: process.env.EMAIL_USER,
+      to: email,
+      subject: 'Booking Verification Code — HJ Events',
+      html: `
+        <div style="font-family: Arial, sans-serif; background-color: #fff7f7; padding: 30px;">
+          <div style="max-width: 600px; margin: 0 auto; background: #ffffff; border-radius: 8px; overflow: hidden; box-shadow: 0 2px 8px rgba(0,0,0,0.06);">
+            <div style="padding: 24px 24px 0; text-align: center;">
+              <img
+                src="${process.env.BUSINESS_LOGO_URL || `${process.env.CLIENT_URL}/assets/logo.png`}"
+                alt="HJ Events Logo"
+                style="max-width: 140px; height: auto; display: inline-block; margin-bottom: 12px;"
+              />
+            </div>
+            <div style="padding: 0 24px 24px;">
+              <h1 style="color: #6b2635; font-size: 22px; margin: 8px 0 12px; text-align: center;">
+                Verify Your Booking
+              </h1>
+              <p style="color: #555; line-height: 1.6; text-align: center; margin-bottom: 18px;">
+                Hi ${fullName || 'there'}, please use the verification code below to confirm your booking request.
+              </p>
+              <div style="background: #fff2f2; border-radius: 10px; padding: 18px; margin: 0 auto 20px; text-align: center; max-width: 320px;">
+                <span style="font-size: 30px; letter-spacing: 8px; color: #b14d58; font-weight: 700;">${verificationCode}</span>
+              </div>
+              <p style="color: #777; font-size: 14px; text-align: center; margin-bottom: 24px;">
+                This code expires in <strong>15 minutes</strong>. If you didn't request this booking, please ignore this email.
+              </p>
+              <hr style="border: none; border-top: 1px solid #f0e6e6; margin: 20px 0;">
+              <p style="color: #999; font-size: 12px; text-align: center; margin: 0 0 18px;">
+                HJ Events • Wedding coordination & planning
+              </p>
+              <p style="color: #aaa; font-size: 11px; text-align: center; margin: 0;">
+                This is an automated message, please do not reply to this email.
+              </p>
+            </div>
+          </div>
+        </div>
+      `,
+    };
+
+    const result = await transporter.sendMail(mailOptions);
+    console.log('Booking verification email sent:', result.messageId);
+    return { success: true, messageId: result.messageId };
+  } catch (error) {
+    console.error('Error sending booking verification email:', error);
+    return { success: false, error: error.message };
+  }
+};
+
 export const sendSupplierCredentialsEmail = async ({
   email,
   password,
