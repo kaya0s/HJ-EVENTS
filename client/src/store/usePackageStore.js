@@ -42,6 +42,7 @@ export const usePackageStore = create((set) => ({
     title,
     venue,
     suppliers = [],
+    externalSuppliers = [],
   }) => {
     set({ isBookingPackage: true });
     try {
@@ -51,6 +52,9 @@ export const usePackageStore = create((set) => ({
         title,
         venue,
         suppliers: Array.isArray(suppliers) ? suppliers : [],
+        externalSuppliers: Array.isArray(externalSuppliers)
+          ? externalSuppliers
+          : [],
       };
       const res = await axiosInstance.post("/bookings", payload);
       // Ensure backend returns booking object:
