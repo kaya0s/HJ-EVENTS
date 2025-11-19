@@ -1,4 +1,10 @@
-import { Calendar, Clock, CheckCircle, XCircle } from "lucide-react";
+import {
+  Calendar,
+  Clock,
+  CheckCircle,
+  XCircle,
+  AlertTriangle,
+} from "lucide-react";
 
 const StatisticsCards = ({ statistics }) => {
   const cards = [
@@ -29,6 +35,13 @@ const StatisticsCards = ({ statistics }) => {
       icon: XCircle,
       color: "bg-error",
       textColor: "text-error-content",
+    },
+    {
+      title: "Expired Requests",
+      value: statistics?.expired || 0,
+      icon: AlertTriangle,
+      color: "bg-base-200",
+      textColor: "text-base-content",
     },
   ];
 

@@ -13,7 +13,7 @@ export const protect = async (req, res, next) => {
     next();
   } catch (err) {
     console.error('Auth middleware error', err.message);
-    res.status(401).json({ message: 'Not authorized' });
+    res.status(401).json({ message: 'you are not logged in please log in' });
   }
 };
 

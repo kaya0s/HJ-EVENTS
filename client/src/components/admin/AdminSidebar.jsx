@@ -4,16 +4,15 @@ import {
   Calendar,
   Users,
   UserCheck,
-  Menu,
-  X,
   Package,
   CalendarDays,
   FileText,
+  HelpCircle,
 } from "lucide-react";
 import { useState } from "react";
 
 const AdminSidebar = () => {
-  const [isMobileOpen, setIsMobileOpen] = useState(false);
+  const [isCollapsed, setIsCollapsed] = useState(true);
 
   const navItems = [
     {
@@ -52,104 +51,66 @@ const AdminSidebar = () => {
       label: "Reports & Analytics",
       icon: FileText,
     },
+    {
+      path: "/admin/faqs",
+      label: "FAQs",
+      icon: HelpCircle,
+    },
   ];
 
   const renderNavLink = (item) => {
     const Icon = item.icon;
-    const baseClasses =
-      "flex items-center gap-3 px-4 py-3 rounded-lg transition-colors";
     return (
       <NavLink
         key={item.path}
         to={item.path}
         end={item.end}
         className={({ isActive }) =>
-          `${baseClasses} ${
+          `relative flex items-center py-2.5 rounded-lg transition-colors group ${
             isActive ? "bg-primary text-primary-content" : "hover:bg-base-300"
           }`
         }
       >
-        <Icon size={20} />
-        <span className="font-medium">{item.label}</span>
+        {/* Icon container - fixed width, always left-aligned */}
+        <div className="flex items-center justify-center flex-shrink-0 w-16">
+          <Icon size={20} />
+        </div>
+        {/* Text label - fades in/out, does not push icon */}
+        <span
+          className={`font-medium transition-all duration-300 whitespace-nowrap origin-left
+            ${
+              isCollapsed
+                ? "opacity-0 pointer-events-none w-0 overflow-hidden scale-x-0"
+                : "opacity-100 w-auto scale-x-100 ml-1"
+            }`}
+          style={{
+            transitionProperty: "opacity, width, margin, transform",
+            minWidth: isCollapsed ? 0 : undefined,
+          }}
+        >
+          {item.label}
+        </span>
       </NavLink>
     );
   };
 
   return (
-    <>
-      <button
-        className="lg:hidden absolute top-4 left-4 z-20 btn btn-sm btn-ghost"
-        onClick={() => setIsMobileOpen(!isMobileOpen)}
-        type="button"
-        aria-label="Toggle admin sidebar"
-      >
-        {isMobileOpen ? <X size={20} /> : <Menu size={20} />}
-      </button>
+    <aside
+      className={`hidden lg:block fixed left-0 top-16 h-[calc(100vh-4rem)] bg-base-200 border-r border-base-300 transition-all duration-300 z-30 ${
+        isCollapsed ? "w-20" : "w-64"
+      }`}
+      onMouseEnter={() => setIsCollapsed(false)}
+      onMouseLeave={() => setIsCollapsed(true)}
+    >
+      <div className="h-full flex flex-col overflow-hidden">
+        {/* Header - icon is fixed left, label slides in/out */}
 
-      <div>
-        <aside
-          className="hidden lg:block fixed left-0 top-0 h-full w-64 bg-base-200 border-r border-base-300 z-10"
-          style={{ minHeight: "100vh" }}
-        >
-          <div className="p-6">
-            <h2 className="text-2xl font-bold text-primary mb-8">
-              Admin Panel
-            </h2>
-            <nav className="space-y-2">
-              {navItems.map((item) => renderNavLink(item))}
-            </nav>
-          </div>
-        </aside>
-        {isMobileOpen && (
-          <>
-            <div
-              className="fixed inset-0 bg-black/40 z-30 cursor-pointer"
-              onClick={() => setIsMobileOpen(false)}
-              aria-label="Sidebar overlay"
-            />
-            <aside
-              className="fixed left-0 top-0 h-full w-64 bg-base-200 border-r border-base-300 z-40 transition-transform duration-300 transform translate-x-0"
-              style={{ minHeight: "100vh" }}
-            >
-              <div className="p-6">
-                <div className="flex items-center justify-between mb-8">
-                  <h2 className="text-2xl font-bold text-primary">
-                    Admin Panel
-                  </h2>
-                  <button
-                    className="btn btn-sm btn-circle btn-ghost"
-                    onClick={() => setIsMobileOpen(false)}
-                    aria-label="Close sidebar"
-                  >
-                    <X size={20} />
-                  </button>
-                </div>
-                <nav className="space-y-2">
-                  {navItems.map((item) => (
-                    <NavLink
-                      key={item.path}
-                      to={item.path}
-                      end={item.end}
-                      onClick={() => setIsMobileOpen(false)}
-                      className={({ isActive }) =>
-                        `flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${
-                          isActive
-                            ? "bg-primary text-primary-content"
-                            : "hover:bg-base-300"
-                        }`
-                      }
-                    >
-                      <item.icon size={20} />
-                      <span className="font-medium">{item.label}</span>
-                    </NavLink>
-                  ))}
-                </nav>
-              </div>
-            </aside>
-          </>
-        )}
+        {/* Navigation - reduced padding, scrollable if needed */}
+        <nav className="space-y-1 px-2 flex-1 overflow-y-auto">
+          {navItems.map(renderNavLink)}
+        </nav>
       </div>
-    </>
+    </aside>
   );
 };
 

@@ -9,6 +9,9 @@ export const useAuthStore = create((set, get) => ({
   isUpdatingProfile: false,
   isCheckingAuth: true,
   socket: null,
+  pendingVerificationEmail: null,
+  isVerifyingEmail: false,
+  isResendingVerification: false,
 
   checkAuth: async () => {
     try {
@@ -26,14 +29,33 @@ export const useAuthStore = create((set, get) => ({
     set({ isSigningUp: true });
     try {
       const res = await axiosInstance.post("/auth/register", data);
-      set({ authUser: res.data });
-      toast.success("Account created successfully");
-      get().connectSocket && get().connectSocket();
+      const { requiresVerification, email, user, message } = res.data || {};
+
+      if (requiresVerification) {
+        const targetEmail = email || data.email;
+        set({ pendingVerificationEmail: targetEmail });
+        toast.success(
+          message ||
+            "Verification code sent to your email. Please check your inbox."
+        );
+        return { requiresVerification: true, email: targetEmail };
+      }
+
+      if (user) {
+        set({ authUser: user, pendingVerificationEmail: null });
+        toast.success("Account created successfully");
+        get().connectSocket && get().connectSocket();
+        return user;
+      }
+
+      toast.success(message || "Account created successfully");
+      return res.data;
     } catch (error) {
       toast.error(
         "account creation failed: " + error.response?.data?.message ||
           error.message
       );
+      throw error;
     } finally {
       set({ isSigningUp: false });
     }
@@ -43,10 +65,13 @@ export const useAuthStore = create((set, get) => ({
     set({ isLoggingIn: true });
     try {
       const res = await axiosInstance.post("/auth/login", data);
-      set({ authUser: res.data });
+      const user = res.data?.user || res.data;
+      set({ authUser: user, pendingVerificationEmail: null });
       toast.success("Logged in successfully");
+      return user;
     } catch (error) {
       toast.error(error.response?.data?.message || error.message);
+      throw error;
     } finally {
       set({ isLoggingIn: false });
     }
@@ -183,7 +208,7 @@ export const useAuthStore = create((set, get) => ({
   logout: async () => {
     try {
       await axiosInstance.post("/auth/logout");
-      set({ authUser: null });
+      set({ authUser: null, pendingVerificationEmail: null });
       toast.success("Logged out successfully");
     } catch (error) {
       toast.error(error.response?.data?.message || error.message);
@@ -221,6 +246,51 @@ export const useAuthStore = create((set, get) => ({
       throw error;
     } finally {
       set({ isUpdatingProfile: false });
+    }
+  },
+
+  verifyEmail: async (email, code) => {
+    if (!email || !code) {
+      toast.error("Email and verification code are required.");
+      throw new Error("Missing email or code");
+    }
+    set({ isVerifyingEmail: true });
+    try {
+      const res = await axiosInstance.post("/auth/verify-email", {
+        email,
+        code,
+      });
+      const user = res.data?.user || res.data;
+      set({ authUser: user, pendingVerificationEmail: null });
+      toast.success("Email verified successfully");
+      get().connectSocket && get().connectSocket();
+      return user;
+    } catch (error) {
+      toast.error(error.response?.data?.message || error.message);
+      throw error;
+    } finally {
+      set({ isVerifyingEmail: false });
+    }
+  },
+
+  resendVerificationCode: async (email) => {
+    const targetEmail = email || get().pendingVerificationEmail;
+    if (!targetEmail) {
+      toast.error("We couldn't determine which email to verify.");
+      throw new Error("Missing email");
+    }
+    set({ isResendingVerification: true });
+    try {
+      await axiosInstance.post("/auth/resend-verification", {
+        email: targetEmail,
+      });
+      set({ pendingVerificationEmail: targetEmail });
+      toast.success("Verification code sent. Please check your inbox.");
+    } catch (error) {
+      toast.error(error.response?.data?.message || error.message);
+      throw error;
+    } finally {
+      set({ isResendingVerification: false });
     }
   },
 }));

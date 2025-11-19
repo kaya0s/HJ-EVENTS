@@ -1,11 +1,12 @@
 import { useState } from "react";
-import { CheckCircle, XCircle, Eye, Loader } from "lucide-react";
+import { CheckCircle, XCircle, Eye, Loader, BadgeCheck } from "lucide-react";
 import dayjs from "dayjs";
 import { useBookingStore } from "../../store/useBookingStore";
 
 const BookingsTable = ({ bookings, onViewDetails }) => {
-  const { acceptBooking, rejectBooking } = useBookingStore();
+  const { acceptBooking, rejectBooking, completeBooking } = useBookingStore();
   const [processingId, setProcessingId] = useState(null);
+  const [completingId, setCompletingId] = useState(null);
 
   const handleAccept = async (bookingId) => {
     setProcessingId(bookingId);
@@ -30,6 +31,17 @@ const BookingsTable = ({ bookings, onViewDetails }) => {
     }
   };
 
+  const handleComplete = async (bookingId) => {
+    setCompletingId(bookingId);
+    try {
+      await completeBooking(bookingId);
+    } catch {
+      // toast handled in store
+    } finally {
+      setCompletingId(null);
+    }
+  };
+
   const getStatusBadge = (status) => {
     const normalizedStatus = status?.toLowerCase() || status;
     const statusConfig = {
@@ -38,6 +50,7 @@ const BookingsTable = ({ bookings, onViewDetails }) => {
       completed: "badge-info",
       cancelled: "badge-error",
       rejected: "badge-error",
+      expired: "badge-neutral",
     };
     const displayStatus =
       status?.charAt(0).toUpperCase() + status?.slice(1).toLowerCase() ||
@@ -133,6 +146,24 @@ const BookingsTable = ({ bookings, onViewDetails }) => {
                         )}
                       </button>
                     </>
+                  )}
+                  {(booking.status === "accepted" ||
+                    booking.status === "Accepted") && (
+                    <button
+                      className="btn btn-sm btn-info"
+                      onClick={() => handleComplete(booking._id)}
+                      disabled={
+                        completingId === booking._id ||
+                        processingId === booking._id
+                      }
+                      title="Mark as completed"
+                    >
+                      {completingId === booking._id ? (
+                        <Loader size={16} className="animate-spin" />
+                      ) : (
+                        <BadgeCheck size={16} />
+                      )}
+                    </button>
                   )}
                 </div>
               </td>

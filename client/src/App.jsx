@@ -7,6 +7,7 @@ import { useLocation } from "react-router-dom";
 import Navbar from "./components/Navbar";
 import Footer from "./components/Footer";
 import BackgroundVideo from "./components/BackgroundVideo";
+import NotFound from "./pages/shared/NotFound";
 
 import { useAuthStore } from "./store/useAuthStore";
 import { useThemeStore } from "./store/useThemeStore";
@@ -49,10 +50,14 @@ const App = () => {
           {ClientRoutes({ authUser })}
           {AdminRoutes({ authUser })}
           {SupplierRoutes({ authUser })}
+          <Route path="*" element={<NotFound />} />
         </Routes>
       </main>
 
-      {location.pathname === "/" && <Footer />}
+      {(location.pathname === "/" ||
+        location.pathname === "/about" ||
+        location.pathname === "/contact" ||
+        location.pathname === "/my-bookings") && <Footer />}
       <Toaster />
     </>
   );

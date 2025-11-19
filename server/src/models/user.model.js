@@ -62,8 +62,12 @@ const userSchema = new Schema(
       type: Boolean,
       default: false,
     },
-    emailVerificationToken: {
+    emailVerificationCode: {
       type: String,
+      default: null,
+    },
+    emailVerificationExpires: {
+      type: Date,
       default: null,
     },
     address: {

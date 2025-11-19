@@ -1,4 +1,5 @@
 import Review from '../models/review.model.js';
+import Booking from '../models/booking.model.js';
 
 // Generate incremental ID (if needed)
 async function generateNextId() {
@@ -11,13 +12,12 @@ async function generateNextId() {
 // ===============================
 export const createReview = async (req, res) => {
   try {
-    const { name, avatar, rating, comment } = req.body;
+    const { bookingId, rating, comment } = req.body;
 
-    // Validate
-    if (!name || !rating || !comment) {
+    if (!bookingId || !rating || !comment) {
       return res.status(400).json({
         success: false,
-        message: 'Name, rating, and comment are required',
+        message: 'Booking, rating, and comment are required',
       });
     }
 
@@ -28,28 +28,64 @@ export const createReview = async (req, res) => {
       });
     }
 
-    // Generate incremental numeric id
-    const nextId = await generateNextId();
+    const booking = await Booking.findOne({
+      _id: bookingId,
+      'user.id': req.user._id,
+    }).populate('package');
 
-    // Create Review
+    if (!booking) {
+      return res.status(404).json({
+        success: false,
+        message: 'Booking not found',
+      });
+    }
+
+    if (booking.status !== 'completed') {
+      return res.status(400).json({
+        success: false,
+        message: 'Only completed bookings can be reviewed',
+      });
+    }
+
+    if (booking.review) {
+      return res.status(400).json({
+        success: false,
+        message: 'This booking already has a review',
+      });
+    }
+
+    const existing = await Review.findOne({ booking: bookingId });
+    if (existing) {
+      return res.status(400).json({
+        success: false,
+        message: 'This booking already has a review',
+      });
+    }
+
+    const nextId = await generateNextId();
     const review = await Review.create({
       id: nextId,
-      name: name.trim(),
+      name: req.user.fullName,
       avatar:
-        avatar ||
+        req.user.profilePic ||
         'https://images.unsplash.com/photo-1511367461989-f85a21fda167?w=150&h=150&fit=crop',
       rating,
       comment: comment.trim(),
+      booking: booking._id,
+      user: req.user._id,
     });
+
+    booking.review = review._id;
+    await booking.save();
 
     res.status(201).json({
       success: true,
       data: {
-        id: review.id,
-        name: review.name,
-        avatar: review.avatar,
+        reviewId: review._id,
+        bookingId: booking._id,
         rating: review.rating,
         comment: review.comment,
+        name: review.name,
         createdAt: review.createdAt,
       },
     });
@@ -78,7 +114,8 @@ export const getAllReviews = async (req, res) => {
     const reviews = await Review.find(query)
       .sort({ createdAt: -1 })
       .skip(Number(skip))
-      .limit(Number(limit));
+      .limit(Number(limit))
+      .populate('booking', 'title weddingDate status');
 
     const total = await Review.countDocuments(query);
 
@@ -89,6 +126,14 @@ export const getAllReviews = async (req, res) => {
       rating: review.rating,
       comment: review.comment,
       createdAt: review.createdAt,
+      booking: review.booking
+        ? {
+            id: review.booking._id,
+            title: review.booking.title,
+            status: review.booking.status,
+            weddingDate: review.booking.weddingDate,
+          }
+        : null,
     }));
 
     res.status(200).json({
@@ -106,6 +151,56 @@ export const getAllReviews = async (req, res) => {
       message: 'Error fetching reviews',
       error: error.message,
     });
+  }
+};
+
+export const updateReview = async (req, res) => {
+  try {
+    const { rating, comment } = req.body;
+    const review = await Review.findById(req.params.id);
+
+    if (!review) {
+      return res.status(404).json({ success: false, message: 'Review not found' });
+    }
+
+    if (review.user.toString() !== req.user._id.toString()) {
+      return res
+        .status(403)
+        .json({ success: false, message: 'Not authorized to edit this review' });
+    }
+
+    if (rating !== undefined) {
+      if (rating < 1 || rating > 5) {
+        return res.status(400).json({
+          success: false,
+          message: 'Rating must be between 1 and 5',
+        });
+      }
+      review.rating = rating;
+    }
+
+    if (comment !== undefined) {
+      review.comment = comment.trim();
+    }
+
+    await review.save();
+
+    res.json({
+      success: true,
+      data: {
+        reviewId: review._id,
+        bookingId: review.booking,
+        rating: review.rating,
+        comment: review.comment,
+        name: review.name,
+        createdAt: review.createdAt,
+      },
+    });
+  } catch (error) {
+    console.error('Update review error:', error);
+    res
+      .status(500)
+      .json({ success: false, message: 'Error updating review', error: error.message });
   }
 };
 
