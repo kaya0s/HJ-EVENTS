@@ -1,31 +1,67 @@
 import { useState, useEffect } from "react";
 import dayjs from "dayjs";
-import { X, Calendar, MapPin, Tag, CheckCircle, Users } from "lucide-react";
+import {
+  X,
+  Calendar,
+  MapPin,
+  Tag,
+  CheckCircle,
+  Users,
+  Wallet,
+  MinusCircle,
+} from "lucide-react";
 import toast from "react-hot-toast";
+import { useNavigate } from "react-router-dom";
 import DatePickerCalendar from "./DatePickerCalendar";
 import axiosInstance from "../lib/axios";
 import { useSupplierStore } from "../store/useSupplierStore";
+import { useDeductionStore } from "../store/useDeductionStore";
+import { useAuthStore } from "../store/useAuthStore";
 
-const BookingModal = ({ package: pkg, isOpen, onClose, onBook }) => {
+const normalizeCategoryKey = (value = "") => value.trim().toLowerCase();
+
+const BookingModal = ({ package: pkg, isOpen, onClose }) => {
+  const navigate = useNavigate();
+  const { authUser } = useAuthStore();
   const [selectedDate, setSelectedDate] = useState(null);
   const [title, setTitle] = useState("");
   const [venue, setVenue] = useState("");
   const [bookedDates, setBookedDates] = useState([]);
   const [selectedSuppliers, setSelectedSuppliers] = useState({});
+  const [externalSelections, setExternalSelections] = useState({});
+  const [showVerification, setShowVerification] = useState(false);
   const [showConfirmation, setShowConfirmation] = useState(false);
+  const [verificationCode, setVerificationCode] = useState("");
+  const [isSendingCode, setIsSendingCode] = useState(false);
+  const [isVerifying, setIsVerifying] = useState(false);
   const {
     suppliers,
     categories,
     fetchAllSuppliers,
     isLoading: isLoadingSuppliers,
   } = useSupplierStore();
+  const {
+    deductions,
+    fetchDeductions,
+    isLoading: isLoadingDeductions,
+  } = useDeductionStore();
+
+  // Check authentication when modal opens
+  useEffect(() => {
+    if (isOpen && !authUser) {
+      toast.error("Please login first to book a package");
+      onClose();
+      navigate("/login");
+      return;
+    }
+  }, [isOpen, authUser, onClose, navigate]);
 
   // Fetch booked dates and suppliers from server
   useEffect(() => {
-    if (isOpen) {
+    if (isOpen && authUser) {
       const fetchData = async () => {
         try {
-          await fetchAllSuppliers();
+          await Promise.all([fetchAllSuppliers(), fetchDeductions()]);
 
           const datesResponse = await axiosInstance.get(
             "/bookings/availability?allPackages=true"
@@ -44,7 +80,7 @@ const BookingModal = ({ package: pkg, isOpen, onClose, onBook }) => {
       };
       fetchData();
     }
-  }, [isOpen, fetchAllSuppliers]);
+  }, [isOpen, authUser, fetchAllSuppliers, fetchDeductions]);
 
   // Reset form when modal closes
   useEffect(() => {
@@ -53,7 +89,10 @@ const BookingModal = ({ package: pkg, isOpen, onClose, onBook }) => {
       setTitle("");
       setVenue("");
       setSelectedSuppliers({});
+      setExternalSelections({});
+      setShowVerification(false);
       setShowConfirmation(false);
+      setVerificationCode("");
     }
   }, [isOpen]);
 
@@ -90,11 +129,50 @@ const BookingModal = ({ package: pkg, isOpen, onClose, onBook }) => {
     });
   }, [selectedDate, suppliers]);
 
+  const getDeductionAmount = (category) => {
+    const key = normalizeCategoryKey(category || "");
+    return deductions[key]?.amount || 0;
+  };
+
+  const selectedExternalCategories = Object.entries(externalSelections).filter(
+    ([, isUsing]) => isUsing
+  );
+
+  const totalDeduction = selectedExternalCategories.reduce(
+    (sum, [category]) => sum + getDeductionAmount(category),
+    0
+  );
+
+  const basePrice = Number(pkg?.price) || 0;
+  const finalPrice = Math.max(0, basePrice - totalDeduction);
+
   const handleSupplierChange = (category, supplierId) => {
     setSelectedSuppliers((prev) => ({
       ...prev,
       [category]: supplierId || null,
     }));
+    if (supplierId) {
+      setExternalSelections((prev) => ({
+        ...prev,
+        [category]: false,
+      }));
+    }
+  };
+
+  const toggleExternalSupplier = (category) => {
+    setExternalSelections((prev) => {
+      const nextValue = !prev[category];
+      if (nextValue) {
+        setSelectedSuppliers((prevSuppliers) => ({
+          ...prevSuppliers,
+          [category]: null,
+        }));
+      }
+      return {
+        ...prev,
+        [category]: nextValue,
+      };
+    });
   };
 
   const getSuppliersByCategory = (category) => {
@@ -103,6 +181,21 @@ const BookingModal = ({ package: pkg, isOpen, onClose, onBook }) => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+
+    // Check if user is logged in
+    if (!authUser) {
+      toast.error("Please login first to book a package");
+      onClose();
+      navigate("/login");
+      return;
+    }
+
+    // Check if user is a client
+    if (authUser.role !== "user") {
+      toast.error("Only clients can book packages");
+      onClose();
+      return;
+    }
 
     if (!selectedDate) {
       toast.error("Please select an event date");
@@ -119,29 +212,164 @@ const BookingModal = ({ package: pkg, isOpen, onClose, onBook }) => {
       return;
     }
 
-    setShowConfirmation(true);
+    // Show verification step
+    await handleSendVerificationCode();
+  };
+
+  const handleSendVerificationCode = async () => {
+    setIsSendingCode(true);
+    try {
+      const supplierIds = Object.values(selectedSuppliers).filter(Boolean);
+      const externalSupplierCategories = Object.entries(externalSelections)
+        .filter(([, isUsing]) => isUsing)
+        .map(([category]) => category);
+
+      await axiosInstance.post("/bookings/send-verification", {
+        packageId: pkg._id,
+        eventDate: selectedDate,
+        title: title.trim(),
+        venue: venue.trim(),
+        suppliers: supplierIds,
+        externalSuppliers: externalSupplierCategories,
+      });
+
+      toast.success("Verification code sent to your email");
+      setShowVerification(true);
+    } catch (error) {
+      toast.error(
+        error.response?.data?.message ||
+          error.message ||
+          "Failed to send verification code"
+      );
+    } finally {
+      setIsSendingCode(false);
+    }
+  };
+
+  const handleVerifyCode = async (e) => {
+    e.preventDefault();
+    if (!verificationCode.trim()) {
+      toast.error("Please enter the verification code");
+      return;
+    }
+
+    setIsVerifying(true);
+    try {
+      const res = await axiosInstance.post("/bookings/verify-code", {
+        verificationCode: verificationCode.trim(),
+      });
+
+      toast.success(res.data.message || "Booking verified successfully");
+      setShowVerification(false);
+      setShowConfirmation(true);
+    } catch (error) {
+      toast.error(
+        error.response?.data?.message ||
+          error.message ||
+          "Invalid verification code"
+      );
+    } finally {
+      setIsVerifying(false);
+    }
   };
 
   const handleConfirmBooking = async () => {
-    const supplierIds = Object.values(selectedSuppliers).filter(Boolean);
-
-    await onBook({
-      packageId: pkg._id,
-      packageName: pkg.name,
-      eventDate: selectedDate,
-      title: title.trim(),
-      venue: venue.trim(),
-      suppliers: supplierIds,
-    });
-
+    // Booking is already created after verification, just close and refresh
+    toast.success("Booking confirmed successfully!");
     onClose();
-  };
-
-  const handleBackFromConfirmation = () => {
-    setShowConfirmation(false);
+    // Refresh the page or navigate to bookings
+    window.location.href = "/my-bookings";
   };
 
   if (!isOpen) return null;
+
+  // Verification View
+  if (showVerification) {
+    return (
+      <dialog open={isOpen} className="modal modal-open">
+        <div className="modal-box max-w-md">
+          <div className="flex items-center justify-between mb-6">
+            <div>
+              <h3 className="font-bold text-2xl mb-1">Verify Your Booking</h3>
+              <p className="text-sm text-base-content/60">
+                Enter the code sent to your email
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={onClose}
+              className="btn btn-sm btn-circle btn-ghost"
+              aria-label="Close modal"
+            >
+              <X className="w-5 h-5" />
+            </button>
+          </div>
+
+          <form onSubmit={handleVerifyCode} className="space-y-4">
+            <div className="form-control">
+              <label className="label">
+                <span className="label-text font-medium">
+                  Verification Code
+                </span>
+              </label>
+              <input
+                type="text"
+                inputMode="numeric"
+                maxLength={6}
+                className="input input-bordered w-full tracking-widest text-center text-lg"
+                placeholder="••••••"
+                value={verificationCode}
+                onChange={(e) =>
+                  setVerificationCode(e.target.value.replace(/\D/g, ""))
+                }
+                required
+                autoFocus
+              />
+              <label className="label">
+                <span className="label-text-alt text-base-content/60">
+                  Check your email for the 6-digit code
+                </span>
+              </label>
+            </div>
+
+            <div className="flex gap-3 justify-end pt-4 border-t border-base-200">
+              <button
+                type="button"
+                className="btn btn-ghost"
+                onClick={() => {
+                  setShowVerification(false);
+                  setVerificationCode("");
+                }}
+              >
+                Back
+              </button>
+              <button
+                type="button"
+                className="btn btn-ghost btn-sm"
+                onClick={handleSendVerificationCode}
+                disabled={isSendingCode}
+              >
+                {isSendingCode ? "Sending..." : "Resend Code"}
+              </button>
+              <button
+                type="submit"
+                className="btn btn-primary min-w-[120px]"
+                disabled={!verificationCode.trim() || isVerifying}
+              >
+                {isVerifying ? "Verifying..." : "Verify"}
+              </button>
+            </div>
+          </form>
+        </div>
+
+        <form method="dialog" className="modal-backdrop">
+          <button type="button" onClick={onClose} aria-label="Close modal">
+            close
+          </button>
+        </form>
+      </dialog>
+    );
+  }
 
   // Confirmation View
   if (showConfirmation) {
@@ -158,9 +386,9 @@ const BookingModal = ({ package: pkg, isOpen, onClose, onBook }) => {
         <div className="modal-box max-w-2xl">
           <div className="flex items-center justify-between mb-6">
             <div>
-              <h3 className="font-bold text-2xl mb-1">Confirm Booking</h3>
+              <h3 className="font-bold text-2xl mb-1">Booking Confirmed!</h3>
               <p className="text-sm text-base-content/60">
-                Please review your booking details
+                Your booking has been successfully created
               </p>
             </div>
             <button
@@ -236,21 +464,53 @@ const BookingModal = ({ package: pkg, isOpen, onClose, onBook }) => {
               </div>
             )}
 
+            {/* Pricing Summary */}
+            <div className="bg-base-200 rounded-lg p-4">
+              <h4 className="font-semibold mb-3 flex items-center gap-2">
+                <Wallet className="w-4 h-4" />
+                Pricing Summary
+              </h4>
+              <div className="space-y-2 text-sm">
+                <div className="flex justify-between">
+                  <span>Package Price</span>
+                  <span>₱{basePrice.toLocaleString()}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span>External supplier deductions</span>
+                  <span className="text-success font-medium">
+                    {totalDeduction > 0
+                      ? `-₱${totalDeduction.toLocaleString()}`
+                      : "₱0"}
+                  </span>
+                </div>
+                {selectedExternalCategories.length > 0 && (
+                  <ul className="mt-2 space-y-1 text-xs text-base-content/70">
+                    {selectedExternalCategories.map(([category]) => (
+                      <li key={category} className="flex items-center gap-2">
+                        <MinusCircle className="w-4 h-4 text-success" />
+                        <span>
+                          {category} ( -₱
+                          {getDeductionAmount(category).toLocaleString()})
+                        </span>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+                <div className="border-t border-base-300 pt-2 flex justify-between font-semibold">
+                  <span>Total</span>
+                  <span>₱{finalPrice.toLocaleString()}</span>
+                </div>
+              </div>
+            </div>
+
             {/* Action Buttons */}
             <div className="flex gap-3 justify-end pt-4 border-t border-base-200">
-              <button
-                type="button"
-                className="btn btn-ghost"
-                onClick={handleBackFromConfirmation}
-              >
-                Back
-              </button>
               <button
                 type="button"
                 className="btn btn-primary min-w-[120px]"
                 onClick={handleConfirmBooking}
               >
-                Confirm Booking
+                Done
               </button>
             </div>
           </div>
@@ -399,6 +659,7 @@ const BookingModal = ({ package: pkg, isOpen, onClose, onBook }) => {
                         onChange={(e) =>
                           handleSupplierChange(category, e.target.value)
                         }
+                        disabled={!!externalSelections[category]}
                       >
                         <option value="">None (Admin will assign)</option>
                         {categorySuppliers.map((supplier) => {
@@ -420,6 +681,30 @@ const BookingModal = ({ package: pkg, isOpen, onClose, onBook }) => {
                           );
                         })}
                       </select>
+                      <label className="label cursor-pointer justify-start gap-3 mt-2">
+                        <input
+                          type="checkbox"
+                          className="checkbox checkbox-sm"
+                          checked={!!externalSelections[category]}
+                          onChange={() => toggleExternalSupplier(category)}
+                        />
+                        <span className="text-sm text-base-content/80">
+                          I will use my own external supplier{" "}
+                          {getDeductionAmount(category) > 0 && (
+                            <span className="font-semibold text-success">
+                              (- ₱
+                              {getDeductionAmount(category).toLocaleString()})
+                            </span>
+                          )}
+                        </span>
+                      </label>
+                      {getDeductionAmount(category) === 0 && (
+                        <label className="label -mt-2">
+                          <span className="label-text-alt text-warning">
+                            Admin has not set a deduction for this category yet.
+                          </span>
+                        </label>
+                      )}
                       {selectedDate &&
                         unavailableForDate.length > 0 &&
                         !allUnavailable && (
@@ -449,14 +734,35 @@ const BookingModal = ({ package: pkg, isOpen, onClose, onBook }) => {
             </div>
           </div>
 
-          {/* Package Info */}
-          <div className="bg-base-200 rounded-lg p-4">
-            <div className="flex justify-between items-center">
-              <span className="text-sm font-medium text-base-content/70">
-                Package Price
+          {/* Pricing Summary */}
+          <div className="bg-base-200 rounded-lg p-4 space-y-2">
+            <div className="flex justify-between items-center text-sm text-base-content/70">
+              <span>Package Price</span>
+              <span>₱{basePrice.toLocaleString()}</span>
+            </div>
+            <div className="flex justify-between items-center text-sm text-base-content/70">
+              <span>External supplier deductions</span>
+              <span
+                className={
+                  totalDeduction > 0 ? "text-success font-semibold" : ""
+                }
+              >
+                {totalDeduction > 0
+                  ? `-₱${totalDeduction.toLocaleString()}`
+                  : "₱0"}
+              </span>
+            </div>
+            {isLoadingDeductions && (
+              <p className="text-xs text-base-content/60">
+                Loading deduction settings...
+              </p>
+            )}
+            <div className="border-t border-base-300 pt-2 flex justify-between items-center">
+              <span className="text-base font-semibold text-base-content">
+                Estimated total
               </span>
               <span className="text-lg font-bold text-primary">
-                ₱{pkg.price?.toLocaleString() || "0"}
+                ₱{finalPrice.toLocaleString()}
               </span>
             </div>
           </div>

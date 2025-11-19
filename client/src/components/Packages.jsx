@@ -1,9 +1,14 @@
 import { usePackageStore } from "../store/usePackageStore";
 import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
+import toast from "react-hot-toast";
 import BookingModal from "../components/BookingModal";
+import { useAuthStore } from "../store/useAuthStore";
 
 const Packages = () => {
-  const { packages, fetchPackages, bookPackage } = usePackageStore();
+  const navigate = useNavigate();
+  const { authUser } = useAuthStore();
+  const { packages, fetchPackages } = usePackageStore();
   const [selectedPackage, setSelectedPackage] = useState(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
 
@@ -12,6 +17,17 @@ const Packages = () => {
   }, [fetchPackages]);
 
   const handleBookClick = (pkg) => {
+    if (!authUser) {
+      toast.error("Please login first to book a package");
+      navigate("/login");
+      return;
+    }
+
+    if (authUser.role !== "user") {
+      toast.error("Only clients can book packages");
+      return;
+    }
+
     setSelectedPackage(pkg);
     setIsModalOpen(true);
   };
@@ -19,11 +35,6 @@ const Packages = () => {
   const handleCloseModal = () => {
     setIsModalOpen(false);
     setSelectedPackage(null);
-  };
-
-  const handleBookPackage = async (bookingData) => {
-    await bookPackage(bookingData);
-    handleCloseModal();
   };
 
   // Only display packages with isAvailable === true
@@ -89,7 +100,6 @@ const Packages = () => {
         package={selectedPackage}
         isOpen={isModalOpen}
         onClose={handleCloseModal}
-        onBook={handleBookPackage}
       />
     </section>
   );

@@ -3,7 +3,7 @@ import { BarChart2, PieChart } from "lucide-react";
 import { useBookingStore } from "../../store/useBookingStore";
 
 const StatusLegend = ({ series }) => (
-  <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+  <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-6">
     {series.map((item) => (
       <div key={item.label} className="rounded-lg bg-base-100 p-3 shadow-sm">
         <p className="text-xs uppercase tracking-wide text-base-content/60">
@@ -133,19 +133,31 @@ const ReportsAnalytics = () => {
     useMemo(() => {
       let revenue = 0;
       const statusMap = {
-        pending: 0,
-        accepted: 0,
-        completed: 0,
-        cancelled: 0,
-        rejected: 0,
+        Pending: 0,
+        Accepted: 0,
+        Completed: 0,
+        Cancelled: 0,
+        Rejected: 0,
+        Expired: 0,
       };
       const packageCountMap = new Map();
       const upcoming = [];
 
       for (const booking of bookings) {
         const status = booking?.status?.toLowerCase();
-        if (status && Object.prototype.hasOwnProperty.call(statusMap, status)) {
-          statusMap[status] += 1;
+        if (status) {
+          const keyMap = {
+            pending: "Pending",
+            accepted: "Accepted",
+            completed: "Completed",
+            cancelled: "Cancelled",
+            rejected: "Rejected",
+            expired: "Expired",
+          };
+          const mappedKey = keyMap[status];
+          if (mappedKey) {
+            statusMap[mappedKey] += 1;
+          }
         }
 
         if (status === "accepted" || status === "completed") {
@@ -201,6 +213,8 @@ const ReportsAnalytics = () => {
     { label: "Accepted", value: statusCounts.Accepted },
     { label: "Completed", value: statusCounts.Completed },
     { label: "Cancelled", value: statusCounts.Cancelled },
+    { label: "Rejected", value: statusCounts.Rejected },
+    { label: "Expired", value: statusCounts.Expired },
   ];
 
   return (

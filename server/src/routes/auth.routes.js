@@ -9,6 +9,8 @@ import {
   Logout,
   googleAuth,
   googleAuthCallback,
+  resendVerificationCode,
+  verifyEmailCode,
 } from '../controllers/auth.controller.js';
 
 const router = express.Router();
@@ -24,6 +26,8 @@ router.post('/register', Register);
 router.post('/forgot-password', ForgotPassword);
 router.post('/verify-reset-code', verifyResetCode);
 router.post('/new-password', NewPassword);
+router.post('/verify-email', verifyEmailCode);
+router.post('/resend-verification', resendVerificationCode);
 
 // Logout
 router.post('/logout', Logout);

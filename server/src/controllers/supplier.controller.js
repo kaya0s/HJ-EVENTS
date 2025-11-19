@@ -148,6 +148,7 @@ export const createSupplier = async (req, res) => {
         role: 'supplier',
         phone: supplierData.contactInfo.phone || '',
         address: supplierData.contactInfo.address || '',
+        isEmailVerified: true,
       });
     } catch (error) {
       console.error('Error creating supplier user', error.message);
@@ -285,6 +286,7 @@ export const updateSupplier = async (req, res) => {
         role: 'supplier',
         phone: updates.contactInfo.phone || '',
         address: updates.contactInfo.address || '',
+        isEmailVerified: true,
       });
       supplier.user = newUser._id;
       user = newUser;

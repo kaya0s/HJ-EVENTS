@@ -1,16 +1,6 @@
 import { useState, useEffect } from "react";
-import {
-  Search,
-  Filter,
-  Star,
-  CheckCircle,
-  XCircle,
-  Plus,
-  Edit,
-  Trash2,
-} from "lucide-react";
+import { Search, Star, Plus, Edit, Trash2 } from "lucide-react";
 import { useSupplierStore } from "../../store/useSupplierStore";
-import { useBookingStore } from "../../store/useBookingStore";
 import SupplierModal from "./SupplierModal";
 
 const SuppliersSection = () => {
@@ -21,26 +11,14 @@ const SuppliersSection = () => {
     fetchAllSuppliers,
     deleteSupplier,
   } = useSupplierStore();
-  const { bookings, fetchAllBookings } = useBookingStore();
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("");
-  const [availabilityFilter, setAvailabilityFilter] = useState("all");
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedSupplier, setSelectedSupplier] = useState(null);
 
   useEffect(() => {
     fetchAllSuppliers();
-    fetchAllBookings();
-  }, [fetchAllSuppliers, fetchAllBookings]);
-
-  const getSupplierAvailability = (supplierId) => {
-    const activeBookings = bookings.filter(
-      (b) =>
-        b.status !== "Cancelled" &&
-        b.suppliers?.some((s) => s._id === supplierId)
-    );
-    return activeBookings.length > 0 ? "assigned" : "available";
-  };
+  }, [fetchAllSuppliers]);
 
   const filteredSuppliers = suppliers.filter((supplier) => {
     const matchesSearch =
@@ -49,12 +27,7 @@ const SuppliersSection = () => {
 
     const matchesCategory =
       !selectedCategory || supplier.category === selectedCategory;
-
-    const availability = getSupplierAvailability(supplier._id);
-    const matchesAvailability =
-      availabilityFilter === "all" || availability === availabilityFilter;
-
-    return matchesSearch && matchesCategory && matchesAvailability;
+    return matchesSearch && matchesCategory;
   });
 
   const handleAddSupplier = () => {
@@ -115,20 +88,6 @@ const SuppliersSection = () => {
           </select>
         </div>
 
-        <div className="form-control">
-          <label className="label">
-            <span className="label-text">Availability</span>
-          </label>
-          <select
-            className="select select-bordered"
-            value={availabilityFilter}
-            onChange={(e) => setAvailabilityFilter(e.target.value)}
-          >
-            <option value="all">All</option>
-            <option value="available">Available</option>
-            <option value="assigned">Assigned</option>
-          </select>
-        </div>
         <div className="form-control w-full md:w-64">
           <label className="label">
             <span className="label-text">Search</span>
@@ -160,7 +119,6 @@ const SuppliersSection = () => {
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {filteredSuppliers.map((supplier) => {
-            const availability = getSupplierAvailability(supplier._id);
             return (
               <div
                 key={supplier._id}
@@ -177,31 +135,16 @@ const SuppliersSection = () => {
                 )}
                 <div className="card-body">
                   <h3 className="card-title">{supplier.name}</h3>
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-2 flex-wrap">
                     <span className="badge badge-primary badge-sm">
                       {supplier.category}
                     </span>
                     {supplier.rating > 0 && (
-                      <div className="flex items-center gap-1">
-                        <Star size={16} className="text-warning fill-warning" />
-                        <span className="text-sm">{supplier.rating}</span>
+                      <div className="flex items-center gap-1 text-sm text-warning">
+                        <Star size={16} className="fill-warning" />
+                        <span>{supplier.rating}</span>
                       </div>
                     )}
-                    <div className="ml-auto">
-                      {availability === "available" ? (
-                        <CheckCircle
-                          size={20}
-                          className="text-success"
-                          title="Available"
-                        />
-                      ) : (
-                        <XCircle
-                          size={20}
-                          className="text-warning"
-                          title="Assigned"
-                        />
-                      )}
-                    </div>
                   </div>
                   {supplier.description && (
                     <p className="text-sm text-base-content/70 line-clamp-2">

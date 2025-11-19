@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { useAuthStore } from "../../store/useAuthStore";
 import { Eye, EyeOff, Loader2, Lock, Mail, User } from "lucide-react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { loadRecaptchaScript, executeRecaptcha } from "../../utils/recaptcha";
 import Logo from "../../components/Logo";
 import toast from "react-hot-toast";
@@ -15,10 +15,13 @@ const SignUpPage = () => {
     firstName: "",
     lastName: "",
     email: "",
+    phone: "",
+    address: "",
     password: "",
   });
 
   const { signup, isSigningUp } = useAuthStore();
+  const navigate = useNavigate();
 
   // Load reCAPTCHA script on mount if site key is configured
   useEffect(() => {
@@ -36,6 +39,10 @@ const SignUpPage = () => {
     if (!formData.email.trim()) return toast.error("Email is required");
     if (!/\S+@\S+\.\S+/.test(formData.email))
       return toast.error("Invalid email format");
+    if (!formData.phone.trim()) return toast.error("Phone number is required");
+    if (formData.phone.trim().length < 7)
+      return toast.error("Enter a valid phone number");
+    if (!formData.address.trim()) return toast.error("Address is required");
     if (!formData.password) return toast.error("Password is required");
     if (formData.password.length < 6)
       return toast.error("Password must be at least 6 characters");
@@ -65,7 +72,12 @@ const SignUpPage = () => {
         }
 
         // Send form data with reCAPTCHA token to backend
-        signup({ ...formData, recaptchaToken });
+        const result = await signup({ ...formData, recaptchaToken });
+        if (result?.requiresVerification && result.email) {
+          navigate(`/verify-email?email=${encodeURIComponent(result.email)}`);
+        } else {
+          navigate("/", { replace: true });
+        }
       } catch (error) {
         console.error("Form submission error:", error);
         toast.error("An error occurred. Please try again.");
@@ -100,12 +112,12 @@ const SignUpPage = () => {
                   <span className="label-text font-medium">First Name</span>
                 </label>
                 <div className="relative">
-                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                    <User className="size-5 text-base-content/40" />
+                  <div className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-primary">
+                    <User className="size-5" />
                   </div>
                   <input
                     type="text"
-                    className="input input-bordered w-full pl-10"
+                    className="input input-bordered w-full pl-11"
                     placeholder="John"
                     value={formData.firstName}
                     onChange={(e) =>
@@ -119,12 +131,12 @@ const SignUpPage = () => {
                   <span className="label-text font-medium">Last Name</span>
                 </label>
                 <div className="relative">
-                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                    <User className="size-5 text-base-content/40" />
+                  <div className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-primary">
+                    <User className="size-5" />
                   </div>
                   <input
                     type="text"
-                    className="input input-bordered w-full pl-10"
+                    className="input input-bordered w-full pl-11"
                     placeholder="Doe"
                     value={formData.lastName}
                     onChange={(e) =>
@@ -140,16 +152,47 @@ const SignUpPage = () => {
                 <span className="label-text font-medium">Email</span>
               </label>
               <div className="relative">
-                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                  <Mail className="size-5 text-base-content/40" />
+                <div className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-primary">
+                  <Mail className="size-5" />
                 </div>
                 <input
                   type="email"
-                  className="input input-bordered w-full pl-10"
+                  className="input input-bordered w-full pl-11"
                   placeholder="you@example.com"
                   value={formData.email}
                   onChange={(e) =>
                     setFormData({ ...formData, email: e.target.value })
+                  }
+                />
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="form-control">
+                <label className="label">
+                  <span className="label-text font-medium">Phone</span>
+                </label>
+                <input
+                  type="tel"
+                  className="input input-bordered w-full"
+                  placeholder="+63 900 000 0000"
+                  value={formData.phone}
+                  onChange={(e) =>
+                    setFormData({ ...formData, phone: e.target.value })
+                  }
+                />
+              </div>
+              <div className="form-control">
+                <label className="label">
+                  <span className="label-text font-medium">Address</span>
+                </label>
+                <input
+                  type="text"
+                  className="input input-bordered w-full"
+                  placeholder="Street, City"
+                  value={formData.address}
+                  onChange={(e) =>
+                    setFormData({ ...formData, address: e.target.value })
                   }
                 />
               </div>
@@ -160,12 +203,12 @@ const SignUpPage = () => {
                 <span className="label-text font-medium">Password</span>
               </label>
               <div className="relative">
-                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                  <Lock className="size-5 text-base-content/40" />
+                <div className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-primary">
+                  <Lock className="size-5" />
                 </div>
                 <input
                   type={showPassword ? "text" : "password"}
-                  className="input input-bordered w-full pl-10"
+                  className="input input-bordered w-full pl-11"
                   placeholder="••••••••"
                   value={formData.password}
                   onChange={(e) =>
@@ -174,13 +217,13 @@ const SignUpPage = () => {
                 />
                 <button
                   type="button"
-                  className="absolute inset-y-0 right-0 pr-3 flex items-center"
+                  className="absolute inset-y-0 right-0 pr-3 flex items-center text-primary/80"
                   onClick={() => setShowPassword(!showPassword)}
                 >
                   {showPassword ? (
-                    <EyeOff className="size-5 text-base-content/40" />
+                    <EyeOff className="size-5" />
                   ) : (
-                    <Eye className="size-5 text-base-content/40" />
+                    <Eye className="size-5" />
                   )}
                 </button>
               </div>

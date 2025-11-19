@@ -1,11 +1,14 @@
 import User from '../models/user.model.js';
 import { generateToken } from '../utils/token.js';
 import bcrypt from 'bcryptjs';
-import { sendWelcomeEmail } from '../utils/email.js';
+import {
+  sendWelcomeEmail,
+  sendPasswordResetEmail,
+  sendEmailVerificationEmail,
+} from '../utils/email.js';
 import passport from 'passport';
 import { Strategy as GoogleStrategy } from 'passport-google-oauth20';
 import { generateResetCode, generateResetToken, hashResetToken } from '../utils/passwordReset.js';
-import { sendPasswordResetEmail } from '../utils/email.js';
 import { verifyRecaptcha } from '../utils/recaptcha.js';
 
 // Configure Google OAuth Strategy
@@ -115,10 +118,23 @@ export const googleAuthCallback = async (req, res, next) => {
 
 //register
 export const Register = async (req, res) => {
-  const { firstName, lastName, email, password, recaptchaToken } = req.body;
+  const { firstName, lastName, email, password, recaptchaToken, phone, address } = req.body;
   try {
-    if (!firstName || !lastName || !email || !password) {
-      return res.status(400).json({ message: 'All fields are required' });
+    if (!firstName || !lastName || !email || !password || !phone || !address) {
+      return res.status(400).json({
+        message: 'First name, last name, email, phone, address, and password are required',
+      });
+    }
+
+    const normalizedPhone = String(phone).trim();
+    const normalizedAddress = String(address).trim();
+
+    if (!normalizedPhone) {
+      return res.status(400).json({ message: 'Phone number is required' });
+    }
+
+    if (!normalizedAddress) {
+      return res.status(400).json({ message: 'Address is required' });
     }
 
     // Verify reCAPTCHA
@@ -146,31 +162,108 @@ export const Register = async (req, res) => {
       fullName: firstName + ' ' + lastName,
       email,
       password: hashedPassword,
+      phone: normalizedPhone,
+      address: normalizedAddress,
     });
 
-    if (newUser) {
-      // generate jwt token here
-      generateToken(newUser._id, res);
-      await newUser.save();
-
-      //send welcome email
-      await sendWelcomeEmail(email, firstName + ' ' + lastName);
-
-      res.status(201).json({
-        message: 'Successfully created an account',
-        user: {
-          _id: newUser._id,
-          fullName: newUser.fullName,
-          email: newUser.email,
-          profilePic: newUser.profilePic,
-        },
-      });
-    } else {
-      res.status(400).json({ message: 'Invalid user data' });
+    if (!newUser) {
+      return res.status(400).json({ message: 'Invalid user data' });
     }
+
+    const verificationCode = generateResetCode();
+    newUser.emailVerificationCode = verificationCode;
+    newUser.emailVerificationExpires = new Date(Date.now() + 15 * 60 * 1000); // 15 minutes
+
+    await newUser.save();
+    await sendEmailVerificationEmail(email, newUser.fullName, verificationCode);
+
+    res.status(201).json({
+      message: 'Please verify your email to finish creating your account.',
+      requiresVerification: true,
+      email: newUser.email,
+    });
   } catch (error) {
     console.log('Error in signup controller', error.message);
     res.status(500).json({ message: 'Internal Server Error' });
+  }
+};
+
+export const resendVerificationCode = async (req, res) => {
+  try {
+    const { email } = req.body;
+    if (!email) {
+      return res.status(400).json({ message: 'Email is required' });
+    }
+
+    const user = await User.findOne({ email });
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    if (user.isEmailVerified) {
+      return res.status(400).json({ message: 'Email is already verified' });
+    }
+
+    const verificationCode = generateResetCode();
+    user.emailVerificationCode = verificationCode;
+    user.emailVerificationExpires = new Date(Date.now() + 15 * 60 * 1000);
+    await user.save();
+
+    await sendEmailVerificationEmail(user.email, user.fullName, verificationCode);
+
+    res.json({ message: 'A new verification code has been sent to your email.' });
+  } catch (error) {
+    console.error('Resend verification code error:', error);
+    res.status(500).json({ message: 'Server error' });
+  }
+};
+
+export const verifyEmailCode = async (req, res) => {
+  try {
+    const { email, code } = req.body;
+    if (!email || !code) {
+      return res.status(400).json({ message: 'Email and code are required' });
+    }
+
+    const user = await User.findOne({ email });
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    if (user.isEmailVerified) {
+      return res.status(400).json({ message: 'Email is already verified' });
+    }
+
+    if (
+      !user.emailVerificationCode ||
+      user.emailVerificationCode !== code ||
+      !user.emailVerificationExpires ||
+      user.emailVerificationExpires <= new Date()
+    ) {
+      return res.status(400).json({ message: 'Invalid or expired verification code' });
+    }
+
+    user.isEmailVerified = true;
+    user.emailVerificationCode = null;
+    user.emailVerificationExpires = null;
+    await user.save();
+
+    await sendWelcomeEmail(user.email, user.fullName);
+    generateToken(user._id, res);
+
+    res.json({
+      message: 'Email verified successfully',
+      user: {
+        _id: user._id,
+        fullName: user.fullName,
+        email: user.email,
+        role: user.role,
+        profilePic: user.profilePic,
+      },
+    });
+  } catch (error) {
+    console.error('Verify email code error:', error);
+    res.status(500).json({ message: 'Server error' });
   }
 };
 
@@ -211,8 +304,13 @@ export const Login = async (req, res) => {
     if (!isMatch) {
       return res.status(400).json({ message: 'Invalid credentials' });
     }
+
     generateToken(user._id, res);
-    return res.status(200).json({ message: 'Successfully Logged in!', user });
+    res.status(200).json({
+      email: user.email,
+      fullName: user.fullName,
+      role: user.role,
+    });
   } catch (error) {
     console.error(error.message);
     res.status(500).send('Server error');
@@ -365,6 +463,7 @@ export const checkAuth = async (req, res) => {
       email: user.email,
       role: user.role,
       profilePic: user.profilePic,
+      isEmailVerified: user.isEmailVerified,
     });
   } catch (error) {
     console.error('Auth check error:', error.message);

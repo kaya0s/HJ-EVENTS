@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuthStore } from "../../store/useAuthStore";
 import { useBookingStore } from "../../store/useBookingStore";
+import BookingFilters from "../../components/admin/BookingFilters";
 import AdminSidebar from "../../components/admin/AdminSidebar";
 import StatisticsCards from "../../components/admin/StatisticsCards";
 import BookingsTable from "../../components/admin/BookingsTable";
@@ -17,18 +18,40 @@ import Packages from "./Packages";
 const Dashboard = () => {
   const { authUser } = useAuthStore();
   const navigate = useNavigate();
-  const { bookings, statistics, isLoading, fetchAllBookings } =
+  const { bookings, statistics, isLoading, fetchAllBookings, lastFilters } =
     useBookingStore();
   const [selectedBooking, setSelectedBooking] = useState(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [filters, setFilters] = useState({
+    search: "",
+    status: "all",
+    startDate: "",
+    endDate: "",
+  });
 
   useEffect(() => {
     if (authUser?.role !== "admin") {
       navigate("/");
       return;
     }
-    fetchAllBookings();
+    fetchAllBookings(filters);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [authUser, navigate, fetchAllBookings]);
+  const handleApplyFilters = async (nextFilters) => {
+    setFilters(nextFilters);
+    await fetchAllBookings(nextFilters);
+  };
+
+  const handleResetFilters = async () => {
+    const reset = {
+      search: "",
+      status: "all",
+      startDate: "",
+      endDate: "",
+    };
+    setFilters(reset);
+    await fetchAllBookings(reset);
+  };
 
   const handleViewDetails = (booking) => {
     setSelectedBooking(booking);
@@ -50,7 +73,7 @@ const Dashboard = () => {
       <AdminSidebar />
 
       {/* Main Content */}
-      <main className="lg:ml-64 p-6">
+      <main className="lg:ml-20 p-6 transition-all duration-300">
         <div className="max-w-7xl mx-auto">
           {/* Header */}
           <div className="mb-8">
@@ -70,6 +93,11 @@ const Dashboard = () => {
                 <div className="card bg-base-100 shadow-lg">
                   <div className="card-body">
                     <h2 className="card-title mb-4">Recent Bookings</h2>
+                    <BookingFilters
+                      initialFilters={lastFilters || filters}
+                      onApply={handleApplyFilters}
+                      onReset={handleResetFilters}
+                    />
                     {isLoading ? (
                       <div className="text-center py-12">
                         <Loader className="animate-spin mx-auto" size={32} />

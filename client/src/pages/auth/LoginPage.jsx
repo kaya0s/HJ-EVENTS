@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useAuthStore } from "../../store/useAuthStore";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { Eye, EyeOff, Loader2, User2, LockKeyhole } from "lucide-react";
 import Logo from "../../components/Logo";
 import toast from "react-hot-toast";
@@ -17,6 +17,7 @@ const LoginPage = () => {
     password: "",
   });
   const { login, isLoggingIn, loginWithGoogle } = useAuthStore();
+  const navigate = useNavigate();
 
   // Load reCAPTCHA script on mount if site key is configured
   useEffect(() => {
@@ -58,7 +59,15 @@ const LoginPage = () => {
         }
 
         // Send form data with reCAPTCHA token to backend
-        login({ ...formData, recaptchaToken });
+        const loggedInUser = await login({ ...formData, recaptchaToken });
+
+        if (loggedInUser?.role === "admin") {
+          navigate("/admin", { replace: true });
+        } else if (loggedInUser?.role === "supplier") {
+          navigate("/supplier", { replace: true });
+        } else if (loggedInUser) {
+          navigate("/", { replace: true });
+        }
       } catch (error) {
         console.error("Form submission error:", error);
         toast.error("An error occurred. Please try again.");
@@ -101,12 +110,12 @@ const LoginPage = () => {
                 <span className="label-text font-medium">Email</span>
               </label>
               <div className="relative">
-                <span className="absolute inset-y-0 left-0 pl-3 flex items-center text-base-content/40">
+                <div className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-primary">
                   <User2 className="h-5 w-5" />
-                </span>
+                </div>
                 <input
                   type="email"
-                  className="input input-bordered w-full pl-10"
+                  className="input input-bordered w-full pl-11"
                   placeholder="you@example.com"
                   value={formData.email}
                   onChange={(e) =>
@@ -122,12 +131,12 @@ const LoginPage = () => {
                 <span className="label-text font-medium">Password</span>
               </label>
               <div className="relative">
-                <span className="absolute inset-y-0 left-0 pl-3 flex items-center text-base-content/40">
+                <div className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-primary">
                   <LockKeyhole className="h-5 w-5" />
-                </span>
+                </div>
                 <input
                   type={showPassword ? "text" : "password"}
-                  className="input input-bordered w-full pl-10"
+                  className="input input-bordered w-full pl-11"
                   placeholder="••••••••"
                   value={formData.password}
                   onChange={(e) =>
@@ -137,14 +146,14 @@ const LoginPage = () => {
                 />
                 <button
                   type="button"
-                  className="absolute inset-y-0 right-0 pr-3 flex items-center"
+                  className="absolute inset-y-0 right-0 pr-3 flex items-center text-primary/80"
                   onClick={() => setShowPassword(!showPassword)}
                   tabIndex={-1}
                 >
                   {showPassword ? (
-                    <EyeOff className="h-5 w-5 text-base-content/40" />
+                    <EyeOff className="h-5 w-5" />
                   ) : (
-                    <Eye className="h-5 w-5 text-base-content/40" />
+                    <Eye className="h-5 w-5" />
                   )}
                 </button>
               </div>

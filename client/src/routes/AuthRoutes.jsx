@@ -5,6 +5,7 @@ import ForgotPassword from "../pages/auth/ForgotPassword";
 import VerifyResetCode from "../pages/auth/VerifyResetCode";
 import NewPassword from "../pages/auth/NewPassword";
 import AuthSuccess from "../pages/auth/AuthSuccess";
+import VerifyEmailPage from "../pages/auth/VerifyEmail";
 
 export const AuthRoutes = ({ authUser }) => [
   <Route
@@ -31,6 +32,11 @@ export const AuthRoutes = ({ authUser }) => [
     key="new-password"
     path="/new-password"
     element={!authUser ? <NewPassword /> : <Navigate to="/" replace />}
+  />,
+  <Route
+    key="verify-email"
+    path="/verify-email"
+    element={!authUser ? <VerifyEmailPage /> : <Navigate to="/" replace />}
   />,
   <Route key="auth-success" path="/auth/success" element={<AuthSuccess />} />,
 ];

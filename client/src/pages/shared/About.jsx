@@ -1,7 +1,7 @@
 const About = () => {
   return (
-    <section className="container mx-auto px-4 py-16 space-y-12">
-      <div className="max-w-3xl space-y-6">
+    <section className="bg-linear-to-b from-base-100/80 via-base-200/40 to-base-100/80 min-h-screen w-full px-4 pt-6 pb-16 space-y-12 flex flex-col items-center justify-center">
+      <div className="max-w-3xl w-full space-y-6 text-center">
         <p className="text-sm font-semibold uppercase tracking-[0.3em] text-primary/70">
           Our Story
         </p>
@@ -16,8 +16,8 @@ const About = () => {
         </p>
       </div>
 
-      <div className="grid gap-8 md:grid-cols-3">
-        <div className="rounded-2xl bg-base-200 p-6 shadow-sm">
+      <div className="w-full max-w-5xl grid gap-8 md:grid-cols-3 text-center">
+        <div className="rounded-2xl bg-base-200 p-6 shadow-sm flex flex-col items-center">
           <h3 className="text-lg font-semibold text-base-content">
             Experienced Visionaries
           </h3>
@@ -26,7 +26,7 @@ const About = () => {
             blending cultural traditions with fresh, modern styling.
           </p>
         </div>
-        <div className="rounded-2xl bg-base-200 p-6 shadow-sm">
+        <div className="rounded-2xl bg-base-200 p-6 shadow-sm flex flex-col items-center">
           <h3 className="text-lg font-semibold text-base-content">
             Thoughtful Partnerships
           </h3>
@@ -35,7 +35,7 @@ const About = () => {
             entertainers aligned with your taste and budget.
           </p>
         </div>
-        <div className="rounded-2xl bg-base-200 p-6 shadow-sm">
+        <div className="rounded-2xl bg-base-200 p-6 shadow-sm flex flex-col items-center">
           <h3 className="text-lg font-semibold text-base-content">
             Client-First Care
           </h3>
@@ -46,7 +46,7 @@ const About = () => {
         </div>
       </div>
 
-      <div className="rounded-3xl bg-gradient-to-r from-primary/10 via-primary/5 to-transparent p-10 md:p-12">
+      <div className="w-full max-w-4xl rounded-3xl bg-gradient-to-r from-primary/10 via-primary/5 to-transparent p-10 md:p-12 text-center mx-auto">
         <h2 className="text-2xl font-semibold text-base-content">
           "The HJ Weddings team delivered a celebration that felt uniquely ours
           — every detail was intentional, elegant, and stress-free."

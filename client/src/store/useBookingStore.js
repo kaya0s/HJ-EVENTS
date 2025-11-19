@@ -5,6 +5,7 @@ import toast from "react-hot-toast";
 export const useBookingStore = create((set) => ({
   bookings: [],
   isLoading: false,
+  lastFilters: {},
   statistics: {
     total: 0,
     pending: 0,
@@ -12,15 +13,25 @@ export const useBookingStore = create((set) => ({
     completed: 0,
     cancelled: 0,
     rejected: 0,
+    expired: 0,
   },
 
   /**
    * Fetches all bookings for admin
    */
-  fetchAllBookings: async () => {
+  fetchAllBookings: async (filters = {}) => {
     set({ isLoading: true });
     try {
-      const res = await axiosInstance.get("/bookings/all");
+      const params = new URLSearchParams();
+      Object.entries(filters).forEach(([key, value]) => {
+        if (value) {
+          params.append(key, value);
+        }
+      });
+      const query = params.toString();
+      const res = await axiosInstance.get(
+        `/bookings/all${query ? `?${query}` : ""}`
+      );
       console.log("Bookings API Response:", res.data);
 
       let bookings = [];
@@ -65,9 +76,12 @@ export const useBookingStore = create((set) => ({
         rejected: bookings.filter(
           (b) => b.status === "rejected" || b.status === "Rejected"
         ).length,
+        expired: bookings.filter(
+          (b) => b.status === "expired" || b.status === "Expired"
+        ).length,
       };
 
-      set({ bookings, statistics: stats });
+      set({ bookings, statistics: stats, lastFilters: filters });
     } catch (error) {
       // Explain the error through toast for debugging
       let msg = "Failed to fetch bookings";
@@ -88,6 +102,7 @@ export const useBookingStore = create((set) => ({
           completed: 0,
           cancelled: 0,
           rejected: 0,
+          expired: 0,
         },
       });
     } finally {
@@ -140,6 +155,30 @@ export const useBookingStore = create((set) => ({
         error?.response?.data?.message ||
         error?.message ||
         "Failed to reject booking";
+      toast.error(msg);
+      throw error;
+    }
+  },
+
+  /**
+   * Marks a booking as completed
+   */
+  completeBooking: async (bookingId) => {
+    try {
+      await axiosInstance.post(`/bookings/complete/${bookingId}`);
+      set((state) => ({
+        bookings: state.bookings.map((b) =>
+          b._id === bookingId ? { ...b, status: "completed" } : b
+        ),
+      }));
+      toast.success("Booking marked as completed");
+      const state = useBookingStore.getState();
+      await state.fetchAllBookings();
+    } catch (error) {
+      let msg =
+        error?.response?.data?.message ||
+        error?.message ||
+        "Failed to complete booking";
       toast.error(msg);
       throw error;
     }

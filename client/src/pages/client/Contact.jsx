@@ -1,20 +1,15 @@
-import { Mail, Phone, MapPin, Heart } from "lucide-react";
+import { Mail, Phone, MapPin, Instagram, Facebook } from "lucide-react";
 
 const Contact = () => {
   return (
-    <section className="container mx-auto px-4 py-16 grid gap-12 lg:grid-cols-[2fr,1fr]">
-      <div className="space-y-10">
+    <section className="bg-linear-to-b from-base-100/80 via-base-200/40 to-base-100/80 min-h-screen w-full px-4 pt-6 pb-16 space-y-12 flex flex-col items-center justify-center">
+      <div className="max-w-3xl w-full space-y-6 text-center">
         <div className="space-y-4">
-          <p className="text-sm font-semibold uppercase tracking-[0.3em] text-primary/70">
-            Say hello
-          </p>
-          <h1 className="text-4xl font-bold text-base-content">
-            Let’s start planning the celebration of a lifetime.
-          </h1>
+          <h1 className="text-4xl font-bold text-base-content">Contact Us</h1>
         </div>
       </div>
 
-      <aside className="space-y-8 rounded-3xl bg-base-200 p-8 shadow-sm">
+      <aside className="w-full max-w-4xl space-y-8 rounded-3xl bg-base-200 p-8 md:p-12 shadow-sm">
         <div className="space-y-3">
           <h2 className="text-lg font-semibold">Visit our studio</h2>
           <p className="flex items-start gap-3 text-sm text-base-content/70">
@@ -45,6 +40,29 @@ const Contact = () => {
               events@hjweddings.com
             </a>
           </p>
+        </div>
+        <div className="space-y-3">
+          <h2 className="text-lg font-semibold">Socials</h2>
+          <div className="flex flex-col sm:flex-row gap-2 sm:gap-6 text-sm text-base-content/70">
+            <a
+              href="https://instagram.com/hjweddings"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex items-center gap-3 hover:text-primary transition"
+            >
+              <Instagram className="mt-1 text-primary" size={20} />
+              @hjweddings
+            </a>
+            <a
+              href="https://www.facebook.com/profile.php?id=100064771667953"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex items-center gap-3 hover:text-primary transition"
+            >
+              <Facebook className="mt-1 text-primary" size={20} />
+              facebook.com/hjweddings
+            </a>
+          </div>
         </div>
         <div className="space-y-3">
           <h2 className="text-lg font-semibold">Planning hours</h2>
