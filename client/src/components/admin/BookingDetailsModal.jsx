@@ -9,7 +9,7 @@ import {
   Mail,
   Phone,
   Home,
-  DollarSign,
+  PhilippinePeso,
   Info,
 } from "lucide-react";
 import dayjs from "dayjs";
@@ -154,7 +154,7 @@ const BookingDetailsModal = ({ booking, isOpen, onClose }) => {
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4 bg-base-200 rounded-xl p-4">
             <div>
               <p className="text-sm text-base-content/60 flex items-center gap-2">
-                <DollarSign size={18} className="text-primary" />
+                <PhilippinePeso size={18} className="text-primary" />
                 Base Price
               </p>
               <p className="text-xl font-semibold">
@@ -163,7 +163,7 @@ const BookingDetailsModal = ({ booking, isOpen, onClose }) => {
             </div>
             <div>
               <p className="text-sm text-base-content/60 flex items-center gap-2">
-                <DollarSign size={18} className="text-primary" />
+                <PhilippinePeso size={18} className="text-primary" />
                 Adjusted Total
               </p>
               <p className="text-xl font-semibold">
