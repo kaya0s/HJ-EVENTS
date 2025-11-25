@@ -7,13 +7,8 @@ import AdminSidebar from "../../components/admin/AdminSidebar";
 import StatisticsCards from "../../components/admin/StatisticsCards";
 import BookingsTable from "../../components/admin/BookingsTable";
 import BookingDetailsModal from "../../components/admin/BookingDetailsModal";
-import SuppliersSection from "../../components/admin/SuppliersSection";
 import NotificationsPanel from "../../components/admin/NotificationsPanel";
-import ManageClients from "./ManageClients";
 import { Loader } from "lucide-react";
-import ReportsAnalytics from "../../components/admin/ReportsAnalytics";
-import AdminCalendar from "../../components/admin/AdminCalendar";
-import Packages from "./Packages";
 
 const Dashboard = () => {
   const { authUser } = useAuthStore();
