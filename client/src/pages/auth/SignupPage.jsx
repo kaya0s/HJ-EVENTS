@@ -92,12 +92,6 @@ const SignUpPage = () => {
           {/* LOGO */}
           <div className="text-center mb-8">
             <div className="flex flex-col items-center gap-2 group">
-              <div
-                className="size-12 rounded-xl bg-primary/10 flex items-center justify-center
-              group-hover:bg-primary/20 transition-colors"
-              >
-                <Logo />
-              </div>
               <h1 className="text-2xl font-bold mt-2">Create Account</h1>
               <p className="text-base-content/60">
                 Start planning your special day!
@@ -112,8 +106,8 @@ const SignUpPage = () => {
                   <span className="label-text font-medium">First Name</span>
                 </label>
                 <div className="relative">
-                  <div className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-primary">
-                    <User className="size-5" />
+                  <div className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-primary z-10">
+                    <User className="h-5 w-5" />
                   </div>
                   <input
                     type="text"
@@ -131,8 +125,8 @@ const SignUpPage = () => {
                   <span className="label-text font-medium">Last Name</span>
                 </label>
                 <div className="relative">
-                  <div className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-primary">
-                    <User className="size-5" />
+                  <div className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-primary z-10">
+                    <User className="h-5 w-5" />
                   </div>
                   <input
                     type="text"
@@ -152,8 +146,8 @@ const SignUpPage = () => {
                 <span className="label-text font-medium">Email</span>
               </label>
               <div className="relative">
-                <div className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-primary">
-                  <Mail className="size-5" />
+                <div className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-primary z-10">
+                  <Mail className="h-5 w-5" />
                 </div>
                 <input
                   type="email"
@@ -203,8 +197,8 @@ const SignUpPage = () => {
                 <span className="label-text font-medium">Password</span>
               </label>
               <div className="relative">
-                <div className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-primary">
-                  <Lock className="size-5" />
+                <div className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-primary z-10">
+                  <Lock className="h-5 w-5" />
                 </div>
                 <input
                   type={showPassword ? "text" : "password"}
@@ -217,13 +211,14 @@ const SignUpPage = () => {
                 />
                 <button
                   type="button"
-                  className="absolute inset-y-0 right-0 pr-3 flex items-center text-primary/80"
+                  className="absolute inset-y-0 right-0 pr-3 flex items-center text-primary/80 z-10"
                   onClick={() => setShowPassword(!showPassword)}
+                  tabIndex={-1}
                 >
                   {showPassword ? (
-                    <EyeOff className="size-5" />
+                    <EyeOff className="h-5 w-5" />
                   ) : (
-                    <Eye className="size-5" />
+                    <Eye className="h-5 w-5" />
                   )}
                 </button>
               </div>

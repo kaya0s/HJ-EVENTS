@@ -110,7 +110,7 @@ const LoginPage = () => {
                 <span className="label-text font-medium">Email</span>
               </label>
               <div className="relative">
-                <div className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-primary">
+                <div className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-primary z-10">
                   <User2 className="h-5 w-5" />
                 </div>
                 <input
@@ -131,7 +131,7 @@ const LoginPage = () => {
                 <span className="label-text font-medium">Password</span>
               </label>
               <div className="relative">
-                <div className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-primary">
+                <div className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-primary z-10">
                   <LockKeyhole className="h-5 w-5" />
                 </div>
                 <input
@@ -146,7 +146,7 @@ const LoginPage = () => {
                 />
                 <button
                   type="button"
-                  className="absolute inset-y-0 right-0 pr-3 flex items-center text-primary/80"
+                  className="absolute inset-y-0 right-0 pr-3 flex items-center text-primary/80 z-10"
                   onClick={() => setShowPassword(!showPassword)}
                   tabIndex={-1}
                 >
@@ -158,21 +158,6 @@ const LoginPage = () => {
                 </button>
               </div>
             </div>
-
-            <button
-              type="submit"
-              className="btn btn-primary w-full"
-              disabled={isLoggingIn}
-            >
-              {isLoggingIn ? (
-                <>
-                  <Loader2 className="h-5 w-5 animate-spin" />
-                  Loading...
-                </>
-              ) : (
-                "Sign in"
-              )}
-            </button>
           </form>
 
           <div className="relative">

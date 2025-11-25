@@ -54,7 +54,9 @@ const ForgotPassword = () => {
                 <span className="label-text font-medium">Email Address</span>
               </label>
               <div className="relative">
-                <Mail className="absolute left-3 top-3.5 h-5 w-5 text-base-content/40" />
+                <div className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-primary z-10">
+                  <Mail className="h-5 w-5" />
+                </div>
                 <input
                   type="email"
                   className="input input-bordered w-full pl-10"
