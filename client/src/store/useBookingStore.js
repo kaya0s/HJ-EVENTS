@@ -277,11 +277,18 @@ export const useBookingStore = create((set) => ({
       toast.success("Booking updated successfully");
       return res.data?.booking;
     } catch (error) {
-      let msg =
-        error?.response?.data?.message ||
-        error?.message ||
-        "Failed to update booking";
-      toast.error(msg);
+      if (error?.response?.status === 409) {
+        toast.error(
+          error?.response?.data?.message ||
+            "Someone else updated this booking. Please refresh."
+        );
+      } else {
+        const msg =
+          error?.response?.data?.message ||
+          error?.message ||
+          "Failed to update booking";
+        toast.error(msg);
+      }
       throw error;
     }
   },

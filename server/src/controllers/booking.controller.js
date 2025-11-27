@@ -504,7 +504,7 @@ export const assignSuppliersToBooking = async (req, res) => {
  */
 export const updateBooking = async (req, res) => {
   try {
-    const { title, venue } = req.body;
+    const { title, venue, lastKnownUpdatedAt } = req.body;
     const booking = await Booking.findOne({ _id: req.params.id, 'user.id': req.user._id })
       .populate('package')
       .populate('suppliers', 'name category rating');
@@ -514,6 +514,19 @@ export const updateBooking = async (req, res) => {
     // Cannot edit accepted bookings
     if (booking.status === 'accepted') {
       return res.status(400).json({ message: 'Cannot edit an accepted booking' });
+    }
+
+    // Optimistic concurrency control
+    if (lastKnownUpdatedAt) {
+      const clientTimestamp = new Date(lastKnownUpdatedAt).getTime();
+      const serverTimestamp = new Date(booking.updatedAt).getTime();
+      if (!Number.isNaN(clientTimestamp) && clientTimestamp !== serverTimestamp) {
+        const freshBooking = booking.toObject({ virtuals: true });
+        return res.status(409).json({
+          message: 'Booking was updated by someone else. Please refresh and try again.',
+          booking: freshBooking,
+        });
+      }
     }
 
     // Update only allowed fields (not weddingDate)

@@ -15,7 +15,11 @@ const EditBookingModal = ({ booking, isOpen, onClose, onSave, isSaving }) => {
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    onSave({ title: title.trim(), venue: venue.trim() });
+    onSave({
+      title: title.trim(),
+      venue: venue.trim(),
+      lastKnownUpdatedAt: booking.updatedAt,
+    });
   };
 
   const formatSuppliers = (suppliers) => {
@@ -177,6 +181,11 @@ const EditBookingModal = ({ booking, isOpen, onClose, onSave, isSaving }) => {
               {booking.status?.charAt(0).toUpperCase() +
                 booking.status?.slice(1).toLowerCase() || booking.status}
             </span>
+            {booking.updatedAt && (
+              <span className="text-xs text-base-content/50 ml-2">
+                Updated {dayjs(booking.updatedAt).format("MMM D, YYYY h:mm A")}
+              </span>
+            )}
           </div>
 
           {/* Action Buttons */}
