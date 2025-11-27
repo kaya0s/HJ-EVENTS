@@ -28,6 +28,7 @@ const createInitialFormData = () => ({
     phone: "",
     email: "",
     address: "",
+    facebookPage: "",
   },
 });
 
@@ -61,6 +62,7 @@ const SupplierModal = ({ isOpen, onClose, supplier = null }) => {
           phone: supplier.contactInfo?.phone || "",
           email: supplier.contactInfo?.email || supplier.user?.email || "",
           address: supplier.contactInfo?.address || "",
+          facebookPage: supplier.contactInfo?.facebookPage || "", // ← Change here
         },
       });
       setImagePreview(supplier.imageURL || null);
@@ -205,6 +207,7 @@ const SupplierModal = ({ isOpen, onClose, supplier = null }) => {
         "contactInfo[phone]": formData.contactInfo.phone,
         "contactInfo[email]": formData.contactInfo.email || accountEmail,
         "contactInfo[address]": formData.contactInfo.address,
+        "contactInfo[facebookPage]": formData.contactInfo.facebookPage, // ← Change here
       };
 
       if (accountEmail) {
@@ -343,6 +346,21 @@ const SupplierModal = ({ isOpen, onClose, supplier = null }) => {
                 placeholder="Used for contact and login notifications"
               />
             </div>
+          </div>
+
+          {/* Facebook Page */}
+          <div className="form-control w-full">
+            <label className="label">
+              <span className="label-text">Facebook Page</span>
+            </label>
+            <input
+              type="text"
+              name="contactInfo.facebookPage" // ← Change here
+              value={formData.contactInfo.facebookPage} // ← Change here
+              onChange={handleChange}
+              className="input input-bordered w-full"
+              placeholder="https://facebook.com/yourpage"
+            />
           </div>
 
           <div className="form-control w-full">

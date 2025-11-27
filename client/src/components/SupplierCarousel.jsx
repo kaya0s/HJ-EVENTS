@@ -8,6 +8,7 @@ import {
   Utensils,
   Flower2,
   Sparkles,
+  Facebook,
 } from "lucide-react";
 import axiosInstance from "../lib/axios";
 
@@ -138,6 +139,26 @@ const SupplierCarousel = () => {
               <span className="uppercase text-xs tracking-wide text-base-content/60">
                 {current?.category}
               </span>
+              {/* Facebook page link - Redesigned */}
+              {current?.contactInfo?.facebookPage ? (
+                <a
+                  href={current.contactInfo.facebookPage}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-2 mt-3 px-4 py-2 bg-[#1877F2] hover:bg-[#0C63D4] text-white rounded-lg transition-all shadow-md hover:shadow-lg group"
+                  aria-label={`Visit ${current.name} Facebook Page`}
+                >
+                  <Facebook className="w-4 h-4 group-hover:scale-110 transition-transform" />
+                  <span className="font-medium text-xs">See Our Services</span>
+                </a>
+              ) : (
+                <div className="mt-3 px-4 py-2 bg-base-300/50 rounded-lg border border-base-300">
+                  <span className="flex items-center gap-2 text-base-content/50 text-xs">
+                    <Facebook className="w-4 h-4" />
+                    No Facebook page
+                  </span>
+                </div>
+              )}
             </div>
           </div>
           <div className="flex-1 flex flex-col gap-3 justify-center items-center md:items-start pl-0 md:pl-8 py-2">

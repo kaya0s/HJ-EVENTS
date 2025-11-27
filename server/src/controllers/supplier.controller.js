@@ -105,6 +105,14 @@ export const createSupplier = async (req, res) => {
     const accountFullName =
       data.accountFullName || data['account[fullName]'] || data.name || 'New Supplier';
 
+    // ---- facebookPage extraction ----
+    const facebookPage =
+      data.facebookPage ||
+      data['facebookPage'] ||
+      (data.contactInfo && data.contactInfo.facebookPage) ||
+      data['contactInfo[facebookPage]'] ||
+      '';
+
     if (!accountEmail || !accountPassword) {
       return res.status(400).json({ message: 'Supplier login email and password are required.' });
     }
@@ -130,6 +138,7 @@ export const createSupplier = async (req, res) => {
         phone: data['contactInfo[phone]'] || data.contactInfo?.phone || '',
         email: data['contactInfo[email]'] || data.contactInfo?.email || accountEmail,
         address: data['contactInfo[address]'] || data.contactInfo?.address || '',
+        facebookPage: facebookPage,
       },
       unavailableDates: extractUnavailableDates(data).dates,
     };
@@ -213,6 +222,17 @@ export const updateSupplier = async (req, res) => {
 
     const unavailableDatesResult = extractUnavailableDates(data);
 
+    // Facebook page logic for update, allow updating and fallback to current value if needed
+    const facebookPage =
+      data.facebookPage !== undefined
+        ? data.facebookPage
+        : data['facebookPage'] !== undefined
+          ? data['facebookPage']
+          : (data.contactInfo && data.contactInfo.facebookPage) ||
+            data['contactInfo[facebookPage]'] ||
+            supplier.facebookPage ||
+            '';
+
     const updates = {
       name: data.name ?? supplier.name,
       category: data.category ?? supplier.category,
@@ -234,6 +254,7 @@ export const updateSupplier = async (req, res) => {
           data.contactInfo?.address ??
           supplier.contactInfo?.address ??
           '',
+        facebookPage: facebookPage,
       },
     };
 
@@ -403,13 +424,14 @@ export const updateMyProfile = async (req, res) => {
       return res.status(404).json({ message: 'Supplier not found' });
     }
 
-    const { name, description, priceRange, contactInfo = {}, category } = req.body;
+    const { name, description, priceRange, contactInfo = {}, category, facebookPage } = req.body;
     const unavailableDatesResult = extractUnavailableDates(req.body);
 
     if (name !== undefined) supplier.name = name;
     if (description !== undefined) supplier.description = description;
     if (priceRange !== undefined) supplier.priceRange = priceRange;
     if (category !== undefined) supplier.category = category;
+    if (facebookPage !== undefined) supplier.facebookPage = facebookPage;
 
     supplier.contactInfo = {
       ...supplier.contactInfo,

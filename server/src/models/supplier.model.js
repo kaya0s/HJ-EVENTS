@@ -25,6 +25,7 @@ const supplierSchema = new Schema(
       phone: { type: String, default: '' },
       email: { type: String, default: '' },
       address: { type: String, default: '' },
+      facebookPage: { type: String, default: '' },
     },
     priceRange: {
       type: String,
