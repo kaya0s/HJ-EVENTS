@@ -7,6 +7,7 @@ import Packages from "../pages/admin/Packages";
 import Bookings from "../pages/admin/Bookings";
 import Calendar from "../pages/admin/Calendar";
 import FaqManager from "../pages/admin/FaqManager";
+import Settings from "../pages/admin/Settings";
 
 export const AdminRoutes = ({ authUser }) => (
   <>
@@ -72,6 +73,12 @@ export const AdminRoutes = ({ authUser }) => (
         ) : (
           <Navigate to="/" replace />
         )
+      }
+    />
+    <Route
+      path="/admin/settings"
+      element={
+        authUser?.role === "admin" ? <Settings /> : <Navigate to="/" replace />
       }
     />
   </>
