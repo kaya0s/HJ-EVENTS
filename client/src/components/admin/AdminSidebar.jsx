@@ -9,6 +9,7 @@ import {
   FileText,
   HelpCircle,
   Settings2,
+  DatabaseBackup,
 } from "lucide-react";
 import { useState } from "react";
 
@@ -62,6 +63,11 @@ const AdminSidebar = () => {
       label: "Roles & Permissions",
       icon: Settings2,
     },
+    {
+      path: "/admin/backup",
+      label: "Backup & Restore",
+      icon: DatabaseBackup,
+    },
   ];
 
   const renderNavLink = (item) => {
@@ -78,7 +84,7 @@ const AdminSidebar = () => {
         }
       >
         {/* Icon container - fixed width, always left-aligned */}
-        <div className="flex items-center justify-center flex-shrink-0 w-16">
+        <div className="flex items-center justify-center shrink-0 w-16">
           <Icon size={20} />
         </div>
         {/* Text label - fades in/out, does not push icon */}

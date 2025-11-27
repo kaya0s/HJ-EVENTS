@@ -1,7 +1,20 @@
 import express from 'express';
-import backupDatabase from '../controllers/backup.controller.js';
+import {
+  getBackups,
+  createBackup,
+  downloadBackup,
+  restoreBackup,
+  deleteBackup,
+  backupDatabase, // legacy
+} from '../controllers/backup.controller.js';
 
 const router = express.Router();
-router.get('/', backupDatabase);
 
+router.get('/', getBackups);
+router.post('/create', createBackup);
+router.get('/download/:id', downloadBackup);
+router.post('/restore', restoreBackup);
+router.delete('/:id', deleteBackup);
+
+router.post('/backup', backupDatabase);
 export default router;
