@@ -17,12 +17,18 @@ import axiosInstance from "../lib/axios";
 import { useSupplierStore } from "../store/useSupplierStore";
 import { useDeductionStore } from "../store/useDeductionStore";
 import { useAuthStore } from "../store/useAuthStore";
+import { usePermissionsStore } from "../store/usePermissionsStore";
 
 const normalizeCategoryKey = (value = "") => value.trim().toLowerCase();
 
 const BookingModal = ({ package: pkg, isOpen, onClose }) => {
   const navigate = useNavigate();
   const { authUser } = useAuthStore();
+  const canSubmitRequests = usePermissionsStore((state) =>
+    authUser?.role === "user"
+      ? state.isAllowed("user", "submitRequests")
+      : false
+  );
   const [selectedDate, setSelectedDate] = useState(null);
   const [title, setTitle] = useState("");
   const [venue, setVenue] = useState("");
@@ -46,6 +52,8 @@ const BookingModal = ({ package: pkg, isOpen, onClose }) => {
     isLoading: isLoadingDeductions,
   } = useDeductionStore();
 
+  const isRequestsDisabled = authUser?.role === "user" && !canSubmitRequests;
+
   // Check authentication when modal opens
   useEffect(() => {
     if (isOpen && !authUser) {
@@ -54,7 +62,10 @@ const BookingModal = ({ package: pkg, isOpen, onClose }) => {
       navigate("/login");
       return;
     }
-  }, [isOpen, authUser, onClose, navigate]);
+    if (isOpen && isRequestsDisabled) {
+      toast.error("Booking requests are currently disabled by your admin.");
+    }
+  }, [isOpen, authUser, onClose, navigate, isRequestsDisabled]);
 
   // Fetch booked dates and suppliers from server
   useEffect(() => {
@@ -193,6 +204,17 @@ const BookingModal = ({ package: pkg, isOpen, onClose }) => {
     // Check if user is a client
     if (authUser.role !== "user") {
       toast.error("Only clients can book packages");
+      onClose();
+      return;
+    }
+
+    if (isRequestsDisabled) {
+      toast.error("You do not have access to submit booking requests.");
+      return;
+    }
+
+    if (!canSubmitRequests) {
+      toast.error("Booking requests are disabled by the administrator.");
       onClose();
       return;
     }
@@ -347,14 +369,16 @@ const BookingModal = ({ package: pkg, isOpen, onClose }) => {
                 type="button"
                 className="btn btn-ghost btn-sm"
                 onClick={handleSendVerificationCode}
-                disabled={isSendingCode}
+                disabled={isSendingCode || isRequestsDisabled}
               >
                 {isSendingCode ? "Sending..." : "Resend Code"}
               </button>
               <button
                 type="submit"
                 className="btn btn-primary min-w-[120px]"
-                disabled={!verificationCode.trim() || isVerifying}
+                disabled={
+                  !verificationCode.trim() || isVerifying || isRequestsDisabled
+                }
               >
                 {isVerifying ? "Verifying..." : "Verify"}
               </button>
@@ -549,6 +573,14 @@ const BookingModal = ({ package: pkg, isOpen, onClose }) => {
           </button>
         </div>
 
+        {isRequestsDisabled && (
+          <div className="alert alert-warning mb-4">
+            <span className="font-semibold">
+              You do not have access to this feature.
+            </span>
+          </div>
+        )}
+
         <form className="space-y-6" onSubmit={handleSubmit}>
           {/* Wedding Title */}
           <div className="form-control w-full">
@@ -566,6 +598,7 @@ const BookingModal = ({ package: pkg, isOpen, onClose }) => {
               className="input input-bordered w-full focus:input-primary"
               maxLength={120}
               required
+              disabled={isRequestsDisabled}
             />
           </div>
 
@@ -608,6 +641,7 @@ const BookingModal = ({ package: pkg, isOpen, onClose }) => {
               placeholder="Enter event venue (e.g., Grand Ballroom, Hotel Name)"
               className="input input-bordered w-full focus:input-primary"
               required
+              disabled={isRequestsDisabled}
             />
           </div>
 

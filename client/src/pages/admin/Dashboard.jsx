@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuthStore } from "../../store/useAuthStore";
 import { useBookingStore } from "../../store/useBookingStore";
@@ -9,6 +9,7 @@ import BookingsTable from "../../components/admin/BookingsTable";
 import BookingDetailsModal from "../../components/admin/BookingDetailsModal";
 import NotificationsPanel from "../../components/admin/NotificationsPanel";
 import { Loader } from "lucide-react";
+import toast from "react-hot-toast";
 
 const Dashboard = () => {
   const { authUser } = useAuthStore();
@@ -60,6 +61,15 @@ const Dashboard = () => {
     fetchAllBookings();
   };
 
+  const handleOpenDashboardReport = useCallback(() => {
+    const apiUrl = import.meta.env.VITE_API_URL;
+    const reportUrl = `${apiUrl}/admin/reports/bookings/pdf`;
+    const popup = window.open(reportUrl, "_blank", "noopener");
+    if (!popup) {
+      toast.error("Please allow pop-ups to preview the PDF.");
+    }
+  }, []);
+
   if (authUser?.role !== "admin") {
     return null;
   }
@@ -71,11 +81,20 @@ const Dashboard = () => {
       <main className="lg:ml-20 p-6 transition-all duration-300">
         <div className="max-w-7xl mx-auto">
           {/* Header */}
-          <div className="mb-8">
-            <h1 className="text-3xl font-bold mb-2">Admin Dashboard</h1>
-            <p className="text-base-content/60">
-              Manage bookings, suppliers, and system activities
-            </p>
+          <div className="mb-8 flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+            <div>
+              <h1 className="text-3xl font-bold mb-2">Admin Dashboard</h1>
+              <p className="text-base-content/60">
+                Manage bookings, suppliers, and system activities
+              </p>
+            </div>
+            <button
+              type="button"
+              className="btn btn-primary w-full md:w-auto"
+              onClick={handleOpenDashboardReport}
+            >
+              View bookings PDF
+            </button>
           </div>
 
           {/* Overview Content */}

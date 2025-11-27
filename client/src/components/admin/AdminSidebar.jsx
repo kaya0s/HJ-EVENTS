@@ -8,6 +8,7 @@ import {
   CalendarDays,
   FileText,
   HelpCircle,
+  Settings2,
 } from "lucide-react";
 import { useState } from "react";
 
@@ -55,6 +56,11 @@ const AdminSidebar = () => {
       path: "/admin/faqs",
       label: "FAQs",
       icon: HelpCircle,
+    },
+    {
+      path: "/admin/settings",
+      label: "Roles & Permissions",
+      icon: Settings2,
     },
   ];
 

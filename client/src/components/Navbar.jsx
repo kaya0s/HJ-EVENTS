@@ -21,6 +21,7 @@ import {
   Mail,
   CalendarCheck,
   HelpCircle,
+  Settings2,
 } from "lucide-react";
 import Logo from "./Logo";
 
@@ -93,9 +94,14 @@ const Navbar = () => {
       label: "FAQs",
       icon: HelpCircle,
     },
+    {
+      path: "/admin/settings",
+      label: "Roles & Permissions",
+      icon: Settings2,
+    },
   ];
 
-  const userNavItems = [
+  const baseUserNavItems = [
     {
       path: "/",
       label: "Home",
@@ -118,6 +124,7 @@ const Navbar = () => {
       icon: CalendarCheck,
     },
   ];
+  const userNavItems = baseUserNavItems;
 
   const profileLink = useMemo(() => {
     if (!authUser) return "/login";
