@@ -1,12 +1,21 @@
-import { useEffect, useMemo } from "react";
+import { useEffect, useMemo, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import dayjs from "dayjs";
 import isSameOrAfter from "dayjs/plugin/isSameOrAfter";
-import { Loader, CalendarClock, CheckCircle, Clock, Users } from "lucide-react";
+import {
+  Loader,
+  CalendarClock,
+  CheckCircle,
+  Clock,
+  Users,
+  BarChart2,
+} from "lucide-react";
 import SupplierSidebar from "../../components/supplier/SupplierSidebar";
 import SupplierCalendar from "../../components/supplier/SupplierCalendar";
 import { useAuthStore } from "../../store/useAuthStore";
 import { useSupplierDashboardStore } from "../../store/useSupplierDashboardStore";
+import { usePermissionsStore } from "../../store/usePermissionsStore";
+import toast from "react-hot-toast";
 
 dayjs.extend(isSameOrAfter);
 
@@ -21,16 +30,23 @@ const Dashboard = () => {
     fetchSupplierProfile,
     fetchSupplierBookings,
   } = useSupplierDashboardStore();
+  const canViewBookings = usePermissionsStore((state) =>
+    state.isAllowed("supplier", "viewBookings")
+  );
+  const canGenerateReports = usePermissionsStore((state) =>
+    state.isAllowed("supplier", "generateReports")
+  );
 
   useEffect(() => {
     if (authUser?.role !== "supplier") {
       navigate("/");
       return;
     }
+    if (!canViewBookings) return;
     fetchSupplierProfile();
     fetchSupplierBookings();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [authUser?.role, navigate]);
+  }, [authUser?.role, navigate, canViewBookings]);
 
   const stats = useMemo(() => {
     const total = bookings.length;
@@ -86,11 +102,33 @@ const Dashboard = () => {
       .slice(0, 5);
   }, [bookings]);
 
+  const isLoading = isLoadingBookings || isLoadingProfile;
+  const handleSupplierReportPreview = useCallback(() => {
+    const apiUrl = import.meta.env.VITE_API_URL;
+    const reportUrl = `${apiUrl}/suppliers/reports/bookings/pdf`;
+    const popup = window.open(reportUrl, "_blank", "noopener");
+    if (!popup) {
+      toast.error("Please allow pop-ups to preview the PDF.");
+    }
+  }, []);
+
   if (authUser?.role !== "supplier") {
     return null;
   }
 
-  const isLoading = isLoadingBookings || isLoadingProfile;
+  if (!canViewBookings) {
+    return (
+      <div className="min-h-screen bg-base-100 flex items-center justify-center px-4 text-center">
+        <div className="max-w-xl space-y-4">
+          <h1 className="text-3xl font-bold">Bookings hidden for now</h1>
+          <p className="text-base-content/70">
+            The admin disabled supplier booking visibility. You will regain
+            access once it is enabled again.
+          </p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-base-100 lg:flex">
@@ -166,6 +204,30 @@ const Dashboard = () => {
                   </div>
                 </div>
               </section>
+
+              {canGenerateReports && (
+                <section className="card bg-base-100 shadow-lg">
+                  <div className="card-body flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+                    <div>
+                      <h2 className="card-title flex items-center gap-2">
+                        <BarChart2 className="text-secondary" />
+                        Quick performance snapshot
+                      </h2>
+                      <p className="text-sm text-base-content/60">
+                        Download a summarized PDF of your current assignments
+                        and completion stats.
+                      </p>
+                    </div>
+                    <button
+                      type="button"
+                      className="btn btn-secondary"
+                      onClick={handleSupplierReportPreview}
+                    >
+                      View bookings PDF
+                    </button>
+                  </div>
+                </section>
+              )}
             </>
           )}
         </div>

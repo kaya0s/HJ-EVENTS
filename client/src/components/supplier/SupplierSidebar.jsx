@@ -30,7 +30,6 @@ const navItems = [
 
 const SupplierSidebar = () => {
   const [isMobileOpen, setIsMobileOpen] = useState(false);
-
   const renderNavLink = (item) => {
     const Icon = item.icon;
     return (

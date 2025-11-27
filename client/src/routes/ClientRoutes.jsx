@@ -1,7 +1,7 @@
 import { Route, Navigate } from "react-router-dom";
 import Home from "../pages/client/Home";
-import Contact from "../pages/client/Contact";
 import MyBookings from "../pages/client/MyBookings";
+import Contact from "../pages/client/Contact";
 export const ClientRoutes = ({ authUser }) => (
   <>
     <Route
@@ -15,17 +15,6 @@ export const ClientRoutes = ({ authUser }) => (
           <Navigate to="/admin" replace />
         ) : authUser.role === "supplier" ? (
           <Navigate to="/supplier" replace />
-        ) : (
-          <Navigate to="/login" replace />
-        )
-      }
-    />
-
-    <Route
-      path="/contact"
-      element={
-        authUser?.role === "user" ? (
-          <Contact />
         ) : (
           <Navigate to="/login" replace />
         )

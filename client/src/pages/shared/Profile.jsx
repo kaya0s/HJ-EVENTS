@@ -1,10 +1,18 @@
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { User, Mail, Lock, Camera, Phone, MapPin } from "lucide-react";
 import { useAuthStore } from "../../store/useAuthStore";
+import { usePermissionsStore } from "../../store/usePermissionsStore";
+import toast from "react-hot-toast";
 
 const Profile = () => {
   const { authUser, updateProfile, changePassword, isUpdatingProfile } =
     useAuthStore();
+  const roleKey = authUser?.role === "supplier" ? "supplier" : "user";
+  const permissionKey =
+    authUser?.role === "supplier" ? "manageProducts" : "updateProfile";
+  const canEditProfile = usePermissionsStore((state) =>
+    authUser ? state.isAllowed(roleKey, permissionKey) : false
+  );
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isPasswordModalOpen, setIsPasswordModalOpen] = useState(false);
   const fileInputRef = useRef(null);
@@ -24,6 +32,10 @@ const Profile = () => {
   });
 
   const openEditModal = () => {
+    if (!canEditProfile) {
+      toast.error("Profile editing is disabled by your admin.");
+      return;
+    }
     setEditForm({
       fullName: authUser?.fullName || "",
       email: authUser?.email || "",
@@ -35,6 +47,10 @@ const Profile = () => {
   };
 
   const openPasswordModal = () => {
+    if (!canEditProfile) {
+      toast.error("Profile editing is disabled by your admin.");
+      return;
+    }
     setPasswordForm({
       currentPassword: "",
       newPassword: "",
@@ -44,12 +60,20 @@ const Profile = () => {
   };
 
   const handleProfilePicClick = () => {
+    if (!canEditProfile) {
+      toast.error("Profile editing is disabled by your admin.");
+      return;
+    }
     fileInputRef.current?.click();
   };
 
   const handleProfilePicChange = async (e) => {
     const file = e.target.files?.[0];
     if (!file) return;
+    if (!canEditProfile) {
+      toast.error("Profile editing is disabled by your admin.");
+      return;
+    }
 
     const formData = new FormData();
     formData.append("profilePic", file);
@@ -67,6 +91,10 @@ const Profile = () => {
 
   const handleEditSubmit = async (e) => {
     e.preventDefault();
+    if (!canEditProfile) {
+      toast.error("Profile editing is disabled by your admin.");
+      return;
+    }
     const formData = new FormData();
     formData.append("fullName", editForm.fullName.trim());
     formData.append("email", editForm.email.trim());
@@ -86,6 +114,10 @@ const Profile = () => {
 
   const handlePasswordSubmit = async (e) => {
     e.preventDefault();
+    if (!canEditProfile) {
+      toast.error("Profile editing is disabled by your admin.");
+      return;
+    }
     if (passwordForm.newPassword !== passwordForm.confirmPassword) {
       alert("New passwords do not match");
       return;
@@ -112,6 +144,13 @@ const Profile = () => {
     }
   };
 
+  useEffect(() => {
+    if (!canEditProfile) {
+      setIsEditModalOpen(false);
+      setIsPasswordModalOpen(false);
+    }
+  }, [canEditProfile]);
+
   return (
     <div className="min-h-screen bg-base-200 py-12 px-4">
       <div className="container mx-auto max-w-2xl">
@@ -124,6 +163,14 @@ const Profile = () => {
             Manage your account information
           </p>
         </div>
+
+        {!canEditProfile && (
+          <div className="alert alert-warning mb-6">
+            <p className="text-sm">
+              Profile edits are temporarily disabled by your administrator.
+            </p>
+          </div>
+        )}
 
         {/* Profile Card */}
         <div className="card bg-base-100 shadow-xl">
@@ -270,6 +317,7 @@ const Profile = () => {
                   type="button"
                   onClick={openPasswordModal}
                   className="btn btn-outline btn-primary w-full"
+                  disabled={!canEditProfile}
                 >
                   <Lock className="w-4 h-4" />
                   Change Password
@@ -279,6 +327,7 @@ const Profile = () => {
                   type="button"
                   onClick={openEditModal}
                   className="btn btn-outline w-full"
+                  disabled={!canEditProfile}
                 >
                   Edit Profile
                 </button>
@@ -289,7 +338,7 @@ const Profile = () => {
       </div>
 
       {/* Edit Profile Modal */}
-      {isEditModalOpen && (
+      {isEditModalOpen && canEditProfile && (
         <div className="modal modal-open">
           <div className="modal-box max-w-2xl">
             <h3 className="font-bold text-lg mb-4">Edit Profile</h3>
@@ -398,7 +447,7 @@ const Profile = () => {
       )}
 
       {/* Change Password Modal */}
-      {isPasswordModalOpen && (
+      {isPasswordModalOpen && canEditProfile && (
         <div className="modal modal-open">
           <div className="modal-box">
             <h3 className="font-bold text-lg mb-4">Change Password</h3>

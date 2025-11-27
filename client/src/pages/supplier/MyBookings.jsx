@@ -6,6 +6,7 @@ import SupplierBookingsTable from "../../components/supplier/SupplierBookingsTab
 import SupplierBookingDetailsModal from "../../components/supplier/SupplierBookingDetailsModal";
 import { useAuthStore } from "../../store/useAuthStore";
 import { useSupplierDashboardStore } from "../../store/useSupplierDashboardStore";
+import { usePermissionsStore } from "../../store/usePermissionsStore";
 
 const MyBookings = () => {
   const { authUser } = useAuthStore();
@@ -13,18 +14,36 @@ const MyBookings = () => {
   const { bookings, isLoadingBookings, fetchSupplierBookings } =
     useSupplierDashboardStore();
   const [selectedBooking, setSelectedBooking] = useState(null);
+  const canViewBookings = usePermissionsStore((state) =>
+    state.isAllowed("supplier", "viewBookings")
+  );
 
   useEffect(() => {
     if (authUser?.role !== "supplier") {
       navigate("/");
       return;
     }
+    if (!canViewBookings) return;
     fetchSupplierBookings();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [authUser?.role, navigate]);
+  }, [authUser?.role, navigate, canViewBookings]);
 
   if (authUser?.role !== "supplier") {
     return null;
+  }
+
+  if (!canViewBookings) {
+    return (
+      <div className="min-h-screen bg-base-100 flex items-center justify-center px-4 text-center">
+        <div className="max-w-xl space-y-4">
+          <h1 className="text-3xl font-bold">Bookings disabled</h1>
+          <p className="text-base-content/70">
+            Contact your administrator if you need temporary read access to the
+            booking queue.
+          </p>
+        </div>
+      </div>
+    );
   }
 
   return (

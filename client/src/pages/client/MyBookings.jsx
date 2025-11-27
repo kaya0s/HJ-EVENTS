@@ -6,6 +6,8 @@ import toast from "react-hot-toast";
 import { useBookingStore } from "../../store/useBookingStore";
 import EditBookingModal from "../../components/EditBookingModal";
 import useReviewsStore from "../../store/useReviewsStore";
+import { useAuthStore } from "../../store/useAuthStore";
+import { usePermissionsStore } from "../../store/usePermissionsStore";
 
 const statusStyles = {
   pending: "badge-warning",
@@ -17,6 +19,7 @@ const statusStyles = {
 };
 
 const MyBookings = () => {
+  const { authUser } = useAuthStore();
   const { fetchMyBookings, isLoading, cancelMyBooking, updateMyBooking } =
     useBookingStore();
   const { refetchReviews, submitReview } = useReviewsStore();
@@ -27,14 +30,21 @@ const MyBookings = () => {
   const [reviewBooking, setReviewBooking] = useState(null);
   const [isSubmittingReview, setIsSubmittingReview] = useState(false);
   const [reviewForm, setReviewForm] = useState({ rating: 5, comment: "" });
+  const canViewBookings = usePermissionsStore((state) =>
+    authUser?.role === "user" ? state.isAllowed("user", "viewBookings") : false
+  );
 
   useEffect(() => {
+    if (authUser?.role !== "user" || !canViewBookings) {
+      setBookings([]);
+      return;
+    }
     const loadBookings = async () => {
       const data = await fetchMyBookings();
       setBookings(data);
     };
     loadBookings();
-  }, [fetchMyBookings]);
+  }, [authUser?.role, canViewBookings, fetchMyBookings]);
 
   const formatDate = (date) => {
     if (!date) return "N/A";
@@ -96,7 +106,11 @@ const MyBookings = () => {
     if (!editingBooking) return;
     setIsSaving(true);
     try {
-      const updated = await updateMyBooking(editingBooking._id, formData);
+      const payload = {
+        ...formData,
+        lastKnownUpdatedAt: editingBooking.updatedAt,
+      };
+      const updated = await updateMyBooking(editingBooking._id, payload);
       setBookings((prev) =>
         prev.map((booking) =>
           booking._id === editingBooking._id
@@ -105,7 +119,16 @@ const MyBookings = () => {
         )
       );
       setEditingBooking(null);
-    } catch {
+    } catch (error) {
+      if (error?.response?.status === 409 && error.response?.data?.booking) {
+        const serverBooking = error.response.data.booking;
+        setBookings((prev) =>
+          prev.map((booking) =>
+            booking._id === serverBooking._id ? serverBooking : booking
+          )
+        );
+        setEditingBooking(serverBooking);
+      }
       // toast handled in store
     } finally {
       setIsSaving(false);
@@ -197,6 +220,25 @@ const MyBookings = () => {
     }
     return "None assigned";
   };
+
+  if (authUser?.role !== "user") {
+    return null;
+  }
+
+  if (!canViewBookings) {
+    return (
+      <section className="min-h-screen flex items-center justify-center px-4">
+        <div className="max-w-lg text-center space-y-4 bg-base-100 border border-base-200 rounded-3xl p-8 shadow-lg">
+          <h1 className="text-2xl font-bold">Bookings hidden</h1>
+          <p className="text-base-content/70">
+            An administrator has temporarily disabled access to client bookings.
+            Please check back later or contact support if you need specific
+            details.
+          </p>
+        </div>
+      </section>
+    );
+  }
 
   return (
     <section className="bg-linear-to-b from-base-100/80 via-base-200/40 to-base-100/80 min-h-screen w-full px-4 pt-6 pb-16 flex flex-col items-center">
