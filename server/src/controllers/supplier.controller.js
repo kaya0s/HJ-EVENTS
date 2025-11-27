@@ -6,6 +6,7 @@ import Booking from '../models/booking.model.js';
 import User from '../models/user.model.js';
 import bcrypt from 'bcryptjs';
 import { sendSupplierCredentialsEmail } from '../utils/email.js';
+import { createPdfId, streamBookingsPdf } from '../utils/pdfReports.js';
 
 const normalizeDateInput = (value) => {
   if (value === undefined || value === null) return [];
@@ -462,6 +463,40 @@ export const getMyBookings = async (req, res) => {
     res.json(bookings);
   } catch (error) {
     res.status(500).json({ message: 'Server error', error: error.message });
+  }
+};
+
+export const downloadMyBookingsReport = async (req, res) => {
+  try {
+    const supplier = await Supplier.findOne({ user: req.user._id }).populate('user', 'fullName');
+    if (!supplier) {
+      return res.status(404).json({ message: 'Supplier profile not found' });
+    }
+
+    const bookings = await Booking.find({ suppliers: supplier._id })
+      .populate('user.id', 'fullName email')
+      .populate('package', 'name')
+      .lean();
+
+    const pdfId = createPdfId();
+
+    res.setHeader('Content-Type', 'application/pdf');
+    res.setHeader('Content-Disposition', `inline; filename="supplier-bookings-${pdfId}.pdf"`);
+    res.setHeader('X-Report-Id', pdfId);
+
+    streamBookingsPdf({
+      bookings,
+      res,
+      title: 'Assigned Booking Report',
+      subtitle: supplier.name ? `${supplier.name} · Supplier Summary` : 'Supplier Summary',
+      generatedBy: supplier.user?.fullName || req.user.fullName || 'Supplier User',
+      pdfId,
+    });
+  } catch (error) {
+    console.error('Supplier bookings PDF error:', error);
+    if (!res.headersSent) {
+      res.status(500).json({ message: 'Failed to generate supplier booking report' });
+    }
   }
 };
 

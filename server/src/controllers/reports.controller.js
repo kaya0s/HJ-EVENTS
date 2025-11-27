@@ -1,5 +1,6 @@
 import Booking from '../models/booking.model.js';
 import Review from '../models/review.model.js';
+import { createPdfId, streamBookingsPdf } from '../utils/pdfReports.js';
 
 // Return counts and popular suppliers
 export const getDashboard = async (req, res) => {
@@ -33,5 +34,37 @@ export const getMonthlyRevenue = async (req, res) => {
     res.json({ months });
   } catch (error) {
     res.status(500).json({ message: `Server error${error}` });
+  }
+};
+
+export const downloadBookingsReport = async (req, res) => {
+  try {
+    const limit = Math.min(parseInt(req.query.limit, 10) || 100, 500);
+    const bookings = await Booking.find()
+      .sort({ weddingDate: -1 })
+      .limit(limit)
+      .populate('user.id', 'fullName email')
+      .populate('package', 'name')
+      .lean();
+
+    const reportId = createPdfId();
+
+    res.setHeader('Content-Type', 'application/pdf');
+    res.setHeader('Content-Disposition', `inline; filename="booking-report-${reportId}.pdf"`);
+    res.setHeader('X-Report-Id', reportId);
+
+    streamBookingsPdf({
+      bookings,
+      res,
+      title: 'Company Booking Report',
+      subtitle: 'Administrative View',
+      generatedBy: req.user?.fullName || 'Administrative User',
+      pdfId: reportId,
+    });
+  } catch (error) {
+    console.error('Download bookings report error:', error);
+    if (!res.headersSent) {
+      res.status(500).json({ message: 'Failed to generate booking report' });
+    }
   }
 };

@@ -11,6 +11,7 @@ import {
   updateMyProfile,
   getMyBookings,
   updateBookingStatus,
+  downloadMyBookingsReport,
 } from '../controllers/supplier.controller.js';
 
 const router = express.Router();
@@ -23,6 +24,7 @@ router.get('/my-profile', protect, authorize('supplier'), getMyProfile);
 router.put('/my-profile', protect, authorize('supplier'), updateMyProfile);
 router.get('/my-bookings', protect, authorize('supplier'), getMyBookings);
 router.patch('/booking/:bookingId/status', protect, authorize('supplier'), updateBookingStatus);
+router.get('/reports/bookings/pdf', protect, authorize('supplier'), downloadMyBookingsReport);
 
 // Admin access
 router.post('/', protect, authorize('admin'), upload.single('image'), createSupplier);

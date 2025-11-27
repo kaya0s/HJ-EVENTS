@@ -14,11 +14,11 @@ import ReviewRoutes from './routes/review.routes.js';
 import packageRoutes from './routes/package.routes.js';
 import faqRoutes from './routes/faq.routes.js';
 import deductionRoutes from './routes/deduction.routes.js';
+import backupRoutes from './routes/backup.routes.js';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import { dirname } from 'path';
 
-// ES module fix for __dirname
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
@@ -62,7 +62,8 @@ app.use('/api/faqs', faqRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/deductions', deductionRoutes);
-
+//DB backup
+app.use('/api/backup', backupRoutes);
 // API routes
 app.use('/api/auth', authRoutes);
 
