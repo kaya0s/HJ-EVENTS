@@ -99,7 +99,14 @@ const BookingsTable = ({ bookings, onViewDetails }) => {
               <td className="font-medium">
                 {booking.title || "Untitled Wedding"}
               </td>
-              <td>{getStatusBadge(booking.status)}</td>
+              <td>
+                <div className="flex items-center gap-2">
+                  {getStatusBadge(booking.status)}
+                  {booking.payment?.status === 'paid' && (
+                    <span className="badge badge-success">Paid</span>
+                  )}
+                </div>
+              </td>
               <td>
                 {booking.suppliers?.length > 0 ? (
                   <span className="badge badge-ghost">

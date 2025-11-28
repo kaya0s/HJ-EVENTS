@@ -4,6 +4,7 @@ import { Loader, Edit2, Star } from "lucide-react";
 import toast from "react-hot-toast";
 
 import { useBookingStore } from "../../store/useBookingStore";
+import PayPalButton from "../../components/PayPalButton";
 import EditBookingModal from "../../components/EditBookingModal";
 import useReviewsStore from "../../store/useReviewsStore";
 import { useAuthStore } from "../../store/useAuthStore";
@@ -28,6 +29,7 @@ const MyBookings = () => {
   const [editingBooking, setEditingBooking] = useState(null);
   const [isSaving, setIsSaving] = useState(false);
   const [reviewBooking, setReviewBooking] = useState(null);
+  const [payBooking, setPayBooking] = useState(null);
   const [isSubmittingReview, setIsSubmittingReview] = useState(false);
   const [reviewForm, setReviewForm] = useState({ rating: 5, comment: "" });
   const canViewBookings = usePermissionsStore((state) =>
@@ -93,6 +95,12 @@ const MyBookings = () => {
       setCancellingId(null);
     }
   };
+
+  const openPaymentModal = (booking) => {
+    setPayBooking(booking);
+  };
+
+  const closePaymentModal = () => setPayBooking(null);
 
   const handleEdit = (booking) => {
     setEditingBooking(booking);
@@ -301,7 +309,12 @@ const MyBookings = () => {
                       {formatSuppliers(booking.suppliers)}
                     </td>
                     <td className="px-6 py-4">
-                      {getStatusBadge(booking.status)}
+                      <div className="flex items-center gap-2">
+                        {getStatusBadge(booking.status)}
+                        {booking.payment?.status === 'paid' && (
+                          <span className="badge badge-success">Paid</span>
+                        )}
+                      </div>
                     </td>
                     <td className="px-6 py-4">
                       <div className="flex gap-2">
@@ -333,19 +346,31 @@ const MyBookings = () => {
                           </button>
                         )}
                         {isPending(booking.status) && (
-                          <button
-                            className="btn btn-sm btn-outline btn-error"
-                            onClick={() => handleCancel(booking._id)}
-                            disabled={cancellingId === booking._id}
-                            title="Cancel Booking"
-                          >
-                            {cancellingId === booking._id ? (
-                              <Loader className="animate-spin" size={16} />
-                            ) : (
-                              "Cancel"
-                            )}
-                          </button>
-                        )}
+                            <>
+                              {booking.payment?.status !== "paid" && (
+                                <button
+                                  className="btn btn-sm btn-primary"
+                                  onClick={() => openPaymentModal(booking)}
+                                >
+                                  Pay Now
+                                </button>
+                              )}
+
+                              <button
+                                className="btn btn-sm btn-outline btn-error"
+                                onClick={() => handleCancel(booking._id)}
+                                disabled={cancellingId === booking._id}
+                                title="Cancel Booking"
+                              >
+                                {cancellingId === booking._id ? (
+                                  <Loader className="animate-spin" size={16} />
+                                ) : (
+                                  "Cancel"
+                                )}
+                              </button>
+                            </>
+                          )}
+
                       </div>
                     </td>
                   </tr>
@@ -410,17 +435,27 @@ const MyBookings = () => {
                       </button>
                     )}
                     {isPending(booking.status) && (
-                      <button
-                        className="btn btn-sm btn-outline btn-error flex-1"
-                        onClick={() => handleCancel(booking._id)}
-                        disabled={cancellingId === booking._id}
-                      >
-                        {cancellingId === booking._id ? (
-                          <Loader className="animate-spin" size={16} />
-                        ) : (
-                          "Cancel"
+                      <>
+                        {booking.payment?.status !== 'paid' && (
+                          <button
+                            className="btn btn-sm btn-primary flex-1"
+                            onClick={() => openPaymentModal(booking)}
+                          >
+                            Pay Now
+                          </button>
                         )}
-                      </button>
+                        <button
+                          className="btn btn-sm btn-outline btn-error flex-1"
+                          onClick={() => handleCancel(booking._id)}
+                          disabled={cancellingId === booking._id}
+                        >
+                          {cancellingId === booking._id ? (
+                            <Loader className="animate-spin" size={16} />
+                          ) : (
+                            "Cancel"
+                          )}
+                        </button>
+                      </>
                     )}
                   </div>
                 </div>
@@ -569,6 +604,39 @@ const MyBookings = () => {
           </div>
           <form method="dialog" className="modal-backdrop">
             <button onClick={closeReviewModal}>close</button>
+          </form>
+        </dialog>
+      )}
+
+      {payBooking && (
+        <dialog className="modal modal-open">
+          <div className="modal-box max-w-md">
+            <h3 className="font-semibold text-xl mb-2">Pay for Booking</h3>
+            <p className="text-sm text-base-content/70 mb-4">
+              Paying for <span className="font-medium">{payBooking.title || 'your booking'}</span>
+            </p>
+            <div className="mb-4">
+              <PayPalButton
+                booking={payBooking}
+                onSuccess={(updated, meta) => {
+                  // update local list
+                  setBookings((prev) => prev.map((b) => (b._id === updated._id ? updated : b)));
+                  closePaymentModal();
+                }}
+                onError={(err) => {
+                  console.error('Payment error', err);
+                }}
+                onStart={() => {
+                  // optional: set a loading state
+                }}
+              />
+            </div>
+            <div className="modal-action">
+              <button className="btn btn-ghost" onClick={closePaymentModal}>Close</button>
+            </div>
+          </div>
+          <form method="dialog" className="modal-backdrop">
+            <button onClick={closePaymentModal}>close</button>
           </form>
         </dialog>
       )}

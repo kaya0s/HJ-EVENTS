@@ -13,10 +13,12 @@ import {
   completeBooking,
   sendBookingVerificationCode,
   verifyBookingCode,
+  createPaypalOrder,
+  capturePaypalOrder,
 } from '../controllers/booking.controller.js';
 
 const router = express.Router();
-
+  
 // Public route for availability calendar
 router.get('/availability', getBookedDates);
 
@@ -29,6 +31,10 @@ router.post('/', protect, createBooking);
 router.get('/me', protect, getMyBookings);
 router.post('/cancel/:id', protect, cancelBooking);
 router.patch('/:id', protect, updateBooking);
+
+// PayPal payment flow for bookings
+router.post('/:id/paypal/create-order', protect, createPaypalOrder);
+router.post('/:id/paypal/capture', protect, capturePaypalOrder);
 
 // Admin actions
 router.get('/all', protect, authorize('admin'), getAllBookings);

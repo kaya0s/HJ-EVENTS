@@ -181,6 +181,26 @@ const BookingDetailsModal = ({ booking, isOpen, onClose }) => {
             </div>
           </div>
 
+          {/* Payment Summary */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 bg-base-200 rounded-xl p-4">
+            <div>
+              <p className="text-sm text-base-content/60">Payment Status</p>
+              <p className="text-xl font-semibold">
+                {booking.payment?.status || 'pending'}
+              </p>
+            </div>
+            <div>
+              <p className="text-sm text-base-content/60">Transaction</p>
+              <p className="text-xs font-mono break-words">
+                {booking.payment?.transactionId || 'N/A'}
+              </p>
+            </div>
+            <div>
+              <p className="text-sm text-base-content/60">Payer</p>
+              <p className="font-semibold">{booking.payment?.payer?.email || 'N/A'}</p>
+            </div>
+          </div>
+
           {booking.externalSupplierSelections?.length > 0 && (
             <div>
               <p className="text-sm font-semibold mb-2">

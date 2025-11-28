@@ -1,6 +1,7 @@
 import Booking from '../models/booking.model.js';
 import Package from '../models/package.model.js';
 import ActivityLog from '../models/activityLog.model.js';
+import paypalSdk from '../utils/paypal.js';
 import ExternalSupplierDeduction from '../models/externalSupplierDeduction.model.js';
 import {
   sendBookingApprovalEmail,
@@ -168,6 +169,11 @@ export const createBooking = async (req, res) => {
       suppliers: Array.isArray(suppliers) ? suppliers : [],
       basePrice,
       totalPrice,
+      payment: {
+        status: 'pending',
+        amount: totalPrice,
+        currency: 'PHP',
+      },
       externalSupplierSelections: externalSelectionEntries,
     });
 
@@ -810,6 +816,11 @@ export const verifyBookingCode = async (req, res) => {
       suppliers: Array.isArray(suppliers) ? suppliers : [],
       basePrice,
       totalPrice,
+      payment: {
+        status: 'pending',
+        amount: totalPrice,
+        currency: 'PHP',
+      },
       externalSupplierSelections: externalSelectionEntries,
     });
 
@@ -838,5 +849,215 @@ export const verifyBookingCode = async (req, res) => {
   } catch (error) {
     console.error('Verify booking code error:', error);
     res.status(500).json({ message: 'Server error', error: error.message });
+  }
+};
+
+/**
+ * @desc Create a PayPal order for a booking
+ * @route POST /api/bookings/:id/paypal/create-order
+ * @access client
+ */
+export const createPaypalOrder = async (req, res) => {
+  try {
+    const booking = await Booking.findOne({ _id: req.params.id, 'user.id': req.user._id });
+    if (!booking) return res.status(404).json({ message: 'Booking not found' });
+    if (!(booking.status === 'pending')) {
+      return res.status(400).json({ message: 'Can only create payment for pending bookings' });
+    }
+    if (booking.payment?.status === 'paid') {
+      return res.status(400).json({ message: 'Booking is already paid' });
+    }
+    if (!booking.totalPrice || booking.totalPrice <= 0) {
+      return res.status(400).json({ message: 'Booking has no payable amount' });
+    }
+    // create PayPal order and include booking._id as reference
+    const resp = await paypalSdk.createOrder({ amount: booking.totalPrice, currency: booking.payment?.currency || 'PHP', description: `Payment for booking ${booking._id}`, reference_id: booking._id.toString() });
+    // persist last create response for audit
+    booking.payment = booking.payment || {};
+    booking.payment.attempts = (booking.payment.attempts || 0) + 1;
+    booking.payment.providerResponse = { createOrder: resp };
+    await booking.save();
+    const orderId = resp?.id;
+    res.json({ orderId, links: resp?.links || resp });
+  } catch (error) {
+    console.error('createPaypalOrder error:', error);
+    res.status(500).json({ message: 'Failed to create PayPal order', error: error?.message || error });
+  }
+};
+
+/**
+ * @desc Capture/approve PayPal order and update booking
+ * @route POST /api/bookings/:id/paypal/capture
+ * @access client
+ */
+export const capturePaypalOrder = async (req, res) => {
+  try {
+    const { orderId } = req.body;
+    if (!orderId) return res.status(400).json({ message: 'orderId is required' });
+    const booking = await Booking.findOne({ _id: req.params.id, 'user.id': req.user._id });
+    if (!booking) return res.status(404).json({ message: 'Booking not found' });
+    if (booking.payment?.status === 'paid') {
+      return res.status(400).json({ message: 'Booking is already paid' });
+    }
+    const captureResp = await paypalSdk.captureOrder(orderId);
+    // find capture detail entry
+    const captureData = captureResp?.purchase_units?.[0]?.payments?.captures?.[0] || null;
+    const payer = captureResp?.payer || {};
+    if (!captureData) {
+      // fallback, if not captured but status is 'COMPLETED' maybe
+    }
+    // Update booking payment information
+    booking.payment = booking.payment || {};
+    booking.payment.attempts = (booking.payment.attempts || 0) + 1;
+    booking.payment.transactionId = captureData?.id || captureResp?.id || null;
+    const capturedAmount = Number(captureData?.amount?.value || booking.totalPrice || 0);
+    booking.payment.amount = capturedAmount;
+    booking.payment.currency = captureData?.amount?.currency_code || booking.payment?.currency || 'PHP';
+    booking.payment.paidAt = new Date();
+    booking.payment.payer = {
+      payerId: payer?.payer_id || payer?.payerID || payer?.id || null,
+      email: payer?.email_address || null,
+      name: `${payer?.name?.given_name || ''} ${payer?.name?.surname || ''}`.trim() || null,
+    };
+    booking.payment.method = 'paypal';
+    booking.payment.providerResponse = { capture: captureResp };
+    // Verify amount matches booking expected price (sanity check)
+    if (!(Math.abs(capturedAmount - Number(booking.totalPrice || 0)) < 0.01)) {
+      booking.payment.status = 'failed';
+      console.warn('Captured amount does not match booking price', {
+        bookingId: booking._id,
+        expected: booking.totalPrice,
+        captured: capturedAmount,
+      });
+    } else {
+      booking.payment.status = (captureResp?.status === 'COMPLETED' || captureData?.status === 'COMPLETED') ? 'paid' : 'failed';
+    }
+
+    // If capture succeeded, keep booking status as 'pending' but mark payment as 'paid'
+    if (booking.payment.status === 'paid') {
+      // If payment completed, auto-accept the booking and notify customer (matching approveBooking flow)
+      if (booking.status === 'pending') {
+        booking.status = 'accepted';
+        ensureBookingTitle(booking);
+        // Send approval email
+        try {
+          if (booking.user?.id?.email) {
+            const eventDate = booking.weddingDate
+              ? new Date(booking.weddingDate).toLocaleDateString('en-US', {
+                  year: 'numeric',
+                  month: 'long',
+                  day: 'numeric',
+                })
+              : 'N/A';
+            await sendBookingApprovalEmail(
+              booking.user.id.email,
+              booking.user.fullName || booking.user.id.fullName,
+              booking._id.toString().slice(-8).toUpperCase(),
+              eventDate
+            );
+          }
+        } catch (e) {
+          console.error('Failed to send approval email after payment', e);
+        }
+      }
+      // Log activity
+      await ActivityLog.create({
+        actor: req.user._id,
+        actorName: req.user.fullName,
+        action: 'Pay booking',
+        details: `Booking ${booking._id} paid via PayPal, txn ${booking.payment.transactionId}`,
+      });
+    }
+    await booking.save();
+    res.json({ booking, capture: captureResp });
+  } catch (error) {
+    console.error('capturePaypalOrder error:', error?.response?.data || error?.message || error);
+    res.status(500).json({ message: 'Failed to capture PayPal order', error: error?.message || error });
+  }
+};
+
+/**
+ * @desc PayPal webhook handler for events like PAYMENT.CAPTURE.COMPLETED
+ * @route POST /api/webhooks/paypal
+ * @access public
+ */
+export const handlePaypalWebhook = async (req, res) => {
+  try {
+    const transmission_id = req.headers['paypal-transmission-id'] || req.headers['paypal-transmission-id'.toLowerCase()];
+    const transmission_time = req.headers['paypal-transmission-time'];
+    const cert_url = req.headers['paypal-cert-url'];
+    const auth_algo = req.headers['paypal-auth-algo'];
+    const transmission_sig = req.headers['paypal-transmission-sig'] || req.headers['paypal-transmission-sig'.toLowerCase()];
+    const webhook_event = req.body;
+    const verified = await paypalSdk.verifyWebhookSignature({ transmission_id, transmission_time, cert_url, auth_algo, transmission_sig, webhook_event, webhook_id: process.env.PAYPAL_WEBHOOK_ID });
+    if (!verified) {
+      console.warn('Webhook signature verification failed.');
+      return res.status(400).json({ message: 'Invalid webhook signature' });
+    }
+    // Handle relevant events
+    const eventType = webhook_event?.event_type;
+    if (eventType === 'PAYMENT.CAPTURE.COMPLETED' || eventType === 'CHECKOUT.ORDER.APPROVED' || eventType === 'PAYMENT.CAPTURE.REFUNDED') {
+      const resource = webhook_event.resource || {};
+      // Look up booking using reference_id if available
+      const customId = resource?.custom_id || resource?.invoice_id || resource?.supplementary_data?.related_ids?.order_id || resource?.payment_instruction?.reference_id || resource?.id;
+      // Try to extract invoice or reference from resource
+      const transactionId = resource?.id || (resource?.payments?.captures?.[0]?.id) || resource?.resource?.id;
+      // Try find using reference_id (store booking id in createOrder reference_id)
+      let booking = null;
+      if (resource?.invoice_id || resource?.custom_id || resource?.reference_id) {
+        const possibleId = resource?.invoice_id || resource?.custom_id || resource?.reference_id;
+        try { booking = await Booking.findById(possibleId); } catch (err) { /* ignore */ }
+      }
+      // fallback: find by transactionId
+      if (!booking && transactionId) {
+        booking = await Booking.findOne({ 'payment.transactionId': transactionId });
+      }
+      // If still not found, check nested capture id
+      if (!booking && resource?.supplementary_data?.related_ids?.order_id) {
+        const orderId = resource.supplementary_data.related_ids.order_id;
+        booking = await Booking.findOne({ 'payment.providerResponse.createOrder.id': orderId });
+      }
+      if (!booking) {
+        console.warn('Booking not found for webhook event', webhook_event);
+        return res.status(200).json({ message: 'No related booking found' });
+      }
+      if (eventType === 'PAYMENT.CAPTURE.COMPLETED') {
+        // Update booking payment
+        booking.payment = booking.payment || {};
+        booking.payment.status = 'paid';
+        booking.payment.transactionId = transactionId;
+        booking.payment.amount = Number(resource?.amount?.value || booking.totalPrice || 0);
+        booking.payment.currency = resource?.amount?.currency_code || booking.payment.currency || 'PHP';
+        booking.payment.paidAt = new Date(resource?.update_time || Date.now());
+        booking.payment.payer = booking.payment.payer || {};
+        // store provider response
+        booking.payment.providerResponse = booking.payment.providerResponse || {};
+        booking.payment.providerResponse.webhook = resource;
+        await booking.save();
+        // Log
+        await ActivityLog.create({
+          actor: null,
+          actorName: 'PayPal Webhook',
+          action: 'Webhook payment completed',
+          details: `Booking ${booking._id} payment captured via webhook, txn ${transactionId}`,
+        });
+      } else if (eventType === 'PAYMENT.CAPTURE.REFUNDED') {
+        booking.payment = booking.payment || {};
+        booking.payment.status = 'refunded';
+        booking.payment.providerResponse = booking.payment.providerResponse || {};
+        booking.payment.providerResponse.webhook = resource;
+        await booking.save();
+        await ActivityLog.create({
+          actor: null,
+          actorName: 'PayPal Webhook',
+          action: 'Webhook payment refunded',
+          details: `Booking ${booking._id} payment refunded via webhook, txn ${transactionId}`,
+        });
+      }
+    }
+    return res.status(200).json({ message: 'Webhook received' });
+  } catch (error) {
+    console.error('handlePaypalWebhook error:', error);
+    return res.status(500).json({ message: 'Webhook processing error', error: error?.message || error });
   }
 };

@@ -15,6 +15,7 @@ import packageRoutes from './routes/package.routes.js';
 import faqRoutes from './routes/faq.routes.js';
 import deductionRoutes from './routes/deduction.routes.js';
 import backupRoutes from './routes/backup.routes.js';
+import webhookRoutes from './routes/webhook.routes.js';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import { dirname } from 'path';
@@ -64,6 +65,7 @@ app.use('/api/users', userRoutes);
 app.use('/api/deductions', deductionRoutes);
 //DB backup
 app.use('/api/backup', backupRoutes);
+app.use('/api/webhooks', webhookRoutes);
 // API routes
 app.use('/api/auth', authRoutes);
 

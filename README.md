@@ -34,6 +34,7 @@ Client (`client/.env`):
 VITE_API_URL=http://localhost:3000/api
 # reCAPTCHA v3 Site Key (get from https://www.google.com/recaptcha/admin)
 VITE_RECAPTCHA_SITE_KEY=your_recaptcha_v3_site_key
+VITE_PAYPAL_CLIENT_ID=your_paypal_sandbox_client_id
 ```
 
 **Important:**
@@ -78,6 +79,14 @@ SERVER_URL=http://localhost:3000
 # Server
 PORT=3000
 NODE_ENV=development
+# PayPal Sandbox / Live settings
+# PAYPAL_MODE = sandbox | live
+PAYPAL_MODE=sandbox
+# PayPal REST API credentials for sandbox/live
+PAYPAL_CLIENT_ID=your_paypal_client_id
+PAYPAL_CLIENT_SECRET=your_paypal_client_secret
+# PayPal webhook ID (get from PayPal developer dashboard)
+PAYPAL_WEBHOOK_ID=your_paypal_webhook_id
 
 ```
 
@@ -158,3 +167,42 @@ Booking endpoints (example):
 - `POST /api/bookings` — create a booking (body: couple, eventDate, eventType, ...)
 
 Note: client uses axios with `withCredentials` where needed.
+
+## PayPal Integration (Sandbox)
+
+This repository includes a sandbox PayPal integration that allows clients to pay for a booking when its status is `pending`.
+
+Setup:
+- Create a PayPal developer sandbox account and create an app. Get the `Client ID` and `Secret` and set them in `server/.env` as `PAYPAL_CLIENT_ID` and `PAYPAL_CLIENT_SECRET`.
+- In the PayPal developer dashboard, set up a webhook to call `POST {SERVER_URL}/api/webhooks/paypal` and subscribe to events:
+	- `PAYMENT.CAPTURE.COMPLETED`
+	- `PAYMENT.CAPTURE.REFUNDED`
+	- `CHECKOUT.ORDER.APPROVED` (optional)
+- Set `PAYPAL_WEBHOOK_ID` in `server/.env` to the webhook ID created in the PayPal dashboard.
+
+High-level payment flow:
+1. Client sees a `Pay Now` button for bookings with `status: pending` and `payment.status: pending`.
+2. Clicking the button opens a PayPal modal loaded with the `VITE_PAYPAL_CLIENT_ID` client id in `client/.env`.
+3. The PayPal button calls `POST /api/bookings/:id/paypal/create-order` to create an order on the server (linked to the booking by reference_id).
+4. PayPal proceeds — upon approval the client calls `POST /api/bookings/:id/paypal/capture` which performs a server-side capture using PayPal v2 API.
+5. Server verifies the capture and updates the booking `payment` object (transactionId, amount, currency, paidAt, payer info, providerResponse) and sets `payment.status: paid`. Admins can query payment and booking status from the admin UI.
+6. PayPal webhooks (configured in the sandbox developer account) are used for final confirmation and any third-party notifications (like refunds).
+
+Notes:
+- The SDK uses sandbox mode by default when `PAYPAL_MODE=sandbox`.
+- If you prefer client-side order creation/capture, you can adapt the PayPal button to use direct `actions.order.create` and `actions.order.capture`. This server-side flow ensures secure verification and auditability.
+- Make sure to restart server and client after adding env variables.
+
+Quick test flow (local):
+1. Ensure server is reachable from the PayPal dashboard for webhook testing (use ngrok if needed):
+	- `ngrok http 3000` and set `SERVER_URL` to the HTTPS ngrok URL (e.g. https://abc123.ngrok.io)
+2. Add your sandbox `VITE_PAYPAL_CLIENT_ID` to `client/.env` and server `PAYPAL_CLIENT_ID`/`PAYPAL_CLIENT_SECRET`.
+3. Create a booking as a user (status: pending) via client.
+4. Open `My Bookings` page; click `Pay Now` for the pending booking.
+5. Complete the PayPal checkout (sandbox account email). The PayPal JS button will create an order via the backend and capture via server-side endpoint.
+6. Verify booking `payment.status` changes to `paid` and `payment.transactionId` is recorded in the admin booking details.
+7. In the PayPal Developer Dashboard, check the webhook event deliveries for any webhook-based updates.
+
+If anything fails:
+- Check server logs for `createPaypalOrder`, `capturePaypalOrder`, or webhook verification warnings.
+- If webhook verification fails, ensure you set `PAYPAL_WEBHOOK_ID` in the server environment to the correct id. You may inspect the returned verification result in logs.

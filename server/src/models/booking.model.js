@@ -85,6 +85,54 @@ const bookingSchema = new mongoose.Schema(
         },
       },
     ],
+    payment: {
+      // Overall payment status for the booking
+      status: {
+        type: String,
+        enum: ['pending', 'paid', 'failed', 'refunded'],
+        default: 'pending',
+      },
+      method: {
+        type: String,
+        enum: ['paypal', 'manual', 'other'],
+        default: 'paypal',
+      },
+      // Store the PayPal transaction / capture ID
+      transactionId: {
+        type: String,
+        default: null,
+      },
+      // Amount charged (in booking currency)
+      amount: {
+        type: Number,
+        default: 0,
+        min: 0,
+      },
+      currency: {
+        type: String,
+        default: 'PHP',
+      },
+      // Timestamp of when the payment was captured
+      paidAt: {
+        type: Date,
+        default: null,
+      },
+      // PayPal payer info for audit
+      payer: {
+        payerId: { type: String, default: null },
+        email: { type: String, default: null },
+        name: { type: String, default: null },
+      },
+      // Raw provider response for auditing
+      providerResponse: {
+        type: Object,
+        default: null,
+      },
+      attempts: {
+        type: Number,
+        default: 0,
+      },
+    },
   },
   { timestamps: true }
 );

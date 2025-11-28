@@ -292,4 +292,36 @@ export const useBookingStore = create((set) => ({
       throw error;
     }
   },
+  /**
+   * Create a PayPal order (backend)
+   */
+  createPayPalOrder: async (bookingId) => {
+    try {
+      const res = await axiosInstance.post(`/bookings/${bookingId}/paypal/create-order`);
+      return res.data?.orderId || (res.data?.id && res.data.id) || null;
+    } catch (error) {
+      let msg = error?.response?.data?.message || error?.message || 'Failed to create PayPal order';
+      toast.error(msg);
+      throw error;
+    }
+  },
+  /**
+   * Capture a PayPal order on the backend and update booking
+   */
+  capturePayPalOrder: async (bookingId, orderId) => {
+    try {
+      const res = await axiosInstance.post(`/bookings/${bookingId}/paypal/capture`, { orderId });
+      // update booking in store
+      const updatedBooking = res.data?.booking || res.data;
+      set((state) => ({
+        bookings: state.bookings.map((b) => (b._id === bookingId ? updatedBooking : b)),
+      }));
+      toast.success('Payment successful');
+      return res.data;
+    } catch (error) {
+      let msg = error?.response?.data?.message || error?.message || 'Failed to capture PayPal order';
+      toast.error(msg);
+      throw error;
+    }
+  },
 }));
