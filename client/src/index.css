@@ -5,3 +5,19 @@
     aqua, lofi, pastel, fantasy, wireframe, black, luxury, dracula, cmyk, autumn,
     acid, lemonade, night, coffee, winter, dim, nord, sunset;
 }
+
+
+/* Remove ONLY PayPal background wrappers */
+.paypal-buttons,
+.paypal-button-row,
+.paypal-button-layout-vertical,
+.paypal-button-container {
+  background: transparent !important;
+  box-shadow: none !important;
+}
+
+/* Keep spacing consistent but no background */
+.paypal-button-row {
+  padding: 0 !important;
+  margin: 0 !important;
+}

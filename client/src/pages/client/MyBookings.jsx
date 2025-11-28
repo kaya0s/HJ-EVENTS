@@ -609,37 +609,73 @@ const MyBookings = () => {
       )}
 
       {payBooking && (
-        <dialog className="modal modal-open">
-          <div className="modal-box max-w-md">
-            <h3 className="font-semibold text-xl mb-2">Pay for Booking</h3>
-            <p className="text-sm text-base-content/70 mb-4">
-              Paying for <span className="font-medium">{payBooking.title || 'your booking'}</span>
-            </p>
-            <div className="mb-4">
-              <PayPalButton
-                booking={payBooking}
-                onSuccess={(updated, meta) => {
-                  // update local list
-                  setBookings((prev) => prev.map((b) => (b._id === updated._id ? updated : b)));
-                  closePaymentModal();
-                }}
-                onError={(err) => {
-                  console.error('Payment error', err);
-                }}
-                onStart={() => {
-                  // optional: set a loading state
-                }}
-              />
-            </div>
-            <div className="modal-action">
-              <button className="btn btn-ghost" onClick={closePaymentModal}>Close</button>
-            </div>
-          </div>
-          <form method="dialog" className="modal-backdrop">
-            <button onClick={closePaymentModal}>close</button>
-          </form>
-        </dialog>
-      )}
+  <dialog className="modal modal-open">
+    <div className="modal-box max-w-md space-y-4">
+      
+      <h3 className="font-semibold text-xl">Payment Method</h3>
+
+      {/* ========= DESCRIPTION ========= */}
+      <p className="text-sm text-base-content/70">
+        Paying for <span className="font-medium">{payBooking.title || "your booking"}</span>
+      </p>
+
+      {/* ========= OTHER DETAILS ========= */}
+      <div className="bg-base-200/40 rounded-lg p-4 space-y-2 border border-base-300">
+        <h4 className="font-semibold text-base">Booking Details</h4>
+
+        <div className="text-sm text-base-content/70">
+          <p>
+            <span className="font-medium text-base-content">Event Date:</span>{" "}
+            {dayjs(payBooking.weddingDate).format("MMMM DD, YYYY")}
+          </p>
+
+          <p>
+            <span className="font-medium text-base-content">Venue:</span>{" "}
+            {payBooking.venue || "N/A"}
+          </p>
+
+          <p>
+            <span className="font-medium text-base-content">Package:</span>{" "}
+            {payBooking.packageName || "N/A"}
+          </p>
+
+          <p>
+            <span className="font-medium text-base-content">Amount Due:</span>{" "}
+            <span className="font-bold text-primary">
+              ₱{Number(payBooking.totalAmount || payBooking.amount || 0).toLocaleString()}
+            </span>
+          </p>
+        </div>
+      </div>
+
+      {/* ========= PAYPAL ========= */}
+      <div>
+        <PayPalButton
+          booking={payBooking}
+          onSuccess={(updated) => {
+            setBookings((prev) =>
+              prev.map((b) => (b._id === updated._id ? updated : b))
+            );
+            closePaymentModal();
+          }}
+          onError={(err) => console.error("Payment error", err)}
+        />
+      </div>
+
+      {/* ========= FOOTER ========= */}
+      <div className="modal-action">
+        <button className="btn btn-ghost" onClick={closePaymentModal}>
+          Close
+        </button>
+      </div>
+    </div>
+
+    <form method="dialog" className="modal-backdrop">
+      <button onClick={closePaymentModal}>close</button>
+    </form>
+  </dialog>
+)}
+
     </section>
   );
 };
