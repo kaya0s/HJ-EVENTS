@@ -27,7 +27,7 @@ export const sendPasswordResetEmail = async (email, resetCode) => {
           <div style="max-width: 600px; margin: 0 auto; background: #ffffff; border-radius: 8px; overflow: hidden; box-shadow: 0 2px 8px rgba(0,0,0,0.06);">
             <div style="padding: 24px 24px 0; text-align: center;">
               <img
-                src="${process.env.BUSINESS_LOGO_URL || `${process.env.CLIENT_URL}/assets/logo.png`}"
+                src="${process.env.BUSINESS_LOGO_URL || `${process.env.CLIENT_URL}/assets/images/logo.png`}"
                 alt="HJ Events Logo"
                 style="max-width: 140px; height: auto; display: inline-block; margin-bottom: 12px;"
               />
@@ -79,7 +79,7 @@ export const sendEmailVerificationEmail = async (email, fullName, code) => {
           <div style="max-width: 600px; margin: 0 auto; background: #ffffff; border-radius: 8px; overflow: hidden; box-shadow: 0 2px 8px rgba(0,0,0,0.06);">
             <div style="padding: 24px 24px 0; text-align: center;">
               <img
-                src="${process.env.BUSINESS_LOGO_URL || `${process.env.CLIENT_URL}/assets/logo.png`}"
+                src="${process.env.BUSINESS_LOGO_URL || `${process.env.CLIENT_URL}/assets/images/logo.png`}"
                 alt="HJ Events Logo"
                 style="max-width: 140px; height: auto; display: inline-block; margin-bottom: 12px;"
               />
@@ -134,7 +134,7 @@ export const sendWelcomeEmail = async (email, fullName) => {
         
         <div style="padding: 24px 24px 0; text-align: center;">
           <img
-          src="${process.env.BUSINESS_LOGO_URL || `${process.env.CLIENT_URL}/assets/logo.png`}"
+          src="${process.env.BUSINESS_LOGO_URL || `${process.env.CLIENT_URL}/assets/images/logo.png`}"
           alt="HJ Events Logo"
           style="max-width: 140px; height: auto; display: inline-block; margin-bottom: 12px;"
           />
@@ -206,7 +206,7 @@ export const sendBookingApprovalEmail = async (email, fullName, bookingId, event
         
         <div style="padding: 24px 24px 0; text-align: center;">
           <img
-          src="${process.env.BUSINESS_LOGO_URL || `${process.env.CLIENT_URL}/assets/logo.png`}"
+          src="${process.env.BUSINESS_LOGO_URL || `${process.env.CLIENT_URL}/assets/images/logo.png`}"
           alt="HJ Events Logo"
           style="max-width: 140px; height: auto; display: inline-block; margin-bottom: 12px;"
           />
@@ -279,7 +279,7 @@ export const sendBookingRejectionEmail = async (email, fullName, bookingId, reas
         
         <div style="padding: 24px 24px 0; text-align: center;">
           <img
-          src="${process.env.BUSINESS_LOGO_URL || `${process.env.CLIENT_URL}/assets/logo.png`}"
+          src="${process.env.BUSINESS_LOGO_URL || `${process.env.CLIENT_URL}/assets/images/logo.png`}"
           alt="HJ Events Logo"
           style="max-width: 140px; height: auto; display: inline-block; margin-bottom: 12px;"
           />
@@ -351,7 +351,7 @@ export const sendBookingVerificationEmail = async (email, fullName, verification
           <div style="max-width: 600px; margin: 0 auto; background: #ffffff; border-radius: 8px; overflow: hidden; box-shadow: 0 2px 8px rgba(0,0,0,0.06);">
             <div style="padding: 24px 24px 0; text-align: center;">
               <img
-                src="${process.env.BUSINESS_LOGO_URL || `${process.env.CLIENT_URL}/assets/logo.png`}"
+                src="${process.env.BUSINESS_LOGO_URL || `${process.env.CLIENT_URL}/assets/images/logo.png`}"
                 alt="HJ Events Logo"
                 style="max-width: 140px; height: auto; display: inline-block; margin-bottom: 12px;"
               />
@@ -411,7 +411,7 @@ export const sendSupplierCredentialsEmail = async ({
           <div style="max-width: 600px; margin: 0 auto; background: #ffffff; border-radius: 8px; overflow: hidden; box-shadow: 0 2px 8px rgba(0,0,0,0.06);">
             <div style="padding: 24px 24px 0; text-align: center;">
               <img
-                src="${process.env.BUSINESS_LOGO_URL || `${process.env.CLIENT_URL}/assets/logo.png`}"
+                src="${process.env.BUSINESS_LOGO_URL || `${process.env.CLIENT_URL}/assets/images/logo.png`}"
                 alt="${companyName} Logo"
                 style="max-width: 140px; height: auto; display: inline-block; margin-bottom: 12px;"
               />
