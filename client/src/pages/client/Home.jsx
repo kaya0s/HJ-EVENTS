@@ -17,7 +17,6 @@ const Home = () => {
   const { faqs, isLoading: isLoadingFaqs, fetchFaqs } = useFaqStore();
   const { refetchReviews } = useReviewsStore();
 
-  // Fetch booked dates for availability calendar
   useEffect(() => {
     const fetchBookedDates = async () => {
       try {
@@ -28,6 +27,7 @@ const Home = () => {
         setBookedDates([]);
       }
     };
+
     fetchBookedDates();
     fetchFaqs();
     refetchReviews();
@@ -44,6 +44,8 @@ const Home = () => {
 
   return (
     <section className="bg-linear-to-b from-base-100/80 via-base-200/40 to-base-100/80">
+
+      {/* HERO SECTION */}
       <div className="container mx-auto flex min-h-[calc(100vh-4rem)] flex-col justify-center gap-12 md:gap-16 w-full max-w-screen-2xl px-6 md:px-10 py-12 md:py-16 lg:flex-row lg:items-center">
         <div className="max-w-2xl mx-auto space-y-6 md:space-y-8 text-center lg:text-left lg:mx-0">
           <p className="text-sm font-semibold uppercase tracking-[0.3em] text-primary/70">
@@ -57,6 +59,7 @@ const Home = () => {
             ceremonies that are rich with meaning. Let our team handle every
             timeline, supplier, and surprise so you can live every moment.
           </p>
+
           <div className="flex flex-col gap-4 sm:flex-row sm:justify-center lg:justify-start pt-2">
             <a
               href="#packages"
@@ -70,24 +73,72 @@ const Home = () => {
             </Link>
           </div>
         </div>
+
         <div className="scale-100 mx-auto mt-8 md:mt-10 lg:mt-0">
           <DatePickerCalendar bookedDates={bookedDates} />
         </div>
       </div>
 
+      {/* STATIC DETAILS SECTION */}
+      <section className="py-14">
+        <div className="container mx-auto w-full max-w-screen-2xl px-6 md:px-10 text-center space-y-10">
+
+          <p className="text-sm font-semibold text-primary uppercase tracking-[0.3em]">
+            What We Offer
+          </p>
+
+          <h2 className="text-3xl md:text-4xl font-bold text-base-content max-w-3xl mx-auto">
+            A seamless experience from planning to “I do”
+          </h2>
+
+          <div className="grid gap-10 md:grid-cols-3 mt-10">
+
+            <div className="bg-base-200/60 p-6 rounded-xl shadow-sm border border-base-300/20 space-y-3">
+              <h3 className="font-semibold text-lg">Full-Service Coordination</h3>
+              <p className="text-base-content/70 text-sm leading-relaxed">
+                From timelines to rehearsals, our team manages every detail
+                so your wedding day flows without stress or interruptions.
+              </p>
+            </div>
+
+            <div className="bg-base-200/60 p-6 rounded-xl shadow-sm border border-base-300/20 space-y-3">
+              <h3 className="font-semibold text-lg">Supplier Management</h3>
+              <p className="text-base-content/70 text-sm leading-relaxed">
+                We partner with trusted florists, photographers, caterers,
+                and creatives to ensure your vision is perfectly executed.
+              </p>
+            </div>
+
+            <div className="bg-base-200/60 p-6 rounded-xl shadow-sm border border-base-300/20 space-y-3">
+              <h3 className="font-semibold text-lg">Custom Styling & Design</h3>
+              <p className="text-base-content/70 text-sm leading-relaxed">
+                Elegant setups, curated colors, and thoughtful details tailored
+                to match your unique story and aesthetic preferences.
+              </p>
+            </div>
+
+          </div>
+        </div>
+      </section>
+
+      {/* PACKAGES */}
       <div id="packages" ref={packagesRef} className="py-8 md:py-12">
         <Packages />
       </div>
 
+      {/* SUPPLIERS */}
       <div className="pb-8 md:pb-12">
         <SupplierCarousel />
       </div>
+
+      {/* REVIEWS */}
       <div>
         <div className="container mx-auto w-full max-w-screen-2xl px-6 md:px-10 py-10 space-y-8">
           <Reviews />
         </div>
       </div>
 
+      {/* FAQ */}
       <section className="py-12">
         <div className="container mx-auto w-full max-w-screen-2xl px-6 md:px-10">
           <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-6">
@@ -100,6 +151,7 @@ const Home = () => {
               </h2>
             </div>
           </div>
+
           {isLoadingFaqs ? (
             <div className="text-center py-12">
               <span className="loading loading-spinner loading-lg"></span>

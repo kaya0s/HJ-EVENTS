@@ -38,8 +38,8 @@ const VerifyResetCode = () => {
 
   return (
     <section className="bg-gradient-to-b from-base-100/80 via-base-200/40 to-base-100/80">
-      <div className="min-h-[calc(100vh-4rem)] flex items-center justify-center p-4">
-        <div className="w-full max-w-md space-y-8 bg-base-100 rounded-2xl shadow-lg p-8 flex flex-col justify-center mx-auto">
+      <div className="min-h-[calc(100vh-4rem)] flex items-center justify-center w-full px-0 py-0 sm:px-4 sm:py-8 sm:container sm:mx-auto sm:max-w-screen-2xl">
+        <div className="w-full bg-base-100 space-y-8 shadow-lg flex flex-col justify-center mx-auto rounded-none p-6 min-h-[calc(100vh-4rem)] sm:rounded-2xl sm:p-8 sm:max-w-md sm:min-h-0">
           <div className="text-center mb-8">
             <div className="flex flex-col items-center gap-2 group">
               <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center group-hover:bg-primary/20 transition-colors">

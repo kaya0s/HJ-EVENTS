@@ -62,8 +62,8 @@ const VerifyEmailPage = () => {
   };
 
   return (
-    <section className="bg-gradient-to-b from-base-100/80 via-base-200/40 to-base-100/80 min-h-[calc(100vh-4rem)] flex items-center justify-center px-4 py-10">
-      <div className="w-full max-w-md space-y-8 bg-base-100 rounded-2xl shadow-lg p-8">
+    <section className="bg-gradient-to-b from-base-100/80 via-base-200/40 to-base-100/80 min-h-[calc(100vh-4rem)] flex items-center justify-center w-full px-0 py-0 sm:px-4 sm:py-10 sm:container sm:mx-auto sm:max-w-screen-2xl">
+      <div className="w-full bg-base-100 space-y-8 shadow-lg rounded-none p-6 min-h-[calc(100vh-4rem)] sm:rounded-2xl sm:p-8 sm:max-w-md sm:min-h-0">
         <div className="text-center space-y-3">
           <div className="mx-auto size-14 rounded-2xl bg-primary/10 flex items-center justify-center">
             <MailCheck className="size-7 text-primary" />

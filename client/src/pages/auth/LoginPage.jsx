@@ -85,8 +85,8 @@ const LoginPage = () => {
 
   return (
     <section className="bg-gradient-to-b from-base-100/80 via-base-200/40 to-base-100/80">
-      <div className="container mx-auto flex min-h-[calc(100vh-4rem)] flex-col justify-center gap-8 md:gap-12 w-full max-w-screen-2xl px-4 md:px-10 py-8 md:py-10 lg:flex-row lg:items-center">
-        <div className="w-full max-w-md bg-base-100 rounded-2xl shadow-lg p-8 space-y-8 flex flex-col justify-center mx-auto">
+      <div className="min-h-[calc(100vh-4rem)] flex items-center justify-center w-full px-0 py-0 sm:px-4 sm:py-8 sm:container sm:mx-auto sm:max-w-screen-2xl lg:flex-row lg:items-center">
+        <div className="w-full bg-base-100 shadow-lg space-y-8 flex flex-col justify-center mx-auto rounded-none p-6 min-h-[calc(100vh-4rem)] sm:rounded-2xl sm:p-8 sm:max-w-md sm:min-h-0">
           {/* Logo */}
           <div className="text-center mb-4">
             <div className="flex flex-col items-center gap-2 group">
