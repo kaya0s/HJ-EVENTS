@@ -244,6 +244,14 @@ export const updateUser = async (req, res) => {
       const salt = await bcrypt.genSalt(10);
       updates.password = await bcrypt.hash(updates.password, salt);
     }
+    // Prevent granting admin role via admin update endpoint to avoid privilege escalation
+    if (updates.role === 'admin') {
+      return res.status(403).json({ message: 'Cannot grant admin role via this endpoint' });
+    }
+    // Prevent administrators from modifying their own role (avoid accidental lockout)
+    if (req.user && req.user._id && req.user._id.toString() === req.params.id && updates.role) {
+      return res.status(403).json({ message: 'You cannot change your own role' });
+    }
     // lastKnownUpdatedAt already destructured; reuse it
     let user;
     if (lastKnownUpdatedAt) {

@@ -105,6 +105,8 @@ const ManageClients = () => {
       if (error.response?.status === 409) {
         toast.error(error.response?.data?.message || "User was updated by someone else. Please refresh.");
         fetchUsers();
+      } else if (error.response?.status === 403) {
+        toast.error(error.response?.data?.message || "Cannot grant admin role via this interface.");
       } else {
         toast.error(error.response?.data?.message || "Failed to update user");
       }
@@ -201,11 +203,14 @@ const ManageClients = () => {
                   })
                 }
                 required
+                disabled={selectedUser?._id === authUser?._id}
               >
                 <option value="user">Client</option>
                 <option value="supplier">Supplier</option>
-                <option value="admin">Admin</option>
               </select>
+              {selectedUser?._id === authUser?._id && (
+                <p className="text-sm text-base-content/60 mt-1">You cannot change your own role.</p>
+              )}
             </div>
 
             <div className="form-control w-full">

@@ -35,10 +35,6 @@ const supplierSchema = new Schema(
       type: String,
       default: '',
     },
-    rating: {
-      type: Number,
-      default: 0,
-    },
     unavailableDates: {
       type: [Date],
       default: [],

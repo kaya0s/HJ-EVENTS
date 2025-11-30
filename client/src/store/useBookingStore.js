@@ -207,7 +207,7 @@ export const useBookingStore = create((set) => ({
         ),
       }));
       toast.success("Suppliers assigned successfully");
-      return res.data.booking;
+      return { booking: res.data.booking, conflict: false };
     } catch (error) {
       let msg = error?.response?.data?.message || error?.message || "Failed to assign suppliers";
       if (error?.response?.status === 409) {
@@ -218,7 +218,7 @@ export const useBookingStore = create((set) => ({
           set((state) => ({
             bookings: state.bookings.map((b) => (b._id === fresh._id ? fresh : b)),
           }));
-          return fresh;
+          return { booking: fresh, conflict: true };
         }
       }
       toast.error(msg);

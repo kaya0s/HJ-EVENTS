@@ -54,9 +54,7 @@ const EditBookingModal = ({ booking, isOpen, onClose, onSave, isSaving }) => {
                 </p>
               )}
             </div>
-            {supplier.rating > 0 && (
-              <div className="text-sm text-warning">⭐ {supplier.rating}</div>
-            )}
+            {/* rating removed */}
           </div>
         ))}
       </div>

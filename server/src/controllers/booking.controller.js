@@ -190,7 +190,7 @@ export const createBooking = async (req, res) => {
 
     // Populate suppliers for response
     const populatedBooking = await Booking.findById(booking._id)
-      .populate('suppliers', 'name category rating')
+      .populate('suppliers', 'name category')
       .populate('package');
 
     res.status(201).json({ booking: populatedBooking });
@@ -210,7 +210,7 @@ export const getMyBookings = async (req, res) => {
     await autoExpirePendingBookings({ 'user.id': req.user._id });
     const bookings = await Booking.find({ 'user.id': req.user._id })
       .populate('package')
-      .populate('suppliers', 'name category rating')
+      .populate('suppliers', 'name category')
       .populate('review', 'rating comment createdAt')
       .sort('-createdAt');
     res.json({ bookings });
@@ -490,7 +490,7 @@ export const getAllBookings = async (req, res) => {
         select: 'fullName email phone',
       })
       .populate('package')
-      .populate('suppliers', 'name category rating')
+      .populate('suppliers', 'name category')
       .populate('review', 'rating comment createdAt user')
       .sort('-createdAt')
       .lean();
@@ -568,7 +568,7 @@ export const assignSuppliersToBooking = async (req, res) => {
     const populatedBooking = await Booking.findById(updated._id)
       .populate('user.id', 'fullName email phone')
       .populate('package')
-      .populate('suppliers', 'name category rating')
+      .populate('suppliers', 'name category')
       .lean();
 
     // Transform booking to ensure user data is accessible
@@ -628,7 +628,7 @@ export const updateBooking = async (req, res) => {
     if (!updatedBooking) {
       const fresh = await Booking.findById(req.params.id)
         .populate('package')
-        .populate('suppliers', 'name category rating');
+        .populate('suppliers', 'name category');
       return res.status(409).json({
         message: 'Booking was updated by someone else. Please refresh and try again.',
         booking: fresh,
@@ -644,7 +644,7 @@ export const updateBooking = async (req, res) => {
     });
     const populated = await Booking.findById(updatedBooking._id)
       .populate('package')
-      .populate('suppliers', 'name category rating');
+      .populate('suppliers', 'name category');
     res.json({ booking: populated });
   } catch (error) {
     console.error('Update booking error:', error);
@@ -935,7 +935,7 @@ export const verifyBookingCode = async (req, res) => {
 
     // Populate suppliers for response
     const populatedBooking = await Booking.findById(booking._id)
-      .populate('suppliers', 'name category rating')
+      .populate('suppliers', 'name category')
       .populate('package');
 
     res.status(201).json({

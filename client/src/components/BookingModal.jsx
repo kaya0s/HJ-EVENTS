@@ -707,7 +707,7 @@ const BookingModal = ({ package: pkg, isOpen, onClose }) => {
                               disabled={Boolean(isUnavailable)}
                             >
                               {supplier.name}
-                              {supplier.rating > 0 && ` ⭐ ${supplier.rating}`}
+                              {/* rating removed */}
                               {supplier.priceRange &&
                                 ` - ${supplier.priceRange}`}
                               {isUnavailable ? " (Unavailable)" : ""}

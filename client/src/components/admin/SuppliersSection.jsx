@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Search, Star, Plus, Edit, Trash2 } from "lucide-react";
+import { Search, Plus, Edit, Trash2 } from "lucide-react";
 import { useSupplierStore } from "../../store/useSupplierStore";
 import SupplierModal from "./SupplierModal";
 
@@ -139,12 +139,7 @@ const SuppliersSection = () => {
                     <span className="badge badge-primary badge-sm">
                       {supplier.category}
                     </span>
-                    {supplier.rating > 0 && (
-                      <div className="flex items-center gap-1 text-sm text-warning">
-                        <Star size={16} className="fill-warning" />
-                        <span>{supplier.rating}</span>
-                      </div>
-                    )}
+                    {/* Rating removed */}
                   </div>
                   {supplier.description && (
                     <p className="text-sm text-base-content/70 line-clamp-2">

@@ -56,19 +56,21 @@ const BookingDetailsModal = ({ booking, isOpen, onClose }) => {
 
     setIsAssigning(true);
     try {
-      const result = await assignSuppliers(booking._id, supplierIds);
-      if (result && result._id && result.updatedAt) {
-        // If the store returned a fresh booking due to a 409, update the local selection and notify admin
-        if (result._id === booking._id && result.updatedAt !== booking.updatedAt) {
+        const result = await assignSuppliers(booking._id, supplierIds);
+        if (result?.conflict) {
+          // Conflict: server returned fresh booking; update selection and keep modal open
+          const fresh = result.booking;
           const newSelection = {};
-          (result.suppliers || []).forEach((s) => {
+          (fresh.suppliers || []).forEach((s) => {
             if (s.category) newSelection[s.category] = s._id;
           });
           setSelectedSuppliers(newSelection);
-          // Show a message to admin that the booking was updated by someone else
-          toast?.success?.('Booking updated by someone else; refreshed suppliers. Please re-assign if needed.');
+          toast.error('Booking was updated by someone else. Refresh applied; please review changes and re-assign if needed.');
+          // Do not close modal so admin can re-assign
+        } else {
+          // Successful assignment
+          onClose();
         }
-      }
       onClose();
     } catch (err) {
       // Error already handled in store; if we receive a fresh booking, we updated the UI above
@@ -227,7 +229,7 @@ const BookingDetailsModal = ({ booking, isOpen, onClose }) => {
               <p className="text-sm font-semibold mb-2">
                 External Supplier Deductions
               </p>
-              <div className="space-y-2">
+                  <div className="space-y-2">
                 {booking.externalSupplierSelections.map((entry) => (
                   <div
                     key={`${entry.category}-${entry.deductionAmount}`}
@@ -315,8 +317,7 @@ const BookingDetailsModal = ({ booking, isOpen, onClose }) => {
                     <option value="">None</option>
                     {categorySuppliers.map((supplier) => (
                       <option key={supplier._id} value={supplier._id}>
-                        {supplier.name}{" "}
-                        {supplier.rating > 0 && `⭐ ${supplier.rating}`}
+                        {supplier.name}
                       </option>
                     ))}
                   </select>
