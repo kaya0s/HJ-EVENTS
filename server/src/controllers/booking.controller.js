@@ -540,9 +540,9 @@ export const assignSuppliersToBooking = async (req, res) => {
     }
     const existing = await Booking.findById(req.params.id).lean();
     if (!existing) return res.status(404).json({ message: 'Booking not found' });
-    // Only allow assigning suppliers for pending bookings
-    if (existing.status !== 'pending') {
-      return res.status(400).json({ message: 'Cannot assign suppliers unless booking is pending' });
+    // Allow assigning suppliers when booking is pending or accepted
+    if (!['pending', 'accepted'].includes(existing.status)) {
+      return res.status(400).json({ message: 'Cannot assign suppliers unless booking is pending or accepted' });
     }
     const updated = await updateByUpdatedAt(
       Booking,
@@ -953,15 +953,18 @@ export const verifyBookingCode = async (req, res) => {
  * @route POST /api/bookings/:id/paypal/create-order
  * @access client
  */
+// Create PayPal order (no concurrency; read-only on booking)
 export const createPaypalOrder = async (req, res) => {
   try {
-    const { lastKnownUpdatedAt } = req.body;
-    if (!lastKnownUpdatedAt) {
-      return res.status(400).json({ message: 'Missing lastKnownUpdatedAt for concurrency control' });
+    const booking = await Booking.findOne({
+      _id: req.params.id,
+      'user.id': req.user._id,
+    }).lean();
+
+    if (!booking) {
+      return res.status(404).json({ message: 'Booking not found' });
     }
-    const booking = await Booking.findOne({ _id: req.params.id, 'user.id': req.user._id }).lean();
-    if (!booking) return res.status(404).json({ message: 'Booking not found' });
-    if (!(booking.status === 'pending')) {
+    if (booking.status !== 'pending') {
       return res.status(400).json({ message: 'Can only create payment for pending bookings' });
     }
     if (booking.payment?.status === 'paid') {
@@ -970,37 +973,25 @@ export const createPaypalOrder = async (req, res) => {
     if (!booking.totalPrice || booking.totalPrice <= 0) {
       return res.status(400).json({ message: 'Booking has no payable amount' });
     }
-    // create PayPal order and include booking._id as reference
-    const resp = await paypalSdk.createOrder({ amount: booking.totalPrice, currency: booking.payment?.currency || 'PHP', description: `Payment for booking ${booking._id}`, reference_id: booking._id.toString() });
-    // persist last create response for audit
-    const updatedPayment = {
-      ...booking.payment,
-      attempts: (booking.payment?.attempts || 0) + 1,
-      providerResponse: { ...(booking.payment?.providerResponse || {}), createOrder: resp },
-    };
-    const updated = await updateByUpdatedAt(
-      Booking,
-      { _id: req.params.id, 'user.id': req.user._id },
-      lastKnownUpdatedAt,
-      { payment: updatedPayment }
-    );
-    if (!updated) {
-      const fresh = await Booking.findById(req.params.id);
-      return res.status(409).json({ message: 'Booking was updated by someone else. Please refresh', booking: fresh });
-    }
+
+    const resp = await paypalSdk.createOrder({
+      amount: booking.totalPrice,
+      currency: booking.payment?.currency || 'PHP',
+      description: `Payment for booking ${booking._id}`,
+      reference_id: booking._id.toString(),
+    });
+
     const orderId = resp?.id;
-    res.json({ orderId, links: resp?.links || resp });
+    return res.json({ orderId, links: resp?.links || resp });
   } catch (error) {
     console.error('createPaypalOrder error:', error);
-    res.status(500).json({ message: 'Failed to create PayPal order', error: error?.message || error });
+    return res
+      .status(500)
+      .json({ message: 'Failed to create PayPal order', error: error?.message || error });
   }
 };
 
-/**
- * @desc Capture/approve PayPal order and update booking
- * @route POST /api/bookings/:id/paypal/capture
- * @access client
- */
+// Capture PayPal order (with optimistic concurrency)
 export const capturePaypalOrder = async (req, res) => {
   try {
     const { orderId, lastKnownUpdatedAt } = req.body;
@@ -1022,13 +1013,14 @@ export const capturePaypalOrder = async (req, res) => {
     if (!booking) {
       return res.status(404).json({ message: 'Booking not found' });
     }
+
     if (booking.payment?.status === 'paid') {
       return res.status(400).json({ message: 'Booking is already paid' });
     }
 
+    // Call PayPal capture
     const captureResp = await paypalSdk.captureOrder(orderId);
 
-    // Capture detail
     const captureData =
       captureResp?.purchase_units?.[0]?.payments?.captures?.[0] || null;
     const payer = captureResp?.payer || {};
@@ -1041,7 +1033,6 @@ export const capturePaypalOrder = async (req, res) => {
         0,
     );
 
-    // Build payment object
     const updatedPayment = {
       ...booking.payment,
       attempts: (booking.payment?.attempts || 0) + 1,
@@ -1067,7 +1058,6 @@ export const capturePaypalOrder = async (req, res) => {
       },
     };
 
-    // Verify amount matches booking expected price (sanity check)
     const expectedAmount = Number(booking.totalPrice || 0);
     if (!(Math.abs(capturedAmount - expectedAmount) < 0.01)) {
       updatedPayment.status = 'failed';
@@ -1084,7 +1074,6 @@ export const capturePaypalOrder = async (req, res) => {
           : 'failed';
     }
 
-    // If capture succeeded, optionally auto-accept and send email
     const bookingStatusUpdate = {};
     if (updatedPayment.status === 'paid') {
       if (booking.payment?.status !== 'paid' && booking.status === 'pending') {
@@ -1097,41 +1086,11 @@ export const capturePaypalOrder = async (req, res) => {
               : 'Untitled Wedding');
         }
       }
-
-      // Send approval email
-      try {
-        if (booking.user?.id?.email) {
-          const eventDate = booking.weddingDate
-            ? new Date(booking.weddingDate).toLocaleDateString('en-US', {
-                year: 'numeric',
-                month: 'long',
-                day: 'numeric',
-              })
-            : 'N/A';
-
-          await sendBookingApprovalEmail(
-            booking.user.id.email,
-            booking.user.fullName || booking.user.id.fullName,
-            booking._id.toString().slice(-8).toUpperCase(),
-            eventDate,
-          );
-        }
-      } catch (e) {
-        console.error('Failed to send approval email after payment', e);
-      }
-
-      // Log activity
-      await ActivityLog.create({
-        actor: req.user._id,
-        actorName: req.user.fullName,
-        action: 'Pay booking',
-        details: `Booking ${booking._id} paid via PayPal, txn ${updatedPayment.transactionId}`,
-      });
     }
 
-    // Prepare atomic update (payment + optional status/title)
     const updatePayload = { payment: updatedPayment, ...bookingStatusUpdate };
 
+    // Optimistic concurrency here
     const updated = await updateByUpdatedAt(
       Booking,
       { _id: req.params.id, 'user.id': req.user._id },
@@ -1147,6 +1106,41 @@ export const capturePaypalOrder = async (req, res) => {
       });
     }
 
+    // Side-effects only after successful DB update
+    if (updated.payment?.status === 'paid') {
+      try {
+        if (updated.user?.email) {
+          const eventDate = updated.weddingDate
+            ? new Date(updated.weddingDate).toLocaleDateString('en-US', {
+                year: 'numeric',
+                month: 'long',
+                day: 'numeric',
+              })
+            : 'N/A';
+
+          await sendBookingApprovalEmail(
+            updated.user.email,
+            updated.user.fullName,
+            updated._id.toString().slice(-8).toUpperCase(),
+            eventDate,
+          );
+        }
+      } catch (e) {
+        console.error('Failed to send approval email after payment', e);
+      }
+
+      try {
+        await ActivityLog.create({
+          actor: req.user._id,
+          actorName: req.user.fullName,
+          action: 'Pay booking',
+          details: `Booking ${updated._id} paid via PayPal, txn ${updated.payment.transactionId}`,
+        });
+      } catch (e) {
+        console.error('Failed to create activity log for payment', e);
+      }
+    }
+
     return res.json({ booking: updated, capture: captureResp });
   } catch (error) {
     console.error(
@@ -1159,7 +1153,6 @@ export const capturePaypalOrder = async (req, res) => {
     });
   }
 };
-
 
 /**
  * @desc PayPal webhook handler for events like PAYMENT.CAPTURE.COMPLETED

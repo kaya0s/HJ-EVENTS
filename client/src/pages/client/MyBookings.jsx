@@ -658,6 +658,9 @@ const MyBookings = () => {
             );
             closePaymentModal();
           }}
+          onOrderCreated={(updatedBooking) => {
+            setBookings((prev) => prev.map((b) => (b._id === updatedBooking._id ? updatedBooking : b)));
+          }}
           onError={(err) => console.error("Payment error", err)}
         />
       </div>

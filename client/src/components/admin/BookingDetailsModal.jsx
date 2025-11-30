@@ -46,7 +46,8 @@ const BookingDetailsModal = ({ booking, isOpen, onClose }) => {
     }));
   };
 
-  const canAssign = booking?.status?.toLowerCase() === "pending";
+  const status = (booking?.status || '').toLowerCase();
+  const canAssign = status === "pending" || status === "accepted";
 
   const handleAssignSuppliers = async () => {
     if (!canAssign) return;
@@ -335,12 +336,12 @@ const BookingDetailsModal = ({ booking, isOpen, onClose }) => {
               className="btn btn-primary"
               onClick={handleAssignSuppliers}
               disabled={isAssigning || !canAssign}
-              title={!canAssign && 'Booking must be pending to assign suppliers'}
+              title={!canAssign && 'Booking must be pending or accepted to assign suppliers'}
             >
               {isAssigning ? "Assigning..." : "Assign Suppliers"}
             </button>
             {!canAssign && (
-              <p className="text-sm text-base-content/60">Only pending bookings can have suppliers assigned.</p>
+              <p className="text-sm text-base-content/60">Suppliers can be assigned for pending or accepted bookings.</p>
             )}
           </div>
         </div>
