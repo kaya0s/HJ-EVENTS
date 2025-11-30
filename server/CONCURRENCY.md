@@ -20,7 +20,8 @@ Endpoints affected (not exhaustive)
  - Reviews: POST /api/reviews — does NOT require `lastKnownUpdatedAt`. Reviews are stored and attached to bookings unconditionally.
  - Users: PUT /api/users/me — supports `lastKnownUpdatedAt` for optimistic concurrency when updating own profile
  - Users: PUT /api/users/:id — supports `lastKnownUpdatedAt` for optimistic concurrency when admin updates a user
- - Booking edits & supplier assignment: Only allowed when booking.status === 'pending'. These updates require `lastKnownUpdatedAt` and will return 409 when stale.
+ - Booking edits: Only allowed when booking.status === 'pending'. These updates require `lastKnownUpdatedAt` and will return 409 when stale.
+ - Supplier assignment: Admins can assign suppliers when booking.status === 'pending' or 'accepted' (still requires `lastKnownUpdatedAt`).
 
 Conflict scenario: user and admin update same booking
 --------------------------------------------------
