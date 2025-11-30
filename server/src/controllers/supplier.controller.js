@@ -521,36 +521,3 @@ export const downloadMyBookingsReport = async (req, res) => {
     }
   }
 };
-
-/**
- * @desc   Update booking status (Accepted, In Progress, Completed, etc.)
- * @route  PATCH /api/suppliers/booking/:bookingId/status
- * @access Supplier
- */
-export const updateBookingStatus = async (req, res) => {
-  try {
-    const supplier = await Supplier.findOne({ user: req.user._id });
-    if (!supplier) {
-      return res.status(404).json({ message: 'Supplier not found' });
-    }
-
-    const { bookingId } = req.params;
-    const { status } = req.body;
-
-    const booking = await Booking.findOne({
-      _id: bookingId,
-      suppliers: supplier._id,
-    });
-
-    if (!booking) {
-      return res.status(404).json({ message: 'Booking not found or not assigned to you' });
-    }
-
-    booking.status = status;
-    await booking.save();
-
-    res.json({ message: 'Booking status updated', booking });
-  } catch (error) {
-    res.status(500).json({ message: 'Server error', error: error.message });
-  }
-};
