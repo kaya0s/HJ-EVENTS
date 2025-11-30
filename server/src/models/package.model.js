@@ -29,7 +29,7 @@ const packageSchema = new Schema(
       default: true,
     },
   },
-  { timestamps: true }
+  { timestamps: true, optimisticConcurrency: true }
 );
 
 const Package = model('Package', packageSchema);

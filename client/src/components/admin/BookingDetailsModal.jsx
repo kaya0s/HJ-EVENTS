@@ -15,6 +15,7 @@ import {
 import dayjs from "dayjs";
 import { useBookingStore } from "../../store/useBookingStore";
 import { useSupplierStore } from "../../store/useSupplierStore";
+import toast from "react-hot-toast";
 
 const BookingDetailsModal = ({ booking, isOpen, onClose }) => {
   const { assignSuppliers } = useBookingStore();
@@ -45,17 +46,32 @@ const BookingDetailsModal = ({ booking, isOpen, onClose }) => {
     }));
   };
 
+  const canAssign = booking?.status?.toLowerCase() === "pending";
+
   const handleAssignSuppliers = async () => {
+    if (!canAssign) return;
     if (!booking) return;
 
     const supplierIds = Object.values(selectedSuppliers).filter(Boolean);
 
     setIsAssigning(true);
     try {
-      await assignSuppliers(booking._id, supplierIds);
+      const result = await assignSuppliers(booking._id, supplierIds);
+      if (result && result._id && result.updatedAt) {
+        // If the store returned a fresh booking due to a 409, update the local selection and notify admin
+        if (result._id === booking._id && result.updatedAt !== booking.updatedAt) {
+          const newSelection = {};
+          (result.suppliers || []).forEach((s) => {
+            if (s.category) newSelection[s.category] = s._id;
+          });
+          setSelectedSuppliers(newSelection);
+          // Show a message to admin that the booking was updated by someone else
+          toast?.success?.('Booking updated by someone else; refreshed suppliers. Please re-assign if needed.');
+        }
+      }
       onClose();
-    } catch {
-      // Error already handled in store
+    } catch (err) {
+      // Error already handled in store; if we receive a fresh booking, we updated the UI above
     } finally {
       setIsAssigning(false);
     }
@@ -176,8 +192,13 @@ const BookingDetailsModal = ({ booking, isOpen, onClose }) => {
                 Status
               </p>
               <p className="text-xl font-semibold capitalize">
-                {booking.status}
-              </p>
+                  {booking.status}
+                </p>
+                {booking.updatedAt && (
+                  <p className="text-xs text-base-content/50 mt-1 ml-2">
+                    Updated {dayjs(booking.updatedAt).format("MMM D, YYYY h:mm A")}
+                  </p>
+                )}
             </div>
           </div>
 
@@ -289,6 +310,7 @@ const BookingDetailsModal = ({ booking, isOpen, onClose }) => {
                     onChange={(e) =>
                       handleSupplierChange(category, e.target.value)
                     }
+                    disabled={!canAssign}
                   >
                     <option value="">None</option>
                     {categorySuppliers.map((supplier) => (
@@ -311,10 +333,14 @@ const BookingDetailsModal = ({ booking, isOpen, onClose }) => {
             <button
               className="btn btn-primary"
               onClick={handleAssignSuppliers}
-              disabled={isAssigning}
+              disabled={isAssigning || !canAssign}
+              title={!canAssign && 'Booking must be pending to assign suppliers'}
             >
               {isAssigning ? "Assigning..." : "Assign Suppliers"}
             </button>
+            {!canAssign && (
+              <p className="text-sm text-base-content/60">Only pending bookings can have suppliers assigned.</p>
+            )}
           </div>
         </div>
       </div>

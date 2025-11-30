@@ -166,6 +166,11 @@ Booking endpoints (example):
 
 - `POST /api/bookings` — create a booking (body: couple, eventDate, eventType, ...)
 
+Note on concurrency
+- Timeline-based optimistic concurrency control is used for several sensitive update flows (bookings and user profile updates).
+- When updating your profile via `PUT /api/users/me`, include `lastKnownUpdatedAt` set to the user's current `updatedAt` value to ensure the server only applies your changes if the record hasn't changed since.
+- When admin updates a user via `PUT /api/users/:id`, you may include `lastKnownUpdatedAt` as well to prevent accidental overwrites in collaborative workflows.
+
 Note: client uses axios with `withCredentials` where needed.
 
 ## PayPal Integration (Sandbox)

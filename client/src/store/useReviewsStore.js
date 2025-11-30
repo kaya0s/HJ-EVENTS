@@ -68,7 +68,11 @@ export const useReviewsStore = () => {
       await fetchReviews();
       return response.data?.data;
     } catch (err) {
-      toast.error(err.response?.data?.message || err.message);
+      let msg = err.response?.data?.message || err.message || 'Failed to submit review';
+      if (err?.response?.status === 409) {
+        msg = err.response?.data?.message || 'Someone else updated this booking. Please refresh.';
+      }
+      toast.error(msg);
       throw err;
     } finally {
       setIsSubmitting(false);

@@ -1,4 +1,5 @@
 import Booking from '../models/booking.model.js';
+import { updateByUpdatedAt } from '../utils/concurrency.js';
 import Package from '../models/package.model.js';
 import ActivityLog from '../models/activityLog.model.js';
 import paypalSdk from '../utils/paypal.js';
@@ -227,13 +228,30 @@ export const getMyBookings = async (req, res) => {
  */
 export const cancelBooking = async (req, res) => {
   try {
-    const booking = await Booking.findOne({ _id: req.params.id, 'user.id': req.user._id });
-    if (!booking) return res.status(404).json({ message: 'Booking not found' });
-    if (booking.status === 'accepted')
+    const { lastKnownUpdatedAt } = req.body;
+    if (!lastKnownUpdatedAt) {
+      return res.status(400).json({ message: 'Missing lastKnownUpdatedAt for concurrency control' });
+    }
+    // Ensure booking exists & not accepted
+    const existing = await Booking.findOne({ _id: req.params.id, 'user.id': req.user._id }).lean();
+    if (!existing) return res.status(404).json({ message: 'Booking not found' });
+    if (existing.status === 'accepted')
       return res.status(400).json({ message: 'Cannot cancel an accepted booking' });
-    booking.status = 'cancelled';
-    await booking.save();
-    res.json({ booking });
+
+    const updated = await updateByUpdatedAt(
+      Booking,
+      { _id: req.params.id, 'user.id': req.user._id },
+      lastKnownUpdatedAt,
+      { status: 'cancelled' }
+    );
+    if (!updated) {
+      const fresh = await Booking.findById(req.params.id);
+      return res.status(409).json({
+        message: 'Booking was updated by someone else. Please refresh and try again.',
+        booking: fresh,
+      });
+    }
+    res.json({ booking: updated });
   } catch (error) {
     res.status(500).json({ message: `Server error${error}` });
   }
@@ -246,14 +264,33 @@ export const cancelBooking = async (req, res) => {
  */
 export const approveBooking = async (req, res) => {
   try {
-    const booking = await Booking.findById(req.params.id)
+    const { lastKnownUpdatedAt } = req.body;
+    if (!lastKnownUpdatedAt) {
+      return res.status(400).json({ message: 'Missing lastKnownUpdatedAt for concurrency control' });
+    }
+    const existing = await Booking.findById(req.params.id).lean();
+    if (!existing) return res.status(404).json({ message: 'Booking not found' });
+    const payload = { status: 'accepted' };
+    // Ensure a fallback title is set if missing
+    if (!existing.title) {
+      const fallbackTitle = existing.package?.name || (existing.user?.fullName ? `${existing.user.fullName}'s Wedding` : 'Untitled Wedding');
+      payload.title = fallbackTitle;
+    }
+    const updated = await updateByUpdatedAt(
+      Booking,
+      { _id: req.params.id },
+      lastKnownUpdatedAt,
+      payload
+    );
+    if (!updated) {
+      const fresh = await Booking.findById(req.params.id)
+        .populate('user.id', 'email fullName phone')
+        .populate('package');
+      return res.status(409).json({ message: 'Booking was updated by someone else. Please refresh', booking: fresh });
+    }
+    const booking = await Booking.findById(updated._id)
       .populate('user.id', 'email fullName phone')
       .populate('package');
-    if (!booking) return res.status(404).json({ message: 'Booking not found' });
-
-    booking.status = 'accepted';
-    ensureBookingTitle(booking);
-    await booking.save();
 
     await ActivityLog.create({
       actor: req.user._id,
@@ -299,14 +336,32 @@ export const approveBooking = async (req, res) => {
 export const rejectBooking = async (req, res) => {
   try {
     const { reason } = req.body;
-    const booking = await Booking.findById(req.params.id)
+    const { lastKnownUpdatedAt } = req.body;
+    if (!lastKnownUpdatedAt) {
+      return res.status(400).json({ message: 'Missing lastKnownUpdatedAt for concurrency control' });
+    }
+    const existing = await Booking.findById(req.params.id).lean();
+    if (!existing) return res.status(404).json({ message: 'Booking not found' });
+    const payload = { status: 'rejected' };
+    if (!existing.title) {
+      const fallbackTitle = existing.package?.name || (existing.user?.fullName ? `${existing.user.fullName}'s Wedding` : 'Untitled Wedding');
+      payload.title = fallbackTitle;
+    }
+    const updated = await updateByUpdatedAt(
+      Booking,
+      { _id: req.params.id },
+      lastKnownUpdatedAt,
+      payload
+    );
+    if (!updated) {
+      const fresh = await Booking.findById(req.params.id)
+        .populate('user.id', 'email fullName phone')
+        .populate('package');
+      return res.status(409).json({ message: 'Booking was updated by someone else. Please refresh', booking: fresh });
+    }
+    const booking = await Booking.findById(updated._id)
       .populate('user.id', 'email fullName phone')
       .populate('package');
-    if (!booking) return res.status(404).json({ message: 'Booking not found' });
-
-    booking.status = 'rejected';
-    ensureBookingTitle(booking);
-    await booking.save();
 
     // Send email notification to client
     if (booking.user?.id?.email) {
@@ -338,18 +393,35 @@ export const rejectBooking = async (req, res) => {
 
 export const completeBooking = async (req, res) => {
   try {
-    const booking = await Booking.findById(req.params.id)
-      .populate('user.id', 'email fullName phone')
-      .populate('package');
-    if (!booking) return res.status(404).json({ message: 'Booking not found' });
-
-    if (booking.status !== 'accepted') {
+    const { lastKnownUpdatedAt } = req.body;
+    if (!lastKnownUpdatedAt) {
+      return res.status(400).json({ message: 'Missing lastKnownUpdatedAt for concurrency control' });
+    }
+    const existing = await Booking.findById(req.params.id).lean();
+    if (!existing) return res.status(404).json({ message: 'Booking not found' });
+    if (existing.status !== 'accepted') {
       return res.status(400).json({ message: 'Only accepted bookings can be marked as completed' });
     }
-
-    booking.status = 'completed';
-    ensureBookingTitle(booking);
-    await booking.save();
+    const payload = { status: 'completed' };
+    if (!existing.title) {
+      const fallbackTitle = existing.package?.name || (existing.user?.fullName ? `${existing.user.fullName}'s Wedding` : 'Untitled Wedding');
+      payload.title = fallbackTitle;
+    }
+    const updated = await updateByUpdatedAt(
+      Booking,
+      { _id: req.params.id },
+      lastKnownUpdatedAt,
+      payload
+    );
+    if (!updated) {
+      const fresh = await Booking.findById(req.params.id)
+        .populate('user.id', 'email fullName phone')
+        .populate('package');
+      return res.status(409).json({ message: 'Booking was updated by someone else. Please refresh', booking: fresh });
+    }
+    const booking = await Booking.findById(updated._id)
+      .populate('user.id', 'email fullName phone')
+      .populate('package');
 
     await ActivityLog.create({
       actor: req.user._id,
@@ -462,21 +534,38 @@ export const getAllBookings = async (req, res) => {
  */
 export const assignSuppliersToBooking = async (req, res) => {
   try {
-    const { suppliers } = req.body;
-    const booking = await Booking.findById(req.params.id);
-    if (!booking) return res.status(404).json({ message: 'Booking not found' });
-
-    booking.suppliers = suppliers || [];
-    await booking.save();
+    const { suppliers, lastKnownUpdatedAt } = req.body;
+    if (!lastKnownUpdatedAt) {
+      return res.status(400).json({ message: 'Missing lastKnownUpdatedAt for concurrency control' });
+    }
+    const existing = await Booking.findById(req.params.id).lean();
+    if (!existing) return res.status(404).json({ message: 'Booking not found' });
+    // Only allow assigning suppliers for pending bookings
+    if (existing.status !== 'pending') {
+      return res.status(400).json({ message: 'Cannot assign suppliers unless booking is pending' });
+    }
+    const updated = await updateByUpdatedAt(
+      Booking,
+      { _id: req.params.id },
+      lastKnownUpdatedAt,
+      { suppliers: suppliers || [] }
+    );
+    if (!updated) {
+      const fresh = await Booking.findById(req.params.id).lean();
+      return res.status(409).json({
+        message: 'Booking was updated by someone else. Please refresh and try again.',
+        booking: fresh,
+      });
+    }
 
     await ActivityLog.create({
       actor: req.user._id,
       actorName: req.user.fullName,
       action: 'Assign suppliers to booking',
-      details: `Booking ${booking._id}`,
+      details: `Booking ${updated._id}`,
     });
 
-    const populatedBooking = await Booking.findById(booking._id)
+    const populatedBooking = await Booking.findById(updated._id)
       .populate('user.id', 'fullName email phone')
       .populate('package')
       .populate('suppliers', 'name category rating')
@@ -511,45 +600,52 @@ export const assignSuppliersToBooking = async (req, res) => {
 export const updateBooking = async (req, res) => {
   try {
     const { title, venue, lastKnownUpdatedAt } = req.body;
-    const booking = await Booking.findOne({ _id: req.params.id, 'user.id': req.user._id })
-      .populate('package')
-      .populate('suppliers', 'name category rating');
-
-    if (!booking) return res.status(404).json({ message: 'Booking not found' });
-
-    // Cannot edit accepted bookings
-    if (booking.status === 'accepted') {
-      return res.status(400).json({ message: 'Cannot edit an accepted booking' });
+    if (!lastKnownUpdatedAt) {
+      return res.status(400).json({ message: 'Missing lastKnownUpdatedAt for concurrency control' });
     }
 
-    // Optimistic concurrency control
-    if (lastKnownUpdatedAt) {
-      const clientTimestamp = new Date(lastKnownUpdatedAt).getTime();
-      const serverTimestamp = new Date(booking.updatedAt).getTime();
-      if (!Number.isNaN(clientTimestamp) && clientTimestamp !== serverTimestamp) {
-        const freshBooking = booking.toObject({ virtuals: true });
-        return res.status(409).json({
-          message: 'Booking was updated by someone else. Please refresh and try again.',
-          booking: freshBooking,
-        });
-      }
+    // Cannot edit accepted bookings - get a quick read to check status
+    const existing = await Booking.findOne({ _id: req.params.id, 'user.id': req.user._id }).lean();
+    if (!existing) return res.status(404).json({ message: 'Booking not found' });
+    // Only allow edits when booking is pending
+    if (existing.status !== 'pending') {
+      return res.status(400).json({ message: 'Only pending bookings can be edited' });
     }
 
-    // Update only allowed fields (not weddingDate)
-    if (title !== undefined) booking.title = title.trim();
-    if (venue !== undefined) booking.venue = venue.trim();
+    // Build allowed update object
+    const updateObj = {};
+    if (title !== undefined) updateObj.title = title.trim();
+    if (venue !== undefined) updateObj.venue = venue.trim();
 
-    await booking.save();
+    // Attempt atomic update using timestamp match
+    const updatedBooking = await updateByUpdatedAt(
+      Booking,
+      { _id: req.params.id, 'user.id': req.user._id },
+      lastKnownUpdatedAt,
+      updateObj
+    );
+
+    if (!updatedBooking) {
+      const fresh = await Booking.findById(req.params.id)
+        .populate('package')
+        .populate('suppliers', 'name category rating');
+      return res.status(409).json({
+        message: 'Booking was updated by someone else. Please refresh and try again.',
+        booking: fresh,
+      });
+    }
 
     // Log activity
     await ActivityLog.create({
       actor: req.user._id,
       actorName: req.user.fullName,
       action: 'Update booking',
-      details: `Booking ${booking._id}`,
+      details: `Booking ${updatedBooking._id}`,
     });
-
-    res.json({ booking });
+    const populated = await Booking.findById(updatedBooking._id)
+      .populate('package')
+      .populate('suppliers', 'name category rating');
+    res.json({ booking: populated });
   } catch (error) {
     console.error('Update booking error:', error);
     res.status(500).json({ message: 'Server error', error: error.message });
@@ -859,7 +955,11 @@ export const verifyBookingCode = async (req, res) => {
  */
 export const createPaypalOrder = async (req, res) => {
   try {
-    const booking = await Booking.findOne({ _id: req.params.id, 'user.id': req.user._id });
+    const { lastKnownUpdatedAt } = req.body;
+    if (!lastKnownUpdatedAt) {
+      return res.status(400).json({ message: 'Missing lastKnownUpdatedAt for concurrency control' });
+    }
+    const booking = await Booking.findOne({ _id: req.params.id, 'user.id': req.user._id }).lean();
     if (!booking) return res.status(404).json({ message: 'Booking not found' });
     if (!(booking.status === 'pending')) {
       return res.status(400).json({ message: 'Can only create payment for pending bookings' });
@@ -873,10 +973,21 @@ export const createPaypalOrder = async (req, res) => {
     // create PayPal order and include booking._id as reference
     const resp = await paypalSdk.createOrder({ amount: booking.totalPrice, currency: booking.payment?.currency || 'PHP', description: `Payment for booking ${booking._id}`, reference_id: booking._id.toString() });
     // persist last create response for audit
-    booking.payment = booking.payment || {};
-    booking.payment.attempts = (booking.payment.attempts || 0) + 1;
-    booking.payment.providerResponse = { createOrder: resp };
-    await booking.save();
+    const updatedPayment = {
+      ...booking.payment,
+      attempts: (booking.payment?.attempts || 0) + 1,
+      providerResponse: { ...(booking.payment?.providerResponse || {}), createOrder: resp },
+    };
+    const updated = await updateByUpdatedAt(
+      Booking,
+      { _id: req.params.id, 'user.id': req.user._id },
+      lastKnownUpdatedAt,
+      { payment: updatedPayment }
+    );
+    if (!updated) {
+      const fresh = await Booking.findById(req.params.id);
+      return res.status(409).json({ message: 'Booking was updated by someone else. Please refresh', booking: fresh });
+    }
     const orderId = resp?.id;
     res.json({ orderId, links: resp?.links || resp });
   } catch (error) {
@@ -892,89 +1003,163 @@ export const createPaypalOrder = async (req, res) => {
  */
 export const capturePaypalOrder = async (req, res) => {
   try {
-    const { orderId } = req.body;
-    if (!orderId) return res.status(400).json({ message: 'orderId is required' });
-    const booking = await Booking.findOne({ _id: req.params.id, 'user.id': req.user._id });
-    if (!booking) return res.status(404).json({ message: 'Booking not found' });
+    const { orderId, lastKnownUpdatedAt } = req.body;
+
+    if (!orderId) {
+      return res.status(400).json({ message: 'orderId is required' });
+    }
+    if (!lastKnownUpdatedAt) {
+      return res
+        .status(400)
+        .json({ message: 'Missing lastKnownUpdatedAt for concurrency control' });
+    }
+
+    const booking = await Booking.findOne({
+      _id: req.params.id,
+      'user.id': req.user._id,
+    }).lean();
+
+    if (!booking) {
+      return res.status(404).json({ message: 'Booking not found' });
+    }
     if (booking.payment?.status === 'paid') {
       return res.status(400).json({ message: 'Booking is already paid' });
     }
+
     const captureResp = await paypalSdk.captureOrder(orderId);
-    // find capture detail entry
-    const captureData = captureResp?.purchase_units?.[0]?.payments?.captures?.[0] || null;
+
+    // Capture detail
+    const captureData =
+      captureResp?.purchase_units?.[0]?.payments?.captures?.[0] || null;
     const payer = captureResp?.payer || {};
-    if (!captureData) {
-      // fallback, if not captured but status is 'COMPLETED' maybe
-    }
-    // Update booking payment information
-    booking.payment = booking.payment || {};
-    booking.payment.attempts = (booking.payment.attempts || 0) + 1;
-    booking.payment.transactionId = captureData?.id || captureResp?.id || null;
-    const capturedAmount = Number(captureData?.amount?.value || booking.totalPrice || 0);
-    booking.payment.amount = capturedAmount;
-    booking.payment.currency = captureData?.amount?.currency_code || booking.payment?.currency || 'PHP';
-    booking.payment.paidAt = new Date();
-    booking.payment.payer = {
-      payerId: payer?.payer_id || payer?.payerID || payer?.id || null,
-      email: payer?.email_address || null,
-      name: `${payer?.name?.given_name || ''} ${payer?.name?.surname || ''}`.trim() || null,
+
+    // Compute captured amount safely
+    const capturedAmount = Number(
+      captureData?.amount?.value ??
+        captureResp?.purchase_units?.[0]?.amount?.value ??
+        booking.totalPrice ??
+        0,
+    );
+
+    // Build payment object
+    const updatedPayment = {
+      ...booking.payment,
+      attempts: (booking.payment?.attempts || 0) + 1,
+      transactionId: captureData?.id || captureResp?.id || null,
+      amount: capturedAmount,
+      currency:
+        captureData?.amount?.currency_code ||
+        booking.payment?.currency ||
+        'PHP',
+      paidAt: new Date(),
+      payer: {
+        payerId: payer?.payer_id || payer?.payerID || payer?.id || null,
+        email: payer?.email_address || null,
+        name:
+          `${payer?.name?.given_name || ''} ${
+            payer?.name?.surname || ''
+          }`.trim() || null,
+      },
+      method: 'paypal',
+      providerResponse: {
+        ...(booking.payment?.providerResponse || {}),
+        capture: captureResp,
+      },
     };
-    booking.payment.method = 'paypal';
-    booking.payment.providerResponse = { capture: captureResp };
+
     // Verify amount matches booking expected price (sanity check)
-    if (!(Math.abs(capturedAmount - Number(booking.totalPrice || 0)) < 0.01)) {
-      booking.payment.status = 'failed';
+    const expectedAmount = Number(booking.totalPrice || 0);
+    if (!(Math.abs(capturedAmount - expectedAmount) < 0.01)) {
+      updatedPayment.status = 'failed';
       console.warn('Captured amount does not match booking price', {
         bookingId: booking._id,
-        expected: booking.totalPrice,
+        expected: expectedAmount,
         captured: capturedAmount,
       });
     } else {
-      booking.payment.status = (captureResp?.status === 'COMPLETED' || captureData?.status === 'COMPLETED') ? 'paid' : 'failed';
+      updatedPayment.status =
+        captureResp?.status === 'COMPLETED' ||
+        captureData?.status === 'COMPLETED'
+          ? 'paid'
+          : 'failed';
     }
 
-    // If capture succeeded, keep booking status as 'pending' but mark payment as 'paid'
-    if (booking.payment.status === 'paid') {
-      // If payment completed, auto-accept the booking and notify customer (matching approveBooking flow)
-      if (booking.status === 'pending') {
-        booking.status = 'accepted';
-        ensureBookingTitle(booking);
-        // Send approval email
-        try {
-          if (booking.user?.id?.email) {
-            const eventDate = booking.weddingDate
-              ? new Date(booking.weddingDate).toLocaleDateString('en-US', {
-                  year: 'numeric',
-                  month: 'long',
-                  day: 'numeric',
-                })
-              : 'N/A';
-            await sendBookingApprovalEmail(
-              booking.user.id.email,
-              booking.user.fullName || booking.user.id.fullName,
-              booking._id.toString().slice(-8).toUpperCase(),
-              eventDate
-            );
-          }
-        } catch (e) {
-          console.error('Failed to send approval email after payment', e);
+    // If capture succeeded, optionally auto-accept and send email
+    const bookingStatusUpdate = {};
+    if (updatedPayment.status === 'paid') {
+      if (booking.payment?.status !== 'paid' && booking.status === 'pending') {
+        bookingStatusUpdate.status = 'accepted';
+        if (!booking.title) {
+          bookingStatusUpdate.title =
+            booking.package?.name ||
+            (booking.user?.fullName
+              ? `${booking.user.fullName}'s Wedding`
+              : 'Untitled Wedding');
         }
       }
+
+      // Send approval email
+      try {
+        if (booking.user?.id?.email) {
+          const eventDate = booking.weddingDate
+            ? new Date(booking.weddingDate).toLocaleDateString('en-US', {
+                year: 'numeric',
+                month: 'long',
+                day: 'numeric',
+              })
+            : 'N/A';
+
+          await sendBookingApprovalEmail(
+            booking.user.id.email,
+            booking.user.fullName || booking.user.id.fullName,
+            booking._id.toString().slice(-8).toUpperCase(),
+            eventDate,
+          );
+        }
+      } catch (e) {
+        console.error('Failed to send approval email after payment', e);
+      }
+
       // Log activity
       await ActivityLog.create({
         actor: req.user._id,
         actorName: req.user.fullName,
         action: 'Pay booking',
-        details: `Booking ${booking._id} paid via PayPal, txn ${booking.payment.transactionId}`,
+        details: `Booking ${booking._id} paid via PayPal, txn ${updatedPayment.transactionId}`,
       });
     }
-    await booking.save();
-    res.json({ booking, capture: captureResp });
+
+    // Prepare atomic update (payment + optional status/title)
+    const updatePayload = { payment: updatedPayment, ...bookingStatusUpdate };
+
+    const updated = await updateByUpdatedAt(
+      Booking,
+      { _id: req.params.id, 'user.id': req.user._id },
+      lastKnownUpdatedAt,
+      updatePayload,
+    );
+
+    if (!updated) {
+      const fresh = await Booking.findById(req.params.id);
+      return res.status(409).json({
+        message: 'Booking was updated by someone else. Please refresh',
+        booking: fresh,
+      });
+    }
+
+    return res.json({ booking: updated, capture: captureResp });
   } catch (error) {
-    console.error('capturePaypalOrder error:', error?.response?.data || error?.message || error);
-    res.status(500).json({ message: 'Failed to capture PayPal order', error: error?.message || error });
+    console.error(
+      'capturePaypalOrder error:',
+      error?.response?.data || error?.message || error,
+    );
+    return res.status(500).json({
+      message: 'Failed to capture PayPal order',
+      error: error?.message || error,
+    });
   }
 };
+
 
 /**
  * @desc PayPal webhook handler for events like PAYMENT.CAPTURE.COMPLETED
@@ -1023,17 +1208,24 @@ export const handlePaypalWebhook = async (req, res) => {
       }
       if (eventType === 'PAYMENT.CAPTURE.COMPLETED') {
         // Update booking payment
-        booking.payment = booking.payment || {};
-        booking.payment.status = 'paid';
-        booking.payment.transactionId = transactionId;
-        booking.payment.amount = Number(resource?.amount?.value || booking.totalPrice || 0);
-        booking.payment.currency = resource?.amount?.currency_code || booking.payment.currency || 'PHP';
-        booking.payment.paidAt = new Date(resource?.update_time || Date.now());
-        booking.payment.payer = booking.payment.payer || {};
-        // store provider response
-        booking.payment.providerResponse = booking.payment.providerResponse || {};
-        booking.payment.providerResponse.webhook = resource;
-        await booking.save();
+        const currentUpdatedAt = booking.updatedAt;
+        const payload = {
+          payment: {
+            ...booking.payment,
+            status: 'paid',
+            transactionId: transactionId,
+            amount: Number(resource?.amount?.value || booking.totalPrice || 0),
+            currency: resource?.amount?.currency_code || booking.payment.currency || 'PHP',
+            paidAt: new Date(resource?.update_time || Date.now()),
+            payer: booking.payment?.payer || {},
+            providerResponse: { ...(booking.payment?.providerResponse || {}), webhook: resource },
+          },
+        };
+        const updated = await updateByUpdatedAt(Booking, { _id: booking._id }, currentUpdatedAt, payload);
+        if (!updated) {
+          console.warn('Webhook update skipped due to concurrency mismatch (updatedAt changed)', booking._id);
+          return res.status(200).json({ message: 'Webhook processed but booking was updated by another process' });
+        }
         // Log
         await ActivityLog.create({
           actor: null,
@@ -1042,11 +1234,19 @@ export const handlePaypalWebhook = async (req, res) => {
           details: `Booking ${booking._id} payment captured via webhook, txn ${transactionId}`,
         });
       } else if (eventType === 'PAYMENT.CAPTURE.REFUNDED') {
-        booking.payment = booking.payment || {};
-        booking.payment.status = 'refunded';
-        booking.payment.providerResponse = booking.payment.providerResponse || {};
-        booking.payment.providerResponse.webhook = resource;
-        await booking.save();
+        const currentUpdatedAt = booking.updatedAt;
+        const payload = {
+          payment: {
+            ...booking.payment,
+            status: 'refunded',
+            providerResponse: { ...(booking.payment?.providerResponse || {}), webhook: resource },
+          },
+        };
+        const updated = await updateByUpdatedAt(Booking, { _id: booking._id }, currentUpdatedAt, payload);
+        if (!updated) {
+          console.warn('Webhook refund update skipped due to concurrency mismatch (updatedAt changed)', booking._id);
+          return res.status(200).json({ message: 'Webhook processed but booking was updated by another process' });
+        }
         await ActivityLog.create({
           actor: null,
           actorName: 'PayPal Webhook',

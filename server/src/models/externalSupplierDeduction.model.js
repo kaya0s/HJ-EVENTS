@@ -27,6 +27,7 @@ const externalSupplierDeductionSchema = new Schema(
   },
   {
     timestamps: true,
+    optimisticConcurrency: true,
   }
 );
 
