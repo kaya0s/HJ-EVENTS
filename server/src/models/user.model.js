@@ -83,7 +83,8 @@ const userSchema = new Schema(
   },
   {
     timestamps: true,
-  }
+    optimisticConcurrency: true,
+  },
 );
 
 const User = model('user', userSchema);

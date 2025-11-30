@@ -13,8 +13,14 @@ const EditBookingModal = ({ booking, isOpen, onClose, onSave, isSaving }) => {
     }
   }, [isOpen, booking]);
 
+  const canEdit = booking?.status?.toLowerCase() === 'pending';
+
   const handleSubmit = (e) => {
     e.preventDefault();
+    if (!canEdit) {
+      // Prevent accidental submits when booking is not editable
+      return;
+    }
     onSave({
       title: title.trim(),
       venue: venue.trim(),
@@ -201,7 +207,7 @@ const EditBookingModal = ({ booking, isOpen, onClose, onSave, isSaving }) => {
             <button
               type="submit"
               className="btn btn-primary"
-              disabled={isSaving || !title.trim() || !venue.trim()}
+              disabled={isSaving || !title.trim() || !venue.trim() || !canEdit}
             >
               {isSaving ? (
                 <>
@@ -212,6 +218,11 @@ const EditBookingModal = ({ booking, isOpen, onClose, onSave, isSaving }) => {
                 "Save Changes"
               )}
             </button>
+            {!canEdit && (
+              <p className="text-sm text-base-content/60">
+                Booking cannot be edited unless it is pending.
+              </p>
+            )}
           </div>
         </form>
       </div>

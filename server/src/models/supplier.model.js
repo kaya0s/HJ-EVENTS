@@ -44,7 +44,7 @@ const supplierSchema = new Schema(
       default: [],
     },
   },
-  { timestamps: true }
+  { timestamps: true, optimisticConcurrency: true }
 );
 
 const Supplier = model('Supplier', supplierSchema);

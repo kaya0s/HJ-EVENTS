@@ -45,7 +45,8 @@ const PayPalButton = ({ booking, onSuccess, onError, onStart }) => {
         try {
           onStart && onStart();
           const res = await axiosInstance.post(
-            `/bookings/${booking._id}/paypal/create-order`
+            `/bookings/${booking._id}/paypal/create-order`,
+            { lastKnownUpdatedAt: booking?.updatedAt }
           );
           return res.data.orderId || res.data?.id;
         } catch (err) {
@@ -64,7 +65,7 @@ const PayPalButton = ({ booking, onSuccess, onError, onStart }) => {
           const orderId = data.orderID || data.orderId;
           const res = await axiosInstance.post(
             `/bookings/${booking._id}/paypal/capture`,
-            { orderId }
+            { orderId, lastKnownUpdatedAt: booking?.updatedAt }
           );
 
           const updatedBooking = res.data.booking || res.data;

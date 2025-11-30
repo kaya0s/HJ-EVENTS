@@ -3,6 +3,7 @@ import Supplier from '../models/supplier.model.js';
 import bcrypt from 'bcryptjs';
 import ActivityLog from '../models/activityLog.model.js';
 import cloudinary from '../utils/cloudinary.js';
+import { updateByUpdatedAt, unconditionalUpdate } from '../utils/concurrency.js';
 
 // Helper to upload buffer to Cloudinary and return secure_url
 const uploadBufferToCloudinary = async (buffer) => {
@@ -126,9 +127,27 @@ export const updateProfile = async (req, res) => {
       }
     }
 
-    const user = await User.findByIdAndUpdate(req.user._id, updates, { new: true }).select(
-      '-password'
-    );
+    // Concurrency: if client provides lastKnownUpdatedAt, use timestamp-based optimistic concurrency
+    const { lastKnownUpdatedAt } = req.body || {};
+    let user;
+    if (lastKnownUpdatedAt) {
+      try {
+        user = await updateByUpdatedAt(User, { _id: req.user._id }, lastKnownUpdatedAt, updates, {
+          new: true,
+          projection: '-password',
+        });
+      } catch (err) {
+        console.error('Error in updateByUpdatedAt', err);
+        return res.status(400).json({ message: 'Invalid lastKnownUpdatedAt' });
+      }
+      if (!user) {
+        const fresh = await User.findById(req.user._id).select('-password');
+        return res.status(409).json({ message: 'Profile was updated by someone else. Please refresh and try again.', user: fresh });
+      }
+    } else {
+      // Fallback: unconditional update for older clients or when concurrency not required
+      user = await unconditionalUpdate(User, { _id: req.user._id }, updates, { new: true, projection: '-password' });
+    }
 
     if (!user) {
       return res.status(404).json({ message: 'User not found' });
@@ -219,14 +238,28 @@ export const listUsers = async (req, res) => {
  */
 export const updateUser = async (req, res) => {
   try {
-    const updates = req.body;
+    const { lastKnownUpdatedAt, ...rawUpdates } = req.body || {};
+    const updates = { ...rawUpdates };
     if (updates.password) {
       const salt = await bcrypt.genSalt(10);
       updates.password = await bcrypt.hash(updates.password, salt);
     }
-    const user = await User.findByIdAndUpdate(req.params.id, updates, { new: true }).select(
-      '-password'
-    );
+    // lastKnownUpdatedAt already destructured; reuse it
+    let user;
+    if (lastKnownUpdatedAt) {
+      try {
+        user = await updateByUpdatedAt(User, { _id: req.params.id }, lastKnownUpdatedAt, updates, { new: true, projection: '-password' });
+      } catch (err) {
+        console.error('Error in updateByUpdatedAt (admin update user)', err);
+        return res.status(400).json({ message: 'Invalid lastKnownUpdatedAt' });
+      }
+      if (!user) {
+        const fresh = await User.findById(req.params.id).select('-password');
+        return res.status(409).json({ message: 'User was updated by someone else. Please refresh', user: fresh });
+      }
+    } else {
+      user = await User.findByIdAndUpdate(req.params.id, updates, { new: true }).select('-password');
+    }
     res.json({ user });
   } catch (error) {
     res.status(500).json({ message: `Server error${error}` });

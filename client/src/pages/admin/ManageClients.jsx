@@ -93,13 +93,21 @@ const ManageClients = () => {
     if (!selectedUser) return;
 
     try {
-      await axiosInstance.put(`/users/${selectedUser._id}`, editFormData);
+      // Attach lastKnownUpdatedAt for concurrency checks
+      const payload = { ...editFormData, lastKnownUpdatedAt: selectedUser.updatedAt };
+      await axiosInstance.put(`/users/${selectedUser._id}`, payload);
       toast.success("User updated successfully");
       setIsEditModalOpen(false);
       setSelectedUser(null);
       fetchUsers();
     } catch (error) {
-      toast.error(error.response?.data?.message || "Failed to update user");
+      // Handle concurrency conflict specially
+      if (error.response?.status === 409) {
+        toast.error(error.response?.data?.message || "User was updated by someone else. Please refresh.");
+        fetchUsers();
+      } else {
+        toast.error(error.response?.data?.message || "Failed to update user");
+      }
     }
   };
 

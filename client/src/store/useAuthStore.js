@@ -218,6 +218,16 @@ export const useAuthStore = create((set, get) => ({
   updateProfile: async (formData) => {
     set({ isUpdatingProfile: true });
     try {
+      // Attach the last known updatedAt to enable optimistic concurrency on the server
+      try {
+        const lastKnownUpdatedAt = get().authUser?.updatedAt;
+        if (lastKnownUpdatedAt) {
+          formData.append('lastKnownUpdatedAt', lastKnownUpdatedAt);
+        }
+      } catch (err) {
+        // ignore
+      }
+
       const res = await axiosInstance.put("/users/me", formData, {
         headers: { "Content-Type": "multipart/form-data" },
       });
@@ -226,7 +236,17 @@ export const useAuthStore = create((set, get) => ({
       return res.data.user;
     } catch (error) {
       console.log("error in update profile:", error);
-      toast.error(error.response?.data?.message || error.message);
+      const status = error.response?.status;
+      if (status === 409) {
+        // concurrency conflict: update local auth user to server-provided fresh user if available
+        const fresh = error.response?.data?.user;
+        if (fresh) {
+          set({ authUser: fresh });
+        }
+        toast.error(error.response?.data?.message || 'Profile was changed by someone else');
+      } else {
+        toast.error(error.response?.data?.message || error.message);
+      }
       throw error;
     } finally {
       set({ isUpdatingProfile: false });
