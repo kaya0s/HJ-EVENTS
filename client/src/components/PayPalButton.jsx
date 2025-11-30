@@ -1,3 +1,5 @@
+// components/PayPalButton.jsx
+
 import { useEffect, useRef, useState } from 'react';
 import axiosInstance from '../lib/axios.js';
 import toast from 'react-hot-toast';
@@ -17,7 +19,7 @@ const PayPalButton = ({ booking, onSuccess, onError, onStart }) => {
       const params = new URLSearchParams({
         'client-id': clientId,
         currency: 'PHP',
-        intent: 'capture'
+        intent: 'capture',
       });
 
       const script = document.createElement('script');
@@ -36,47 +38,51 @@ const PayPalButton = ({ booking, onSuccess, onError, onStart }) => {
 
     const buttons = window.paypal.Buttons({
       style: {
-        layout: 'vertical', // KEEP ORIGINAL STYLE
+        layout: 'vertical',
         color: 'gold',
-        shape: 'rect'
+        shape: 'rect',
       },
 
+      // Create order on server (no concurrency here)
       createOrder: async () => {
         try {
           onStart && onStart();
           const res = await axiosInstance.post(
             `/bookings/${booking._id}/paypal/create-order`,
-            { lastKnownUpdatedAt: booking?.updatedAt }
           );
           return res.data.orderId || res.data?.id;
         } catch (err) {
           toast.error(
             err?.response?.data?.message ||
               err.message ||
-              'Failed to create PayPal order'
+              'Failed to create PayPal order',
           );
           onError && onError(err);
           throw err;
         }
       },
 
+      // Capture order on server (with concurrency via lastKnownUpdatedAt)
       onApprove: async (data) => {
         try {
           const orderId = data.orderID || data.orderId;
           const res = await axiosInstance.post(
             `/bookings/${booking._id}/paypal/capture`,
-            { orderId, lastKnownUpdatedAt: booking?.updatedAt }
+            {
+              orderId,
+              lastKnownUpdatedAt: booking?.updatedAt,
+            },
           );
 
           const updatedBooking = res.data.booking || res.data;
           toast.success('Payment completed successfully');
           onSuccess && onSuccess(updatedBooking, res.data);
         } catch (err) {
-          toast.error(
+          const msg =
             err?.response?.data?.message ||
-              err.message ||
-              'Failed to capture PayPal order'
-          );
+            err.message ||
+            'Failed to capture PayPal order';
+          toast.error(msg);
           onError && onError(err);
         }
       },
@@ -89,7 +95,7 @@ const PayPalButton = ({ booking, onSuccess, onError, onStart }) => {
       onError: (err) => {
         toast.error('PayPal error: ' + (err?.message || 'Unknown error'));
         onError && onError(err);
-      }
+      },
     });
 
     if (buttons.isEligible()) {
@@ -106,7 +112,7 @@ const PayPalButton = ({ booking, onSuccess, onError, onStart }) => {
       ref={containerRef}
       className="bg-transparent"
       style={{ background: 'transparent' }}
-    ></div>
+    />
   );
 };
 
