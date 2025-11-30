@@ -9,6 +9,7 @@ import {
   Users,
   Wallet,
   MinusCircle,
+  Loader,
 } from "lucide-react";
 import toast from "react-hot-toast";
 import { useNavigate } from "react-router-dom";
@@ -35,8 +36,9 @@ const BookingModal = ({ package: pkg, isOpen, onClose }) => {
   const [bookedDates, setBookedDates] = useState([]);
   const [selectedSuppliers, setSelectedSuppliers] = useState({});
   const [externalSelections, setExternalSelections] = useState({});
-  const [showVerification, setShowVerification] = useState(false);
-  const [showConfirmation, setShowConfirmation] = useState(false);
+    const [showVerification, setShowVerification] = useState(false); 
+    const [showConfirmation, setShowConfirmation] = useState(false);
+    const [showReview, setShowReview] = useState(false); // New: review step before sending email verification
   const [verificationCode, setVerificationCode] = useState("");
   const [isSendingCode, setIsSendingCode] = useState(false);
   const [isVerifying, setIsVerifying] = useState(false);
@@ -53,6 +55,9 @@ const BookingModal = ({ package: pkg, isOpen, onClose }) => {
   } = useDeductionStore();
 
   const isRequestsDisabled = authUser?.role === "user" && !canSubmitRequests;
+  const canViewBookings = usePermissionsStore((state) =>
+    authUser?.role === "user" ? state.isAllowed("user", "viewBookings") : false
+  );
 
   // Check authentication when modal opens
   useEffect(() => {
@@ -104,6 +109,7 @@ const BookingModal = ({ package: pkg, isOpen, onClose }) => {
       setShowVerification(false);
       setShowConfirmation(false);
       setVerificationCode("");
+      setShowReview(false);
     }
   }, [isOpen]);
 
@@ -233,9 +239,8 @@ const BookingModal = ({ package: pkg, isOpen, onClose }) => {
       toast.error("Please enter a wedding title");
       return;
     }
-
-    // Show verification step
-    await handleSendVerificationCode();
+    // Show a review confirmation modal before sending verification
+    setShowReview(true);
   };
 
   const handleSendVerificationCode = async () => {
@@ -266,6 +271,12 @@ const BookingModal = ({ package: pkg, isOpen, onClose }) => {
     } finally {
       setIsSendingCode(false);
     }
+  };
+
+  // Called by the review confirmation: close review and start send verification flow
+  const handleConfirmReview = async () => {
+    setShowReview(false);
+    await handleSendVerificationCode();
   };
 
   const handleVerifyCode = async (e) => {
@@ -300,16 +311,119 @@ const BookingModal = ({ package: pkg, isOpen, onClose }) => {
     toast.success("Booking confirmed successfully!");
     onClose();
     // Refresh the page or navigate to bookings
-    window.location.href = "/my-bookings";
+    if (canViewBookings) {
+      window.location.href = "/my-bookings";
+    } else {
+      toast.success(
+        "You won't be able to view the booking list — contact support if needed."
+      );
+    }
   };
 
   if (!isOpen) return null;
+
+  // Review / confirmation before verification
+  if (showReview) {
+    const selectedSupplierNames = Object.entries(selectedSuppliers)
+      .filter(([, id]) => id)
+      .map(([category, id]) => {
+        const supplier = suppliers.find((s) => s._id === id);
+        return supplier ? { category, name: supplier.name } : null;
+      })
+      .filter(Boolean);
+
+    const selectedExternalNames = Object.entries(externalSelections)
+      .filter(([, isUsing]) => isUsing)
+      .map(([category]) => category);
+
+    return (
+      <dialog open={isOpen} className="modal modal-open">
+        <div className="modal-box max-w-2xl relative">
+          {isSendingCode && (
+            <div className="absolute inset-0 z-50 flex items-center justify-center bg-black/25 rounded-lg">
+              <div className="flex items-center gap-3 bg-base-100 bg-opacity-60 backdrop-blur-md p-3 rounded">
+                <Loader className="animate-spin text-primary" size={20} />
+                <span className="font-medium">Sending verification...</span>
+              </div>
+            </div>
+          )}
+          <div className="flex items-center justify-between mb-6">
+            <div>
+              <h3 className="font-bold text-2xl mb-1">Confirm Booking Details</h3>
+              <p className="text-sm text-base-content/60">Please confirm your booking details before we send a verification code to your email.</p>
+            </div>
+            <button
+              type="button"
+              onClick={onClose}
+              className="btn btn-sm btn-circle btn-ghost"
+              aria-label="Close modal"
+            >
+              <X className="w-5 h-5" />
+            </button>
+          </div>
+
+          <div className="space-y-4">
+            <div className="bg-base-200 rounded-lg p-4">
+              <h4 className="font-semibold mb-2">Package</h4>
+              <p className="text-primary font-medium">{pkg.name}</p>
+              <p className="text-sm text-base-content/70 mt-1">{pkg.description ?? ''}</p>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="bg-base-200 rounded-lg p-4">
+                <h4 className="font-semibold mb-2">Event Info</h4>
+                <p><strong>Date:</strong> {selectedDate ? dayjs(selectedDate).format('MMMM DD, YYYY') : 'N/A'}</p>
+                <p><strong>Title:</strong> {title || 'Untitled'}</p>
+                <p><strong>Venue:</strong> {venue || 'N/A'}</p>
+              </div>
+              <div className="bg-base-200 rounded-lg p-4">
+                <h4 className="font-semibold mb-2">Suppliers</h4>
+                <p className="text-sm">{selectedSupplierNames.length ? selectedSupplierNames.map(s => s.name).join(', ') : 'No supplier selected'}</p>
+                <p className="text-sm mt-2">External suppliers: {selectedExternalNames.length ? selectedExternalNames.join(', ') : 'None'}</p>
+              </div>
+            </div>
+
+            <div className="bg-base-200 rounded-lg p-4">
+              <h4 className="font-semibold mb-2">Price</h4>
+              <p className="text-lg font-bold">{finalPrice?.toLocaleString ? finalPrice.toLocaleString() : finalPrice} PHP</p>
+            </div>
+          </div>
+
+          <div className="flex gap-3 justify-end pt-4 border-t border-base-200">
+            <button type="button" className="btn btn-ghost" onClick={() => setShowReview(false)}>
+              Back
+            </button>
+            <button
+              type="button"
+              className="btn btn-primary"
+              onClick={handleConfirmReview}
+              disabled={isSendingCode || isRequestsDisabled}
+            >
+              {isSendingCode ? 'Sending...' : 'Confirm & Send Verification'}
+            </button>
+          </div>
+        </div>
+
+        <form method="dialog" className="modal-backdrop">
+          <button type="button" onClick={onClose} aria-label="Close modal">close</button>
+        </form>
+      </dialog>
+    );
+  }
 
   // Verification View
   if (showVerification) {
     return (
       <dialog open={isOpen} className="modal modal-open">
-        <div className="modal-box max-w-md">
+        <div className="modal-box max-w-md relative">
+          {isSendingCode && (
+            <div className="absolute inset-0 z-50 flex items-center justify-center bg-black/25 rounded-lg">
+              <div className="flex items-center gap-3 bg-base-100 bg-opacity-60 backdrop-blur-md p-3 rounded">
+                <Loader className="animate-spin text-primary" size={20} />
+                <span className="font-medium">Sending verification...</span>
+              </div>
+            </div>
+          )}
           <div className="flex items-center justify-between mb-6">
             <div>
               <h3 className="font-bold text-2xl mb-1">Verify Your Booking</h3>
@@ -466,16 +580,15 @@ const BookingModal = ({ package: pkg, isOpen, onClose }) => {
                 </h4>
                 <div className="space-y-2">
                   {selectedSupplierNames.map(({ category, name }) => (
-                    <div
-                      key={`${category}-${name}`}
-                      className="flex items-center gap-2 text-sm"
-                    >
-                      <CheckCircle className="w-4 h-4 text-success" />
-                      <span className="badge badge-outline badge-sm">
-                        {category}
-                      </span>
-                      <span className="font-medium">{name}</span>
-                    </div>
+                        <div
+                          key={`${category}-${name}`}
+                          className="flex items-center gap-2 text-sm"
+                        >
+                          <CheckCircle className="w-4 h-4 text-success" />
+                          <span className="badge badge-outline badge-sm">
+                            <span className="font-medium">{name}</span>
+                          </span>
+                        </div>
                   ))}
                 </div>
               </div>
