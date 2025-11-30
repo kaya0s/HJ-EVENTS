@@ -1,5 +1,6 @@
 import Review from '../models/review.model.js';
 import Booking from '../models/booking.model.js';
+import { unconditionalUpdate } from '../utils/concurrency.js';
 
 // Generate incremental ID (if needed)
 async function generateNextId() {
@@ -63,6 +64,7 @@ export const createReview = async (req, res) => {
     }
 
     const nextId = await generateNextId();
+    // No timestamp concurrency required for reviews. Proceed to create the review and attach it to the booking.
     const review = await Review.create({
       id: nextId,
       name: req.user.fullName,
@@ -75,8 +77,16 @@ export const createReview = async (req, res) => {
       user: req.user._id,
     });
 
-    booking.review = review._id;
-    await booking.save();
+    // Re-check if booking already has a review (narrow race window) and avoid duplicate reviews
+    const freshBooking = await Booking.findById(booking._id).lean();
+    if (freshBooking && freshBooking.review) {
+      // Roll back created review
+      await Review.deleteOne({ _id: review._id }).catch(() => {});
+      return res.status(409).json({ success: false, message: 'This booking already has a review', booking: freshBooking });
+    }
+
+    // Attach the review to the booking unconditionally - avoid timestamp concurrency.
+    await unconditionalUpdate(Booking, { _id: booking._id }, { review: review._id });
 
     res.status(201).json({
       success: true,
