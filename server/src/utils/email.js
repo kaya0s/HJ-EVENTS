@@ -1,15 +1,25 @@
 import nodemailer from 'nodemailer';
+import dotenv from 'dotenv';
+dotenv.config();
 
-const emailUser = process.env.EMAIL_USER;
-const emailPass = process.env.EMAIL_PASS;
+// Brevo SMTP credentials from environment variables
+const brevoLogin = process.env.BREVO_LOGIN; // Your Brevo email
+const brevoSmtpKey = process.env.BREVO_SMTP_KEY; // Your Brevo SMTP key
 
-// Create transporter
+// Create transporter with Brevo SMTP
 const createTransporter = () => {
+  console.log('🔍 DEBUG - Email Configuration:');
+  console.log('BREVO_LOGIN:', process.env.BREVO_LOGIN);
+  console.log('BREVO_SMTP_KEY exists:', !!process.env.BREVO_SMTP_KEY);
+  console.log('BREVO_SMTP_KEY length:', process.env.BREVO_SMTP_KEY?.length);
+  console.log('BREVO_SMTP_KEY starts with:', process.env.BREVO_SMTP_KEY?.substring(0, 10));
   return nodemailer.createTransport({
-    service: 'gmail',
+    host: 'smtp-relay.brevo.com',
+    port: 587,
+    secure: false, // Use TLS
     auth: {
-      user: emailUser,
-      pass: emailPass,
+      user: brevoLogin,
+      pass: brevoSmtpKey,
     },
   });
 };
@@ -19,7 +29,7 @@ export const sendPasswordResetEmail = async (email, resetCode) => {
     const transporter = createTransporter();
 
     const mailOptions = {
-      from: process.env.EMAIL_USER,
+      from: `"HJ Events" <${process.env.SENDER_EMAIL || brevoLogin}>`, // Use verified sender
       to: email,
       subject: 'Password Reset Code — HJ Events',
       html: `
@@ -71,7 +81,7 @@ export const sendEmailVerificationEmail = async (email, fullName, code) => {
   try {
     const transporter = createTransporter();
     const mailOptions = {
-      from: process.env.EMAIL_USER,
+      from: `"HJ Events" <${process.env.SENDER_EMAIL || brevoLogin}>`,
       to: email,
       subject: 'Verify your email — HJ Events',
       html: `
@@ -119,13 +129,12 @@ export const sendEmailVerificationEmail = async (email, fullName, code) => {
   }
 };
 
-// Send welcome email
 export const sendWelcomeEmail = async (email, fullName) => {
   try {
     const transporter = createTransporter();
 
     const mailOptions = {
-      from: process.env.EMAIL_USER,
+      from: `"HJ Events" <${process.env.SENDER_EMAIL || brevoLogin}>`,
       to: email,
       subject: 'Welcome to HJ Events — Wedding Coordination',
       html: `
@@ -162,8 +171,8 @@ export const sendWelcomeEmail = async (email, fullName) => {
 
           <p style="color: #666; font-size: 14px; margin: 0 0 12px;">
           If you'd like to speak with a coordinator now, email us at
-          <a href="mailto:${process.env.SUPPORT_EMAIL || process.env.EMAIL_USER}" style="color: #b76e79; text-decoration: none;">
-            ${process.env.SUPPORT_EMAIL || process.env.EMAIL_USER}
+          <a href="mailto:${process.env.SUPPORT_EMAIL || process.env.SENDER_EMAIL || brevoLogin}" style="color: #b76e79; text-decoration: none;">
+            ${process.env.SUPPORT_EMAIL || process.env.SENDER_EMAIL || brevoLogin}
           </a>.
           </p>
 
@@ -191,13 +200,12 @@ export const sendWelcomeEmail = async (email, fullName) => {
   }
 };
 
-// Send booking approval email
 export const sendBookingApprovalEmail = async (email, fullName, bookingId, eventDate) => {
   try {
     const transporter = createTransporter();
 
     const mailOptions = {
-      from: process.env.EMAIL_USER,
+      from: `"HJ Events" <${process.env.SENDER_EMAIL || brevoLogin}>`,
       to: email,
       subject: 'Your Booking Has Been Approved — HJ Events',
       html: `
@@ -219,7 +227,7 @@ export const sendBookingApprovalEmail = async (email, fullName, bookingId, event
 
           <p style="color: #555; line-height: 1.6; text-align: center;">
             Your booking <strong>#${bookingId}</strong> has been <strong>approved</strong> for 
-            <strong>${eventDate}</strong>. We’re thrilled to begin planning your dream event.
+            <strong>${eventDate}</strong>. We're thrilled to begin planning your dream event.
           </p>
 
           <div style="background: #fff8f8; border-radius: 6px; padding: 18px; margin: 16px 0; text-align: center;">
@@ -235,8 +243,8 @@ export const sendBookingApprovalEmail = async (email, fullName, bookingId, event
 
           <p style="color: #666; font-size: 14px; margin: 0 0 12px;">
             Need help? Contact us at
-            <a href="mailto:${process.env.SUPPORT_EMAIL || process.env.EMAIL_USER}" style="color: #b76e79; text-decoration: none;">
-              ${process.env.SUPPORT_EMAIL || process.env.EMAIL_USER}
+            <a href="mailto:${process.env.SUPPORT_EMAIL || process.env.SENDER_EMAIL || brevoLogin}" style="color: #b76e79; text-decoration: none;">
+              ${process.env.SUPPORT_EMAIL || process.env.SENDER_EMAIL || brevoLogin}
             </a>.
           </p>
 
@@ -264,13 +272,12 @@ export const sendBookingApprovalEmail = async (email, fullName, bookingId, event
   }
 };
 
-// Send booking rejection email
 export const sendBookingRejectionEmail = async (email, fullName, bookingId, reason) => {
   try {
     const transporter = createTransporter();
 
     const mailOptions = {
-      from: process.env.EMAIL_USER,
+      from: `"HJ Events" <${process.env.SENDER_EMAIL || brevoLogin}>`,
       to: email,
       subject: 'Your Booking Request — HJ Events',
       html: `
@@ -308,7 +315,7 @@ export const sendBookingRejectionEmail = async (email, fullName, bookingId, reas
           </p>
 
           <div style="text-align: center; margin: 24px 0;">
-            <a href="mailto:${process.env.SUPPORT_EMAIL || process.env.EMAIL_USER}"
+            <a href="mailto:${process.env.SUPPORT_EMAIL || process.env.SENDER_EMAIL || brevoLogin}"
                style="display: inline-block; background-color: #b76e79; color: #fff; padding: 12px 20px; border-radius: 5px; text-decoration: none; font-weight: 600;">
               Contact Support
             </a>
@@ -338,12 +345,11 @@ export const sendBookingRejectionEmail = async (email, fullName, bookingId, reas
   }
 };
 
-// Send booking verification email
 export const sendBookingVerificationEmail = async (email, fullName, verificationCode) => {
   try {
     const transporter = createTransporter();
     const mailOptions = {
-      from: process.env.EMAIL_USER,
+      from: `"HJ Events" <${process.env.SENDER_EMAIL || brevoLogin}>`,
       to: email,
       subject: 'Booking Verification Code — HJ Events',
       html: `
@@ -400,10 +406,10 @@ export const sendSupplierCredentialsEmail = async ({
 }) => {
   try {
     const transporter = createTransporter();
-    const supportEmail = process.env.SUPPORT_EMAIL || process.env.EMAIL_USER || '';
+    const supportEmail = process.env.SUPPORT_EMAIL || process.env.SENDER_EMAIL || brevoLogin;
 
     const mailOptions = {
-      from: process.env.EMAIL_USER,
+      from: `"${companyName}" <${process.env.SENDER_EMAIL || brevoLogin}>`,
       to: email,
       subject: `${companyName} Supplier Portal Access`,
       html: `
