@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useRef } from "react";
 
 const FacebookIcon = (props) => (
   <svg
@@ -62,7 +62,7 @@ const DEVELOPERS = [
   {
     name: "Josua Cagampang",
     role: "UX/UI Designer",
-    img: "",
+    img: "https://scontent.fcgy3-1.fna.fbcdn.net/v/t39.30808-1/497872318_1451308296240669_2063505570056940611_n.jpg?stp=c0.0.768.768a_dst-jpg_s200x200_tt6&_nc_cat=106&ccb=1-7&_nc_sid=e99d92&_nc_eui2=AeGe1RcXKLOdZJOuOTgoi-hJRyicUShn0PxHKJxRKGfQ_C5l8LZUs0HXkYbG23uj2tBQ9YSv_qmL7yfhZoKH13Z8&_nc_ohc=CgyNaxPRocsQ7kNvwHnoeTL&_nc_oc=AdkIR-p8XyE-xFD_cWARLlXmuuerOq5VGrNs-A5N3p17tEdzBbjmemM54Ec8TQMQeHM&_nc_zt=24&_nc_ht=scontent.fcgy3-1.fna&_nc_gid=zWsTYQ8p2AF9cS779Zo0tw&oh=00_AfljQxFiu8arHAaQJHf8ZBTSiCTrsQTJpN2rdksEwJ6d4A&oe=69349151",
     social: {
       facebook: "https://facebook.com/boblee",
       instagram: "https://instagram.com/boblee",
@@ -75,7 +75,7 @@ const DEVELOPERS = [
   {
     name: "Antonette Salise",
     role: "Quality Assurance Tester",
-    img: "",
+    img: "https://scontent.fcgy3-1.fna.fbcdn.net/v/t39.30808-1/593426969_2016866985772019_2675539088656667489_n.jpg?stp=dst-jpg_s200x200_tt6&_nc_cat=107&ccb=1-7&_nc_sid=1d2534&_nc_eui2=AeEgyL0uBWXeXs4CUsvY16f7ImX1TvijvNAiZfVO-KO80Os1vEwK1FMvhXEVUOzAS86uUZX6Q0SYwUY4vGDTbhgt&_nc_ohc=CvoL1SM_i0wQ7kNvwEYRVmo&_nc_oc=Adn0EsFnjcsKrd9omlZY0SdH6pkMcvi3aHTzf5ifDIg372cnvBcoD6-GaJlflIQY6Kc&_nc_zt=24&_nc_ht=scontent.fcgy3-1.fna&_nc_gid=RQ242wkd4tUUs9mDaldDqA&oh=00_AfnDpRJg0ZAfwsSPqrv-T__-MTFeUfzl47ZAvUNqdii4RQ&oe=6934966F",
     social: {
       facebook: "https://facebook.com/clarazhang",
       instagram: "https://instagram.com/clarazhang",
@@ -88,7 +88,7 @@ const DEVELOPERS = [
   {
     name: "Jassel Cadeliña",
     role: "Documentation Specialist",
-    img: "",
+    img: "https://scontent.fcgy3-1.fna.fbcdn.net/v/t39.30808-1/571799668_1462718848128850_9084993122446676889_n.jpg?stp=cp6_dst-jpg_s200x200_tt6&_nc_cat=111&ccb=1-7&_nc_sid=1d2534&_nc_eui2=AeHgYafMwpAUi7Wf1w79Zsx7dLEUU7vVg3V0sRRTu9WDdQ2DZucTMJQeq8r4dfUgIWviPQOF1yToQFghpPbJ_KNL&_nc_ohc=BQqeSodFGHAQ7kNvwG7v23I&_nc_oc=AdldgeC1G8uCqVyEJMgFoLV83eRtOWUEaStJsK8noaSRtNiP7w_qAIscUw9Kb8We78c&_nc_zt=24&_nc_ht=scontent.fcgy3-1.fna&_nc_gid=1O3510bWCaUXh8Ekud96nQ&oh=00_AfkTjbA9S_CQhDFcN3IAJJHt0L5AMcWkRU2D1WIneuwciw&oe=693498EC",
     social: {
       facebook: "https://facebook.com/davidbrown",
       instagram: "https://instagram.com/davidbrown",
@@ -113,10 +113,25 @@ const getInitials = (name) => {
 };
 
 const Overlay = ({ dev, onClose }) => {
-  // Prevent interaction with background, allow ESC/Click outside to close
+  // Animation state for fade in/out
+  const [visible, setVisible] = React.useState(false);
+  const contentRef = React.useRef();
+
+  // Show animation on mount
+  React.useEffect(() => {
+    setTimeout(() => setVisible(true), 10);
+  }, []);
+
+  // Hide animation on close
+  const handleClose = () => {
+    setVisible(false);
+    setTimeout(onClose, 250); // Wait for fade-out
+  };
+
+  // Prevent background interaction, allow ESC/Click outside to close
   React.useEffect(() => {
     const onKeyDown = (e) => {
-      if (e.key === "Escape") onClose();
+      if (e.key === "Escape") handleClose();
     };
     document.body.style.overflow = "hidden";
     window.addEventListener("keydown", onKeyDown);
@@ -125,30 +140,49 @@ const Overlay = ({ dev, onClose }) => {
       document.body.style.overflow = "";
     };
   }, [onClose]);
-  // For click outside: use a ref
-  const contentRef = React.useRef();
 
   const handleClickOutside = (e) => {
     if (contentRef.current && !contentRef.current.contains(e.target)) {
-      onClose();
+      handleClose();
     }
   };
 
   React.useEffect(() => {
     window.addEventListener("mousedown", handleClickOutside);
     return () => window.removeEventListener("mousedown", handleClickOutside);
-  });
+    // eslint-disable-next-line
+  }, []);
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm transition-all">
+    <div
+      className={`fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm 
+        transition-opacity duration-300 ${
+          visible ? "opacity-100" : "opacity-0 pointer-events-none"
+        }`}
+      style={{
+        alignItems: "center",
+        justifyContent: "center",
+      }}
+    >
       <div
         ref={contentRef}
-        className="bg-base-100 rounded-3xl max-w-2xl w-full mx-4 shadow-2xl flex flex-col items-center relative p-10 animate-fadeIn"
-        style={{ border: "2px solid rgba(120, 93, 210, 0.2)" }}
+        className={`bg-base-100 rounded-3xl max-w-2xl w-full mx-4 shadow-2xl flex flex-col items-center relative p-10
+          transition-all duration-300 ${
+            visible ? "scale-100 opacity-100" : "scale-90 opacity-0"
+          } animate-none`}
+        style={{
+          border: "2px solid rgba(120, 93, 210, 0.2)",
+          // Make overlay card take the whole height on small screens and scrollable if necessary
+          maxHeight: "calc(100vh - 2rem)",
+          overflowY: "auto",
+          // Add a little space at the edge for mobile
+          marginTop: "1rem",
+          marginBottom: "1rem",
+        }}
       >
         <button
           className="absolute top-4 right-4 rounded-full bg-primary/10 hover:bg-primary/20 p-2 text-primary focus:outline-none"
-          onClick={onClose}
+          onClick={handleClose}
           aria-label="Close"
         >
           <svg
@@ -257,6 +291,18 @@ const Overlay = ({ dev, onClose }) => {
 
 const Developers = () => {
   const [selectedDev, setSelectedDev] = useState(null);
+  const [animating, setAnimating] = useState(false);
+  const cardRefs = useRef([]);
+
+  // Smooth scale up for clicked card
+  const handleCardClick = (dev, idx) => {
+    // Start animation for that card
+    setAnimating(idx);
+    setTimeout(() => {
+      setSelectedDev(dev);
+      setAnimating(false);
+    }, 240); // Duration should match scale animation
+  };
 
   return (
     <section
@@ -271,16 +317,30 @@ const Developers = () => {
           {DEVELOPERS.map((dev, idx) => (
             <button
               key={dev.name + idx}
-              className="relative group bg-base-200 rounded-3xl shadow-2xl flex flex-col items-center px-7 py-9 transition-all duration-300 hover:scale-105 hover:shadow-[0_8px_30px_rgba(80,70,160,0.15)] overflow-hidden outline-none focus:ring-2 focus:ring-primary"
+              ref={(el) => (cardRefs.current[idx] = el)}
+              className={`relative group bg-base-200 rounded-3xl shadow-2xl flex flex-col items-center px-7 py-9 overflow-hidden outline-none focus:ring-2 focus:ring-primary
+                transition-all duration-300
+                hover:scale-105 hover:shadow-[0_8px_30px_rgba(80,70,160,0.15)]
+                ${
+                  animating === idx
+                    ? "z-20 scale-110 shadow-[0_10px_40px_rgba(98,75,175,0.30)]"
+                    : ""
+                }
+                `}
               style={{
-                minWidth: 250,
+                minWidth: "min(250px, 96vw)",
                 maxWidth: 340,
                 border: "1px solid rgba(120, 93, 210, 0.1)",
                 cursor: "pointer",
+                transition:
+                  "transform 0.22s cubic-bezier(0.4,0,0.2,1), box-shadow 0.22s cubic-bezier(0.4,0,0.2,1)",
+                marginLeft: "auto",
+                marginRight: "auto",
               }}
               type="button"
-              onClick={() => setSelectedDev(dev)}
+              onClick={() => handleCardClick(dev, idx)}
               tabIndex={0}
+              disabled={animating !== false} // Prevent rapid double-clicking
             >
               <div className="relative mb-7">
                 {dev.img ? (

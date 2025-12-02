@@ -222,9 +222,9 @@ export const useAuthStore = create((set, get) => ({
       try {
         const lastKnownUpdatedAt = get().authUser?.updatedAt;
         if (lastKnownUpdatedAt) {
-          formData.append('lastKnownUpdatedAt', lastKnownUpdatedAt);
+          formData.append("lastKnownUpdatedAt", lastKnownUpdatedAt);
         }
-      } catch (err) {
+      } catch {
         // ignore
       }
 
@@ -243,7 +243,9 @@ export const useAuthStore = create((set, get) => ({
         if (fresh) {
           set({ authUser: fresh });
         }
-        toast.error(error.response?.data?.message || 'Profile was changed by someone else');
+        toast.error(
+          error.response?.data?.message || "Profile was changed by someone else"
+        );
       } else {
         toast.error(error.response?.data?.message || error.message);
       }
