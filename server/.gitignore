@@ -68,6 +68,7 @@ temp/
 # Secrets
 *.key
 *.pem
+drive-token.json
 
 # Lockfiles (if using alternative lockfile managers per environment)
 package-lock.json

@@ -6,9 +6,20 @@ import {
   restoreBackup,
   deleteBackup,
   backupDatabase, // legacy
+  testConnection,
+  authorizeDrive,
+  handleOAuthCallback,
+  checkAuthStatus,
 } from '../controllers/backup.controller.js';
 
 const router = express.Router();
+
+// OAuth2 authorization routes
+router.get('/auth', authorizeDrive);
+router.get('/auth/callback', handleOAuthCallback);
+router.get('/auth/status', checkAuthStatus);
+
+router.get('/test', testConnection);
 
 router.get('/', getBackups);
 router.post('/create', createBackup);

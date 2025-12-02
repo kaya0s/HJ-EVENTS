@@ -10,6 +10,7 @@ import {
   Clock,
   Trash2,
   HardDrive,
+  Cloud,
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import toast from "react-hot-toast";
@@ -28,6 +29,7 @@ const Backup = () => {
     setIsLoading(true);
     try {
       const { data } = await axiosInstance.get("/backup");
+      console.log("Fetched backups:", data.backups); // Debug log
       setBackups(data.backups || []);
     } catch (error) {
       console.error("Error fetching backups:", error);
@@ -35,7 +37,7 @@ const Backup = () => {
     } finally {
       setIsLoading(false);
     }
-  }, []); // Empty dependency array since it doesn't depend on any props/state
+  }, []);
 
   useEffect(() => {
     if (authUser?.role !== "admin") {
@@ -43,7 +45,7 @@ const Backup = () => {
       return;
     }
     fetchBackups();
-  }, [authUser, navigate, fetchBackups]); // Now includes fetchBackups
+  }, [authUser, navigate, fetchBackups]);
 
   if (authUser?.role !== "admin") {
     return null;
@@ -147,7 +149,17 @@ const Backup = () => {
 
   // Utility functions
   const formatDate = (dateString) => {
-    return new Date(dateString).toLocaleString("en-US", {
+    if (!dateString) return "N/A";
+
+    const date = new Date(dateString);
+
+    // Check if date is valid
+    if (isNaN(date.getTime())) {
+      console.error("Invalid date:", dateString);
+      return "Invalid Date";
+    }
+
+    return date.toLocaleString("en-US", {
       year: "numeric",
       month: "short",
       day: "numeric",
@@ -157,10 +169,11 @@ const Backup = () => {
   };
 
   const formatSize = (bytes) => {
-    if (!bytes || bytes === 0) return "0 B";
-    if (bytes < 1024) return bytes + " B";
-    if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(2) + " KB";
-    return (bytes / (1024 * 1024)).toFixed(2) + " MB";
+    const size = parseInt(bytes);
+    if (!size || size === 0) return "0 B";
+    if (size < 1024) return size + " B";
+    if (size < 1024 * 1024) return (size / 1024).toFixed(2) + " KB";
+    return (size / (1024 * 1024)).toFixed(2) + " MB";
   };
 
   return (
@@ -171,7 +184,7 @@ const Backup = () => {
           <header className="flex flex-col gap-2">
             <h1 className="text-3xl font-bold">Backup & Restore</h1>
             <p className="text-base-content/60">
-              Create and manage database backups using MongoDB dump/restore.
+              Create and manage database backups stored in Google Drive.
             </p>
           </header>
 
@@ -197,7 +210,7 @@ const Backup = () => {
               <p className="text-sm text-base-content/60 mb-4">
                 Creates a complete backup using MongoDB's mongodump utility.
                 Includes all collections: bookings, users, suppliers, packages,
-                and more.
+                and more. Automatically uploaded to Google Drive.
               </p>
               <button
                 onClick={createBackup}
@@ -267,20 +280,20 @@ const Backup = () => {
                           Created
                         </th>
                         <th>Size</th>
-                        <th>Database</th>
+                        <th>Storage</th>
                         <th className="text-right">Actions</th>
                       </tr>
                     </thead>
                     <tbody>
                       {backups.map((backup) => (
-                        <tr key={backup._id}>
+                        <tr key={backup.id}>
                           <td>
                             <div className="flex flex-col">
                               <span className="font-medium text-sm">
-                                {formatDate(backup.createdAt)}
+                                {formatDate(backup.createdTime)}
                               </span>
                               <span className="text-xs text-base-content/50">
-                                {backup.filename}
+                                {backup.name}
                               </span>
                             </div>
                           </td>
@@ -290,23 +303,24 @@ const Backup = () => {
                             </span>
                           </td>
                           <td>
-                            <span className="text-sm text-base-content/70">
-                              {backup.collections?.length > 0
-                                ? `${backup.collections.length} collection(s)`
-                                : "All"}
-                            </span>
+                            <div className="flex items-center gap-2">
+                              <Cloud className="w-4 h-4 text-blue-500" />
+                              <span className="text-sm text-base-content/70">
+                                Google Drive
+                              </span>
+                            </div>
                           </td>
                           <td>
                             <div className="flex gap-2 justify-end">
                               <button
                                 onClick={() =>
-                                  restoreBackup(backup._id, backup.filename)
+                                  restoreBackup(backup.id, backup.name)
                                 }
                                 disabled={restoringId !== null}
                                 className="btn btn-sm btn-warning gap-2"
                                 title="Restore this backup"
                               >
-                                {restoringId === backup._id ? (
+                                {restoringId === backup.id ? (
                                   <>
                                     <Loader className="w-4 h-4 animate-spin" />
                                     Restoring...
@@ -320,7 +334,7 @@ const Backup = () => {
                               </button>
                               <button
                                 onClick={() =>
-                                  downloadBackup(backup._id, backup.filename)
+                                  downloadBackup(backup.id, backup.name)
                                 }
                                 className="btn btn-sm btn-ghost gap-2"
                                 title="Download backup"
@@ -330,7 +344,7 @@ const Backup = () => {
                               </button>
                               <button
                                 onClick={() =>
-                                  deleteBackup(backup._id, backup.filename)
+                                  deleteBackup(backup.id, backup.name)
                                 }
                                 className="btn btn-sm btn-ghost btn-error gap-2"
                                 title="Delete backup"
@@ -353,13 +367,14 @@ const Backup = () => {
           <div className="alert alert-info shadow-lg">
             <AlertCircle className="w-5 h-5 shrink-0" />
             <div className="text-sm">
-              <p className="font-semibold">Backup Location</p>
+              <p className="font-semibold">Backup Storage</p>
               <p className="text-xs opacity-80">
-                Backups are stored locally at: C:\backup_database\
+                All backups are securely stored in your connected Google Drive
+                account.
               </p>
               <p className="text-xs opacity-80 mt-1">
-                You can also download backups to save them externally for extra
-                safety.
+                You can download backups anytime to save them locally for
+                additional safety.
               </p>
             </div>
           </div>
