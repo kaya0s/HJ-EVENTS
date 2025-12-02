@@ -3,6 +3,7 @@ import Profile from "../pages/shared/Profile";
 import ThemesPage from "../pages/shared/ThemesPage";
 import About from "../pages/shared/About";
 import Contact from "../pages/client/Contact";
+import Developers from "../pages/shared/Developers";
 export const SharedRoutes = ({ authUser }) => (
   <>
     <Route
@@ -12,5 +13,6 @@ export const SharedRoutes = ({ authUser }) => (
     <Route path="/themes" element={<ThemesPage />} />
     <Route path="/about" element={<About />} />
     <Route path="/contact" element={<Contact />} />
+    <Route path="/developers" element={<Developers />} />
   </>
 );

@@ -1,4 +1,4 @@
-import { Mail, MapPin, Phone, Heart } from "lucide-react";
+import { Mail, MapPin, Phone, Heart, Code } from "lucide-react";
 import Logo from "./Logo";
 import { Link } from "react-router-dom";
 const Footer = () => {
@@ -102,6 +102,20 @@ const Footer = () => {
               >
                 hello@hjweddings.com
               </a>
+            </li>
+            {/* Developers Link - designed as a distinct, styled button */}
+            <li>
+              <Link
+                to="/developers"
+                className="inline-flex items-center gap-2 px-3 py-1.5 rounded-md bg-primary/80 text-white font-semibold shadow transition hover:bg-primary focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2"
+                style={{
+                  boxShadow:
+                    "0 2px 8px 0 rgba(80, 70, 160, 0.10), 0 1.5px 4px 0 rgba(183, 156, 206, 0.06)",
+                }}
+              >
+                <Code size={16} className="text-white" />
+                Developers
+              </Link>
             </li>
           </ul>
         </div>
