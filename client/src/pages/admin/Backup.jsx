@@ -11,10 +11,47 @@ import {
   Trash2,
   HardDrive,
   Cloud,
+  ShieldOff,
+  ArrowLeft,
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import toast from "react-hot-toast";
 import axiosInstance from "../../lib/axios";
+
+const DisabledOverlay = ({ onBack }) => (
+  <div className="fixed inset-0 z-50 flex items-center justify-center">
+    {/* Blurred background */}
+    <div className="absolute inset-0 bg-base-100/70 backdrop-blur-sm" />
+    {/* Centered card */}
+    <div className="card max-w-lg w-full mx-4 shadow-xl border border-base-300 bg-base-200/90 relative z-10">
+      <div className="card-body items-center text-center gap-4">
+        <ShieldOff className="w-12 h-12 text-error" />
+        <h1 className="text-2xl font-bold text-error">
+          Backup is Disabled in Production
+        </h1>
+        <p className="text-base-content/70">
+          This backup server does not have{" "}
+          <span className="font-medium">mongodump</span> installed or backup
+          features are intentionally disabled in production.
+        </p>
+        <p className="text-base-content/60">
+          Please contact your developer or system administrator to enable or
+          troubleshoot backups on this server.
+        </p>
+        <p className="text-base-content/50 text-xs italic mt-2">
+          (Error: 403 Forbidden)
+        </p>
+        <button
+          className="btn btn-outline btn-primary mt-4 gap-2"
+          onClick={onBack}
+        >
+          <ArrowLeft className="w-4 h-4" />
+          Back
+        </button>
+      </div>
+    </div>
+  </div>
+);
 
 const Backup = () => {
   const navigate = useNavigate();
@@ -23,17 +60,25 @@ const Backup = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [isCreating, setIsCreating] = useState(false);
   const [restoringId, setRestoringId] = useState(null);
+  const [disabledInProduction, setDisabledInProduction] = useState(false);
+  const [disableMessage, setDisableMessage] = useState("");
 
   // Fetch all backups - wrapped in useCallback to prevent infinite loops
   const fetchBackups = useCallback(async () => {
     setIsLoading(true);
     try {
       const { data } = await axiosInstance.get("/backup");
-      console.log("Fetched backups:", data.backups); // Debug log
       setBackups(data.backups || []);
     } catch (error) {
-      console.error("Error fetching backups:", error);
-      toast.error(error.response?.data?.message || "Failed to fetch backups");
+      if (error?.response?.status === 403) {
+        setDisabledInProduction(true);
+        setDisableMessage(
+          error.response.data?.message ||
+            "Backup feature is disabled for admin in production."
+        );
+      } else {
+        toast.error(error.response?.data?.message || "Failed to fetch backups");
+      }
     } finally {
       setIsLoading(false);
     }
@@ -59,8 +104,15 @@ const Backup = () => {
       toast.success(data.message || "Backup created successfully");
       fetchBackups();
     } catch (error) {
-      console.error("Error creating backup:", error);
-      toast.error(error.response?.data?.message || "Failed to create backup");
+      if (error?.response?.status === 403) {
+        setDisabledInProduction(true);
+        setDisableMessage(
+          error.response.data?.message ||
+            "Backup feature is disabled for admin in production."
+        );
+      } else {
+        toast.error(error.response?.data?.message || "Failed to create backup");
+      }
     } finally {
       setIsCreating(false);
     }
@@ -90,8 +142,17 @@ const Backup = () => {
       toast.success("Backup downloaded successfully");
     } catch (error) {
       toast.dismiss();
-      console.error("Error downloading backup:", error);
-      toast.error(error.response?.data?.message || "Failed to download backup");
+      if (error?.response?.status === 403) {
+        setDisabledInProduction(true);
+        setDisableMessage(
+          error.response.data?.message ||
+            "Backup feature is disabled for admin in production."
+        );
+      } else {
+        toast.error(
+          error.response?.data?.message || "Failed to download backup"
+        );
+      }
     }
   };
 
@@ -123,8 +184,17 @@ const Backup = () => {
         window.location.reload();
       }, 2000);
     } catch (error) {
-      console.error("Error restoring backup:", error);
-      toast.error(error.response?.data?.message || "Failed to restore backup");
+      if (error?.response?.status === 403) {
+        setDisabledInProduction(true);
+        setDisableMessage(
+          error.response.data?.message ||
+            "Backup feature is disabled for admin in production."
+        );
+      } else {
+        toast.error(
+          error.response?.data?.message || "Failed to restore backup"
+        );
+      }
     } finally {
       setRestoringId(null);
     }
@@ -142,23 +212,25 @@ const Backup = () => {
       toast.success(data.message || "Backup deleted successfully");
       fetchBackups();
     } catch (error) {
-      console.error("Error deleting backup:", error);
-      toast.error(error.response?.data?.message || "Failed to delete backup");
+      if (error?.response?.status === 403) {
+        setDisabledInProduction(true);
+        setDisableMessage(
+          error.response.data?.message ||
+            "Backup feature is disabled for admin in production."
+        );
+      } else {
+        toast.error(error.response?.data?.message || "Failed to delete backup");
+      }
     }
   };
 
   // Utility functions
   const formatDate = (dateString) => {
     if (!dateString) return "N/A";
-
     const date = new Date(dateString);
-
-    // Check if date is valid
     if (isNaN(date.getTime())) {
-      console.error("Invalid date:", dateString);
       return "Invalid Date";
     }
-
     return date.toLocaleString("en-US", {
       year: "numeric",
       month: "short",
@@ -176,8 +248,12 @@ const Backup = () => {
     return (size / (1024 * 1024)).toFixed(2) + " MB";
   };
 
+  const handleBack = () => {
+    navigate(-1);
+  };
+
   return (
-    <div className="min-h-screen bg-base-100">
+    <div className="min-h-screen bg-base-100 relative">
       <AdminSidebar />
       <main className="lg:ml-20 p-6 transition-all duration-300">
         <div className="max-w-5xl mx-auto space-y-6">
@@ -380,6 +456,7 @@ const Backup = () => {
           </div>
         </div>
       </main>
+      {disabledInProduction && <DisabledOverlay onBack={handleBack} />}
     </div>
   );
 };

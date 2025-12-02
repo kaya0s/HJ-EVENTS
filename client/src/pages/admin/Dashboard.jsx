@@ -84,7 +84,7 @@ const Dashboard = () => {
           <div className="mb-8 flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
             <div>
               <h1 className="text-3xl font-bold mb-2">Admin Dashboard</h1>
-              <p className="text-base-content/60">
+              <p className="mt-2 text-base-content/80">
                 Manage bookings, suppliers, and system activities
               </p>
             </div>

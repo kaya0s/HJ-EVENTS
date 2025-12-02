@@ -14,6 +14,14 @@ dotenv.config();
 const BACKUP_BASE_DIR = 'C:\\backup_database';
 const MONGODB_URI = process.env.MONGODB_URI;
 const GOOGLE_DRIVE_FOLDER_ID = process.env.GOOGLE_DRIVE_FOLDER_ID?.trim();
+const NODE_ENV = process.env.NODE_ENV;
+
+// ===========================
+// Utility: Check if backup is allowed in current environment
+// ===========================
+function isBackupAllowed() {
+  return NODE_ENV !== 'production';
+}
 
 // ===========================
 // OAUTH2 GOOGLE DRIVE CLIENT
@@ -46,6 +54,12 @@ const getDriveClient = async () => {
 // TEST FUNCTION
 // ===========================
 export const testConnection = async (req, res) => {
+  if (!isBackupAllowed()) {
+    return res.status(403).json({
+      message: 'Backup feature is not available in production environment.',
+      error: 'NODE_ENV=production',
+    });
+  }
   try {
     // Test MongoDB connection
     const testMongoCmd = `mongosh "${MONGODB_URI}" --eval "db.adminCommand('ping')"`;
@@ -101,6 +115,13 @@ export const testConnection = async (req, res) => {
 // GET BACKUPS (Improved) - now also returns the dates for each backup
 // ===========================
 export const getBackups = async (req, res) => {
+  if (!isBackupAllowed()) {
+    return res.status(403).json({
+      success: false,
+      message: 'Backup feature is not available in production environment.',
+      error: 'NODE_ENV=production',
+    });
+  }
   try {
     if (!isAuthorized()) {
       const authUrl = getAuthUrl();
@@ -162,6 +183,13 @@ export const getBackups = async (req, res) => {
 // CREATE BACKUP
 // ===========================
 export const createBackup = async (req, res) => {
+  if (!isBackupAllowed()) {
+    return res.status(403).json({
+      success: false,
+      message: 'Backup feature is not available in production environment.',
+      error: 'NODE_ENV=production',
+    });
+  }
   try {
     if (!isAuthorized()) {
       const authUrl = getAuthUrl();
@@ -287,6 +315,12 @@ export const createBackup = async (req, res) => {
 // DOWNLOAD BACKUP
 // ===========================
 export const downloadBackup = async (req, res) => {
+  if (!isBackupAllowed()) {
+    return res.status(403).json({
+      message: 'Backup feature is not available in production environment.',
+      error: 'NODE_ENV=production',
+    });
+  }
   try {
     const { id } = req.params;
 
@@ -317,6 +351,12 @@ export const downloadBackup = async (req, res) => {
 // RESTORE BACKUP
 // ===========================
 export const restoreBackup = async (req, res) => {
+  if (!isBackupAllowed()) {
+    return res.status(403).json({
+      message: 'Backup feature is not available in production environment.',
+      error: 'NODE_ENV=production',
+    });
+  }
   try {
     const { backupId } = req.body;
 
@@ -385,6 +425,12 @@ export const restoreBackup = async (req, res) => {
 // DELETE BACKUP
 // ===========================
 export const deleteBackup = async (req, res) => {
+  if (!isBackupAllowed()) {
+    return res.status(403).json({
+      message: 'Backup feature is not available in production environment.',
+      error: 'NODE_ENV=production',
+    });
+  }
   try {
     const { id } = req.params;
 
@@ -409,6 +455,9 @@ export const backupDatabase = (req, res) => {
 };
 
 export const testGoogleAuth = async () => {
+  if (!isBackupAllowed()) {
+    return false;
+  }
   try {
     const drive = await getDriveClient();
 
@@ -431,6 +480,13 @@ export const testGoogleAuth = async () => {
 // OAUTH2 AUTHORIZATION
 // ===========================
 export const authorizeDrive = (req, res) => {
+  if (!isBackupAllowed()) {
+    return res.status(403).json({
+      message: 'Backup feature is not available in production environment.',
+      error: 'NODE_ENV=production',
+      status: 'forbidden',
+    });
+  }
   try {
     if (isAuthorized()) {
       return res.status(200).json({
@@ -465,6 +521,17 @@ export const authorizeDrive = (req, res) => {
 };
 
 export const handleOAuthCallback = async (req, res) => {
+  if (!isBackupAllowed()) {
+    const errorHtml = `
+      <html>
+        <body style="font-family: Arial; padding: 20px; text-align: center;">
+          <h1 style="color: red;">Backup Not Allowed In Production</h1>
+          <p>The backup feature is disabled when NODE_ENV=production.</p>
+        </body>
+      </html>
+    `;
+    return res.status(403).send(errorHtml);
+  }
   try {
     const { code, error: oauthError } = req.query;
 
@@ -523,6 +590,13 @@ export const handleOAuthCallback = async (req, res) => {
 };
 
 export const checkAuthStatus = (req, res) => {
+  if (!isBackupAllowed()) {
+    return res.status(403).json({
+      authorized: false,
+      message: 'Backup feature is not available in production environment.',
+      error: 'NODE_ENV=production',
+    });
+  }
   try {
     const authorized = isAuthorized();
     res.status(200).json({
