@@ -15,7 +15,7 @@ const createTransporter = () => {
   console.log('BREVO_SMTP_KEY starts with:', process.env.BREVO_SMTP_KEY?.substring(0, 10));
   return nodemailer.createTransport({
     host: 'smtp-relay.brevo.com',
-    port: 587,
+    port: 2525,
     secure: false, // Use TLS
     auth: {
       user: brevoLogin,
