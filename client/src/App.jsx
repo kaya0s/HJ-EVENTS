@@ -11,6 +11,7 @@ import NotFound from "./pages/shared/NotFound";
 
 import { useAuthStore } from "./store/useAuthStore";
 import { useThemeStore } from "./store/useThemeStore";
+import { usePermissionsStore } from "./store/usePermissionsStore";
 import {
   AuthRoutes,
   ClientRoutes,
@@ -23,10 +24,18 @@ const App = () => {
   const location = useLocation();
   const { authUser, checkAuth, isCheckingAuth } = useAuthStore();
   const { theme } = useThemeStore();
+  const initializePermissions = usePermissionsStore(
+    (state) => state.initialize
+  );
 
   useEffect(() => {
     checkAuth();
   }, [checkAuth]);
+
+  // Load server-driven permissions after we know the auth state.
+  useEffect(() => {
+    initializePermissions();
+  }, [initializePermissions]);
 
   if (isCheckingAuth && !authUser)
     return (

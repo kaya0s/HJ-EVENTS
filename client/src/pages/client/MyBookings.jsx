@@ -32,9 +32,14 @@ const MyBookings = () => {
   const [payBooking, setPayBooking] = useState(null);
   const [isSubmittingReview, setIsSubmittingReview] = useState(false);
   const [reviewForm, setReviewForm] = useState({ rating: 5, comment: "" });
-  const canViewBookings = usePermissionsStore((state) =>
-    authUser?.role === "user" ? state.isAllowed("user", "viewBookings") : false
-  );
+  const { isLoaded: permsLoaded, isAllowed } = usePermissionsStore((state) => ({
+    isLoaded: state.isLoaded,
+    isAllowed: state.isAllowed,
+  }));
+  const canViewBookings =
+    authUser?.role === "user" && permsLoaded
+      ? isAllowed("user", "viewBookings")
+      : false;
 
   useEffect(() => {
     if (authUser?.role !== "user" || !canViewBookings) {
@@ -231,6 +236,16 @@ const MyBookings = () => {
 
   if (authUser?.role !== "user") {
     return null;
+  }
+
+  if (!permsLoaded) {
+    return (
+      <section className="min-h-screen flex items-center justify-center px-4">
+        <div className="max-w-lg text-center space-y-4 bg-base-100 border border-base-200 rounded-3xl p-8 shadow-lg">
+          <p className="text-base-content/70">Loading your booking access…</p>
+        </div>
+      </section>
+    );
   }
 
   if (!canViewBookings) {

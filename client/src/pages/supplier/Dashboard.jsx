@@ -30,12 +30,13 @@ const Dashboard = () => {
     fetchSupplierProfile,
     fetchSupplierBookings,
   } = useSupplierDashboardStore();
-  const canViewBookings = usePermissionsStore((state) =>
-    state.isAllowed("supplier", "viewBookings")
-  );
-  const canGenerateReports = usePermissionsStore((state) =>
-    state.isAllowed("supplier", "generateReports")
-  );
+  const { isLoaded: permsLoaded, isAllowed } = usePermissionsStore((state) => ({
+    isLoaded: state.isLoaded,
+    isAllowed: state.isAllowed,
+  }));
+  const canViewBookings = permsLoaded && isAllowed("supplier", "viewBookings");
+  const canGenerateReports =
+    permsLoaded && isAllowed("supplier", "generateReports");
 
   useEffect(() => {
     if (authUser?.role !== "supplier") {
@@ -114,6 +115,16 @@ const Dashboard = () => {
 
   if (authUser?.role !== "supplier") {
     return null;
+  }
+
+  if (!permsLoaded) {
+    return (
+      <div className="min-h-screen bg-base-100 flex items-center justify-center px-4 text-center">
+        <div className="max-w-xl space-y-4">
+          <p className="text-base-content/70">Loading your supplier access…</p>
+        </div>
+      </div>
+    );
   }
 
   if (!canViewBookings) {

@@ -10,9 +10,12 @@ const Profile = () => {
   const roleKey = authUser?.role === "supplier" ? "supplier" : "user";
   const permissionKey =
     authUser?.role === "supplier" ? "manageProducts" : "updateProfile";
-  const canEditProfile = usePermissionsStore((state) =>
-    authUser ? state.isAllowed(roleKey, permissionKey) : false
-  );
+  const { isLoaded: permsLoaded, isAllowed } = usePermissionsStore((state) => ({
+    isLoaded: state.isLoaded,
+    isAllowed: state.isAllowed,
+  }));
+  const canEditProfile =
+    !!authUser && permsLoaded && isAllowed(roleKey, permissionKey);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isPasswordModalOpen, setIsPasswordModalOpen] = useState(false);
   const fileInputRef = useRef(null);

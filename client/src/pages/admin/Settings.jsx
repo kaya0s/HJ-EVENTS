@@ -3,35 +3,43 @@ import { useNavigate } from "react-router-dom";
 import { Shield, SlidersHorizontal, RotateCcw } from "lucide-react";
 import AdminSidebar from "../../components/admin/AdminSidebar";
 import { useAuthStore } from "../../store/useAuthStore";
-import {
-  usePermissionsStore,
-  rolePermissionDefinitions,
-} from "../../store/usePermissionsStore";
+import { usePermissionsStore } from "../../store/usePermissionsStore";
 import toast from "react-hot-toast";
 
 const Settings = () => {
   const navigate = useNavigate();
   const { authUser } = useAuthStore();
-  const permissions = usePermissionsStore((state) => state.permissions);
-  const setPermission = usePermissionsStore((state) => state.setPermission);
-  const resetPermissions = usePermissionsStore(
-    (state) => state.resetPermissions
-  );
+  const {
+    permissions,
+    roleDefinitions,
+    isLoading,
+    initialize,
+    setPermission,
+    resetPermissions,
+  } = usePermissionsStore((state) => ({
+    permissions: state.permissions,
+    roleDefinitions: state.roleDefinitions,
+    isLoading: state.isLoading,
+    initialize: state.initialize,
+    setPermission: state.setPermission,
+    resetPermissions: state.resetPermissions,
+  }));
   const [activeRole, setActiveRole] = useState("user");
 
   useEffect(() => {
     if (authUser?.role !== "admin") {
       navigate("/");
     }
-  }, [authUser?.role, navigate]);
+    initialize();
+  }, [authUser?.role, navigate, initialize]);
 
   const roleEntries = useMemo(
-    () => Object.entries(rolePermissionDefinitions),
-    []
+    () => Object.entries(roleDefinitions || {}),
+    [roleDefinitions]
   );
 
-  const handleToggle = (roleKey, permissionKey, checked) => {
-    setPermission(roleKey, permissionKey, checked);
+  const handleToggle = async (roleKey, permissionKey, checked) => {
+    await setPermission(roleKey, permissionKey, checked);
     toast.success(
       `${checked ? "Enabled" : "Disabled"} ${permissionKey
         .replace(/([A-Z])/g, " $1")
@@ -40,14 +48,23 @@ const Settings = () => {
   };
 
   const handleReset = () => {
-    resetPermissions();
-    toast.success("Permissions restored to defaults");
+    resetPermissions().then(() => {
+      toast.success("Permissions restored to defaults");
+    });
   };
 
-  const activeRoleConfig = rolePermissionDefinitions[activeRole];
+  const activeRoleConfig = roleDefinitions?.[activeRole];
 
   if (authUser?.role !== "admin") {
     return null;
+  }
+
+  if (isLoading || !activeRoleConfig) {
+    return (
+      <div className="min-h-screen bg-base-100 flex items-center justify-center">
+        <span className="loading loading-spinner loading-lg" />
+      </div>
+    );
   }
 
   return (

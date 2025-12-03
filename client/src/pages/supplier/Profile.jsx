@@ -31,9 +31,12 @@ const Profile = () => {
     unavailableDates: [],
   });
   const [newUnavailableDate, setNewUnavailableDate] = useState("");
-  const canManageProducts = usePermissionsStore((state) =>
-    state.isAllowed("supplier", "manageProducts")
-  );
+  const { isLoaded: permsLoaded, isAllowed } = usePermissionsStore((state) => ({
+    isLoaded: state.isLoaded,
+    isAllowed: state.isAllowed,
+  }));
+  const canManageProducts =
+    permsLoaded && isAllowed("supplier", "manageProducts");
 
   useEffect(() => {
     if (authUser?.role !== "supplier") {
