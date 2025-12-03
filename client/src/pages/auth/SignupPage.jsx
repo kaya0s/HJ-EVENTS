@@ -108,7 +108,7 @@ const SignUpPage = () => {
   return (
     <section className="bg-gradient-to-b from-base-100/80 via-base-200/40 to-base-100/80">
       <div className="min-h-[calc(100vh-4rem)] flex items-center justify-center w-full px-0 py-0 sm:px-4 sm:py-8 sm:container sm:mx-auto sm:max-w-screen-2xl">
-        <div className="w-full bg-base-100 space-y-8 shadow-lg flex flex-col justify-center mx-auto rounded-none p-6 min-h-[calc(100vh-4rem)] sm:rounded-2xl sm:p-8 sm:max-w-sm sm:min-h-0">
+        <div className="w-full bg-base-100 space-y-8 shadow-lg flex flex-col justify-center mx-auto rounded-none p-6 min-h-[calc(100vh-4rem)] sm:rounded-2xl sm:p-8 sm:max-w-md sm:min-h-0">
           {/* LOGO */}
           <div className="text-center mb-8">
             <div className="flex flex-col items-center gap-4 group">
@@ -248,12 +248,6 @@ const SignUpPage = () => {
                   )}
                 </button>
               </div>
-              <label className="label">
-                <span className="label-text-alt text-base-content/60">
-                  Must be at least 8 characters with capital letters, numbers,
-                  and special characters
-                </span>
-              </label>
             </div>
 
             <button
