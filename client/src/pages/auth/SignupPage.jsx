@@ -44,8 +44,28 @@ const SignUpPage = () => {
       return toast.error("Enter a valid phone number");
     if (!formData.address.trim()) return toast.error("Address is required");
     if (!formData.password) return toast.error("Password is required");
-    if (formData.password.length < 6)
-      return toast.error("Password must be at least 6 characters");
+    if (formData.password.length < 8)
+      return toast.error("Password must be at least 8 characters");
+
+    // Strong password validation: capital letters, numbers, special characters
+    const hasCapitalLetter = /[A-Z]/.test(formData.password);
+    const hasNumber = /[0-9]/.test(formData.password);
+    const hasSpecialChar = /[!@#$%^&*()_+\-=[\]{};':"\\|,.<>/?]/.test(
+      formData.password
+    );
+
+    if (!hasCapitalLetter) {
+      return toast.error("Password must contain at least one capital letter");
+    }
+    if (!hasNumber) {
+      return toast.error("Password must contain at least one number");
+    }
+    if (!hasSpecialChar) {
+      return toast.error(
+        "Password must contain at least one special character"
+      );
+    }
+
     return true;
   };
 
@@ -80,186 +100,189 @@ const SignUpPage = () => {
         }
       } catch (error) {
         console.error("Form submission error:", error);
-        toast.error("An error occurred. Please try again.");
+        // Error message is already handled by the auth store
       }
     }
   };
 
   return (
     <section className="bg-gradient-to-b from-base-100/80 via-base-200/40 to-base-100/80">
-  <div className="min-h-[calc(100vh-4rem)] flex items-center justify-center w-full px-0 py-0 sm:px-4 sm:py-8 sm:container sm:mx-auto sm:max-w-screen-2xl">
-    <div className="w-full bg-base-100 space-y-8 shadow-lg flex flex-col justify-center mx-auto rounded-none p-6 min-h-[calc(100vh-4rem)] sm:rounded-2xl sm:p-8 sm:max-w-sm sm:min-h-0">
+      <div className="min-h-[calc(100vh-4rem)] flex items-center justify-center w-full px-0 py-0 sm:px-4 sm:py-8 sm:container sm:mx-auto sm:max-w-screen-2xl">
+        <div className="w-full bg-base-100 space-y-8 shadow-lg flex flex-col justify-center mx-auto rounded-none p-6 min-h-[calc(100vh-4rem)] sm:rounded-2xl sm:p-8 sm:max-w-sm sm:min-h-0">
+          {/* LOGO */}
+          <div className="text-center mb-8">
+            <div className="flex flex-col items-center gap-4 group">
+              {/* ADD YOUR LOGO HERE */}
+              <Logo />
 
-      {/* LOGO */}
-      <div className="text-center mb-8">
-        <div className="flex flex-col items-center gap-4 group">
+              <h1 className="text-2xl font-bold mt-2">Create Account</h1>
+              <p className="text-base-content/60">
+                Start planning your special day!
+              </p>
+            </div>
+          </div>
 
-          {/* ADD YOUR LOGO HERE */}
-          <Logo />
-
-          <h1 className="text-2xl font-bold mt-2">Create Account</h1>
-          <p className="text-base-content/60">
-            Start planning your special day!
-          </p>
-        </div>
-      </div>
-
-      <form onSubmit={handleSubmit} className="space-y-5">
-        <div className="flex gap-2">
-          <div className="form-control flex-1">
-            <label className="label">
-              <span className="label-text font-medium">First Name</span>
-            </label>
-            <div className="relative">
-              <div className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-primary z-10">
-                <User className="h-5 w-5" />
+          <form onSubmit={handleSubmit} className="space-y-5">
+            <div className="flex gap-2">
+              <div className="form-control flex-1">
+                <label className="label">
+                  <span className="label-text font-medium">First Name</span>
+                </label>
+                <div className="relative">
+                  <div className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-primary z-10">
+                    <User className="h-5 w-5" />
+                  </div>
+                  <input
+                    type="text"
+                    className="input input-bordered w-full pl-11"
+                    placeholder="John"
+                    value={formData.firstName}
+                    onChange={(e) =>
+                      setFormData({ ...formData, firstName: e.target.value })
+                    }
+                  />
+                </div>
               </div>
-              <input
-                type="text"
-                className="input input-bordered w-full pl-11"
-                placeholder="John"
-                value={formData.firstName}
-                onChange={(e) =>
-                  setFormData({ ...formData, firstName: e.target.value })
-                }
-              />
-            </div>
-          </div>
 
-          <div className="form-control flex-1">
-            <label className="label">
-              <span className="label-text font-medium">Last Name</span>
-            </label>
-            <div className="relative">
-              <div className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-primary z-10">
-                <User className="h-5 w-5" />
+              <div className="form-control flex-1">
+                <label className="label">
+                  <span className="label-text font-medium">Last Name</span>
+                </label>
+                <div className="relative">
+                  <div className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-primary z-10">
+                    <User className="h-5 w-5" />
+                  </div>
+                  <input
+                    type="text"
+                    className="input input-bordered w-full pl-11"
+                    placeholder="Doe"
+                    value={formData.lastName}
+                    onChange={(e) =>
+                      setFormData({ ...formData, lastName: e.target.value })
+                    }
+                  />
+                </div>
               </div>
-              <input
-                type="text"
-                className="input input-bordered w-full pl-11"
-                placeholder="Doe"
-                value={formData.lastName}
-                onChange={(e) =>
-                  setFormData({ ...formData, lastName: e.target.value })
-                }
-              />
             </div>
-          </div>
-        </div>
 
-        <div className="form-control">
-          <label className="label">
-            <span className="label-text font-medium">Email</span>
-          </label>
-          <div className="relative">
-            <div className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-primary z-10">
-              <Mail className="h-5 w-5" />
+            <div className="form-control">
+              <label className="label">
+                <span className="label-text font-medium">Email</span>
+              </label>
+              <div className="relative">
+                <div className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-primary z-10">
+                  <Mail className="h-5 w-5" />
+                </div>
+                <input
+                  type="email"
+                  className="input input-bordered w-full pl-11"
+                  placeholder="you@example.com"
+                  value={formData.email}
+                  onChange={(e) =>
+                    setFormData({ ...formData, email: e.target.value })
+                  }
+                />
+              </div>
             </div>
-            <input
-              type="email"
-              className="input input-bordered w-full pl-11"
-              placeholder="you@example.com"
-              value={formData.email}
-              onChange={(e) =>
-                setFormData({ ...formData, email: e.target.value })
-              }
-            />
-          </div>
-        </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div className="form-control">
-            <label className="label">
-              <span className="label-text font-medium">Phone</span>
-            </label>
-            <input
-              type="tel"
-              className="input input-bordered w-full"
-              placeholder="+63 900 000 0000"
-              value={formData.phone}
-              onChange={(e) =>
-                setFormData({ ...formData, phone: e.target.value })
-              }
-            />
-          </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="form-control">
+                <label className="label">
+                  <span className="label-text font-medium">Phone</span>
+                </label>
+                <input
+                  type="tel"
+                  className="input input-bordered w-full"
+                  placeholder="+63 900 000 0000"
+                  value={formData.phone}
+                  onChange={(e) =>
+                    setFormData({ ...formData, phone: e.target.value })
+                  }
+                />
+              </div>
 
-          <div className="form-control">
-            <label className="label">
-              <span className="label-text font-medium">Address</span>
-            </label>
-            <input
-              type="text"
-              className="input input-bordered w-full"
-              placeholder="Street, City"
-              value={formData.address}
-              onChange={(e) =>
-                setFormData({ ...formData, address: e.target.value })
-              }
-            />
-          </div>
-        </div>
-
-        <div className="form-control">
-          <label className="label">
-            <span className="label-text font-medium">Password</span>
-          </label>
-          <div className="relative">
-            <div className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-primary z-10">
-              <Lock className="h-5 w-5" />
+              <div className="form-control">
+                <label className="label">
+                  <span className="label-text font-medium">Address</span>
+                </label>
+                <input
+                  type="text"
+                  className="input input-bordered w-full"
+                  placeholder="Street, City"
+                  value={formData.address}
+                  onChange={(e) =>
+                    setFormData({ ...formData, address: e.target.value })
+                  }
+                />
+              </div>
             </div>
-            <input
-              type={showPassword ? "text" : "password"}
-              className="input input-bordered w-full pl-11"
-              placeholder="••••••••"
-              value={formData.password}
-              onChange={(e) =>
-                setFormData({ ...formData, password: e.target.value })
-              }
-            />
+
+            <div className="form-control">
+              <label className="label">
+                <span className="label-text font-medium">Password</span>
+              </label>
+              <div className="relative">
+                <div className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-primary z-10">
+                  <Lock className="h-5 w-5" />
+                </div>
+                <input
+                  type={showPassword ? "text" : "password"}
+                  className="input input-bordered w-full pl-11"
+                  placeholder="••••••••"
+                  value={formData.password}
+                  onChange={(e) =>
+                    setFormData({ ...formData, password: e.target.value })
+                  }
+                />
+
+                <button
+                  type="button"
+                  className="absolute inset-y-0 right-0 pr-3 flex items-center text-primary/80 z-10"
+                  onClick={() => setShowPassword(!showPassword)}
+                  tabIndex={-1}
+                >
+                  {showPassword ? (
+                    <EyeOff className="h-5 w-5" />
+                  ) : (
+                    <Eye className="h-5 w-5" />
+                  )}
+                </button>
+              </div>
+              <label className="label">
+                <span className="label-text-alt text-base-content/60">
+                  Must be at least 8 characters with capital letters, numbers,
+                  and special characters
+                </span>
+              </label>
+            </div>
 
             <button
-              type="button"
-              className="absolute inset-y-0 right-0 pr-3 flex items-center text-primary/80 z-10"
-              onClick={() => setShowPassword(!showPassword)}
-              tabIndex={-1}
+              type="submit"
+              className="btn btn-primary w-full"
+              disabled={isSigningUp}
             >
-              {showPassword ? (
-                <EyeOff className="h-5 w-5" />
+              {isSigningUp ? (
+                <>
+                  <Loader2 className="size-5 animate-spin" />
+                  Loading...
+                </>
               ) : (
-                <Eye className="h-5 w-5" />
+                "Create Account"
               )}
             </button>
+          </form>
+
+          <div className="text-center">
+            <p className="text-base-content/60">
+              Already have an account?{" "}
+              <Link to="/login" className="link link-primary">
+                Sign in
+              </Link>
+            </p>
           </div>
         </div>
-
-        <button
-          type="submit"
-          className="btn btn-primary w-full"
-          disabled={isSigningUp}
-        >
-          {isSigningUp ? (
-            <>
-              <Loader2 className="size-5 animate-spin" />
-              Loading...
-            </>
-          ) : (
-            "Create Account"
-          )}
-        </button>
-      </form>
-
-      <div className="text-center">
-        <p className="text-base-content/60">
-          Already have an account?{" "}
-          <Link to="/login" className="link link-primary">
-            Sign in
-          </Link>
-        </p>
       </div>
-    </div>
-  </div>
-</section>
-
+    </section>
   );
 };
 export default SignUpPage;

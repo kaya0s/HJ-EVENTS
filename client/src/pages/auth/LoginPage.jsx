@@ -33,6 +33,8 @@ const LoginPage = () => {
     if (!/\S+@\S+\.\S+/.test(formData.email))
       return toast.error("Invalid email format");
     if (!formData.password) return toast.error("Password is required");
+    if (formData.password.length < 8)
+      return toast.error("Password must be at least 8 characters");
     return true;
   };
 
@@ -70,7 +72,7 @@ const LoginPage = () => {
         }
       } catch (error) {
         console.error("Form submission error:", error);
-        toast.error("An error occurred. Please try again.");
+        // Error message is already handled by the auth store
       }
     }
   };
