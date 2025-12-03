@@ -17,8 +17,7 @@ export const useAuthStore = create((set, get) => ({
     try {
       const res = await axiosInstance.get("/auth/check");
       set({ authUser: res.data });
-    } catch (error) {
-      console.log("Error in checking auth:", error);
+    } catch {
       set({ authUser: null });
     } finally {
       set({ isCheckingAuth: false });
@@ -235,7 +234,6 @@ export const useAuthStore = create((set, get) => ({
       toast.success("Profile updated successfully");
       return res.data.user;
     } catch (error) {
-      console.log("error in update profile:", error);
       const status = error.response?.status;
       if (status === 409) {
         // concurrency conflict: update local auth user to server-provided fresh user if available

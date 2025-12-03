@@ -32,7 +32,6 @@ export const useBookingStore = create((set) => ({
       const res = await axiosInstance.get(
         `/bookings/all${query ? `?${query}` : ""}`
       );
-      console.log("Bookings API Response:", res.data);
 
       let bookings = [];
       if (Array.isArray(res.data?.bookings)) {
@@ -55,8 +54,6 @@ export const useBookingStore = create((set) => ({
         console.warn("Bookings is not an array:", bookings);
         bookings = [];
       }
-
-      console.log(`Parsed ${bookings.length} bookings from response`);
 
       // Calculate statistics
       const stats = {
@@ -117,7 +114,9 @@ export const useBookingStore = create((set) => ({
     try {
       const state = useBookingStore.getState();
       const booking = state.bookings.find((b) => b._id === bookingId);
-      await axiosInstance.post(`/bookings/approve/${bookingId}`, { lastKnownUpdatedAt: booking?.updatedAt });
+      await axiosInstance.post(`/bookings/approve/${bookingId}`, {
+        lastKnownUpdatedAt: booking?.updatedAt,
+      });
       set((state) => ({
         bookings: state.bookings.map((b) =>
           b._id === bookingId ? { ...b, status: "accepted" } : b
@@ -127,9 +126,14 @@ export const useBookingStore = create((set) => ({
       // Refresh statistics
       await useBookingStore.getState().fetchAllBookings();
     } catch (error) {
-      let msg = error?.response?.data?.message || error?.message || "Failed to accept booking";
+      let msg =
+        error?.response?.data?.message ||
+        error?.message ||
+        "Failed to accept booking";
       if (error?.response?.status === 409) {
-        msg = error?.response?.data?.message || 'Someone else updated this booking. Please refresh.';
+        msg =
+          error?.response?.data?.message ||
+          "Someone else updated this booking. Please refresh.";
       }
       toast.error(msg);
       throw error;
@@ -143,7 +147,9 @@ export const useBookingStore = create((set) => ({
     try {
       const state = useBookingStore.getState();
       const booking = state.bookings.find((b) => b._id === bookingId);
-      await axiosInstance.post(`/bookings/reject/${bookingId}`, { lastKnownUpdatedAt: booking?.updatedAt });
+      await axiosInstance.post(`/bookings/reject/${bookingId}`, {
+        lastKnownUpdatedAt: booking?.updatedAt,
+      });
       set((state) => ({
         bookings: state.bookings.map((b) =>
           b._id === bookingId ? { ...b, status: "rejected" } : b
@@ -153,9 +159,14 @@ export const useBookingStore = create((set) => ({
       // Refresh statistics
       await useBookingStore.getState().fetchAllBookings();
     } catch (error) {
-      let msg = error?.response?.data?.message || error?.message || "Failed to reject booking";
+      let msg =
+        error?.response?.data?.message ||
+        error?.message ||
+        "Failed to reject booking";
       if (error?.response?.status === 409) {
-        msg = error?.response?.data?.message || 'Someone else updated this booking. Please refresh.';
+        msg =
+          error?.response?.data?.message ||
+          "Someone else updated this booking. Please refresh.";
       }
       toast.error(msg);
       throw error;
@@ -169,7 +180,9 @@ export const useBookingStore = create((set) => ({
     try {
       const state = useBookingStore.getState();
       const booking = state.bookings.find((b) => b._id === bookingId);
-      await axiosInstance.post(`/bookings/complete/${bookingId}`, { lastKnownUpdatedAt: booking?.updatedAt });
+      await axiosInstance.post(`/bookings/complete/${bookingId}`, {
+        lastKnownUpdatedAt: booking?.updatedAt,
+      });
       set((state) => ({
         bookings: state.bookings.map((b) =>
           b._id === bookingId ? { ...b, status: "completed" } : b
@@ -178,9 +191,14 @@ export const useBookingStore = create((set) => ({
       toast.success("Booking marked as completed");
       await useBookingStore.getState().fetchAllBookings();
     } catch (error) {
-      let msg = error?.response?.data?.message || error?.message || "Failed to complete booking";
+      let msg =
+        error?.response?.data?.message ||
+        error?.message ||
+        "Failed to complete booking";
       if (error?.response?.status === 409) {
-        msg = error?.response?.data?.message || 'Someone else updated this booking. Please refresh.';
+        msg =
+          error?.response?.data?.message ||
+          "Someone else updated this booking. Please refresh.";
       }
       toast.error(msg);
       throw error;
@@ -209,14 +227,21 @@ export const useBookingStore = create((set) => ({
       toast.success("Suppliers assigned successfully");
       return { booking: res.data.booking, conflict: false };
     } catch (error) {
-      let msg = error?.response?.data?.message || error?.message || "Failed to assign suppliers";
+      let msg =
+        error?.response?.data?.message ||
+        error?.message ||
+        "Failed to assign suppliers";
       if (error?.response?.status === 409) {
-        msg = error?.response?.data?.message || 'Someone else updated this booking. Please refresh.';
+        msg =
+          error?.response?.data?.message ||
+          "Someone else updated this booking. Please refresh.";
         // Update local store with the fresh booking returned by server to keep UI consistent
         const fresh = error?.response?.data?.booking;
         if (fresh) {
           set((state) => ({
-            bookings: state.bookings.map((b) => (b._id === fresh._id ? fresh : b)),
+            bookings: state.bookings.map((b) =>
+              b._id === fresh._id ? fresh : b
+            ),
           }));
           return { booking: fresh, conflict: true };
         }
@@ -233,8 +258,6 @@ export const useBookingStore = create((set) => ({
     set({ isLoading: true });
     try {
       const res = await axiosInstance.get("/bookings/me");
-      // Defensive parsing identical to fetchAllBookings
-      // console.log("Bookings GET /bookings/me:", res.data)
       let bookings = [];
       if (Array.isArray(res.data?.bookings)) {
         bookings = res.data.bookings;
@@ -272,13 +295,20 @@ export const useBookingStore = create((set) => ({
     try {
       const state = useBookingStore.getState();
       const booking = state.bookings.find((b) => b._id === bookingId);
-      const res = await axiosInstance.post(`/bookings/cancel/${bookingId}`, { lastKnownUpdatedAt: booking?.updatedAt });
+      const res = await axiosInstance.post(`/bookings/cancel/${bookingId}`, {
+        lastKnownUpdatedAt: booking?.updatedAt,
+      });
       toast.success("Booking cancelled");
       return res.data?.booking;
     } catch (error) {
-      let msg = error?.response?.data?.message || error?.message || "Failed to cancel booking";
+      let msg =
+        error?.response?.data?.message ||
+        error?.message ||
+        "Failed to cancel booking";
       if (error?.response?.status === 409) {
-        msg = error?.response?.data?.message || 'Someone else updated this booking. Please refresh.';
+        msg =
+          error?.response?.data?.message ||
+          "Someone else updated this booking. Please refresh.";
       }
       toast.error(msg);
       throw error;
@@ -292,7 +322,10 @@ export const useBookingStore = create((set) => ({
     try {
       const state = useBookingStore.getState();
       const b = state.bookings.find((x) => x._id === bookingId);
-      const payload = { ...data, lastKnownUpdatedAt: data?.lastKnownUpdatedAt || b?.updatedAt };
+      const payload = {
+        ...data,
+        lastKnownUpdatedAt: data?.lastKnownUpdatedAt || b?.updatedAt,
+      };
       const res = await axiosInstance.patch(`/bookings/${bookingId}`, payload);
       toast.success("Booking updated successfully");
       return res.data?.booking;
@@ -319,12 +352,20 @@ export const useBookingStore = create((set) => ({
     try {
       const state = useBookingStore.getState();
       const booking = state.bookings.find((b) => b._id === bookingId);
-      const res = await axiosInstance.post(`/bookings/${bookingId}/paypal/create-order`, { lastKnownUpdatedAt: booking?.updatedAt });
+      const res = await axiosInstance.post(
+        `/bookings/${bookingId}/paypal/create-order`,
+        { lastKnownUpdatedAt: booking?.updatedAt }
+      );
       return res.data?.orderId || (res.data?.id && res.data.id) || null;
     } catch (error) {
-      let msg = error?.response?.data?.message || error?.message || 'Failed to create PayPal order';
+      let msg =
+        error?.response?.data?.message ||
+        error?.message ||
+        "Failed to create PayPal order";
       if (error?.response?.status === 409) {
-        msg = error?.response?.data?.message || 'Someone else updated this booking. Please refresh.';
+        msg =
+          error?.response?.data?.message ||
+          "Someone else updated this booking. Please refresh.";
       }
       toast.error(msg);
       throw error;
@@ -337,18 +378,28 @@ export const useBookingStore = create((set) => ({
     try {
       const state = useBookingStore.getState();
       const booking = state.bookings.find((b) => b._id === bookingId);
-      const res = await axiosInstance.post(`/bookings/${bookingId}/paypal/capture`, { orderId, lastKnownUpdatedAt: booking?.updatedAt });
+      const res = await axiosInstance.post(
+        `/bookings/${bookingId}/paypal/capture`,
+        { orderId, lastKnownUpdatedAt: booking?.updatedAt }
+      );
       // update booking in store
       const updatedBooking = res.data?.booking || res.data;
       set((state) => ({
-        bookings: state.bookings.map((b) => (b._id === bookingId ? updatedBooking : b)),
+        bookings: state.bookings.map((b) =>
+          b._id === bookingId ? updatedBooking : b
+        ),
       }));
-      toast.success('Payment successful');
+      toast.success("Payment successful");
       return res.data;
     } catch (error) {
-      let msg = error?.response?.data?.message || error?.message || 'Failed to capture PayPal order';
+      let msg =
+        error?.response?.data?.message ||
+        error?.message ||
+        "Failed to capture PayPal order";
       if (error?.response?.status === 409) {
-        msg = error?.response?.data?.message || 'Someone else updated this booking. Please refresh.';
+        msg =
+          error?.response?.data?.message ||
+          "Someone else updated this booking. Please refresh.";
       }
       toast.error(msg);
       throw error;
