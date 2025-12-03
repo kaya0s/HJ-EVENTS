@@ -32,10 +32,8 @@ const MyBookings = () => {
   const [payBooking, setPayBooking] = useState(null);
   const [isSubmittingReview, setIsSubmittingReview] = useState(false);
   const [reviewForm, setReviewForm] = useState({ rating: 5, comment: "" });
-  const { isLoaded: permsLoaded, isAllowed } = usePermissionsStore((state) => ({
-    isLoaded: state.isLoaded,
-    isAllowed: state.isAllowed,
-  }));
+  const permsLoaded = usePermissionsStore((state) => state.isLoaded);
+  const isAllowed = usePermissionsStore((state) => state.isAllowed);
   const canViewBookings =
     authUser?.role === "user" && permsLoaded
       ? isAllowed("user", "viewBookings")

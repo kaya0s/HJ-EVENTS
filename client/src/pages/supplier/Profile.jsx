@@ -31,10 +31,8 @@ const Profile = () => {
     unavailableDates: [],
   });
   const [newUnavailableDate, setNewUnavailableDate] = useState("");
-  const { isLoaded: permsLoaded, isAllowed } = usePermissionsStore((state) => ({
-    isLoaded: state.isLoaded,
-    isAllowed: state.isAllowed,
-  }));
+  const permsLoaded = usePermissionsStore((state) => state.isLoaded);
+  const isAllowed = usePermissionsStore((state) => state.isAllowed);
   const canManageProducts =
     permsLoaded && isAllowed("supplier", "manageProducts");
 
@@ -142,7 +140,7 @@ const Profile = () => {
   return (
     <div className="min-h-screen bg-base-100 lg:flex">
       <SupplierSidebar />
-      <main className="flex-1 p-6 transition-all duration-300">
+      <main className="flex-1 p-6 transition-all duration-300 lg:ml-20">
         <div className="max-w-4xl mx-auto space-y-6">
           <header>
             <h1 className="text-3xl font-bold mb-2">My Profile</h1>

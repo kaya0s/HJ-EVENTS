@@ -3,27 +3,26 @@ import { useNavigate } from "react-router-dom";
 import { Shield, SlidersHorizontal, RotateCcw } from "lucide-react";
 import AdminSidebar from "../../components/admin/AdminSidebar";
 import { useAuthStore } from "../../store/useAuthStore";
-import { usePermissionsStore } from "../../store/usePermissionsStore";
+import {
+  usePermissionsStore,
+  rolePermissionDefinitions,
+} from "../../store/usePermissionsStore";
 import toast from "react-hot-toast";
 
 const Settings = () => {
   const navigate = useNavigate();
   const { authUser } = useAuthStore();
-  const {
-    permissions,
-    roleDefinitions,
-    isLoading,
-    initialize,
-    setPermission,
-    resetPermissions,
-  } = usePermissionsStore((state) => ({
-    permissions: state.permissions,
-    roleDefinitions: state.roleDefinitions,
-    isLoading: state.isLoading,
-    initialize: state.initialize,
-    setPermission: state.setPermission,
-    resetPermissions: state.resetPermissions,
-  }));
+  // Select each field separately to avoid creating a new object on every render,
+  // which can cause unnecessary effects and render loops.
+  const permissions = usePermissionsStore((state) => state.permissions);
+  const isLoading = usePermissionsStore((state) => state.isLoading);
+  const error = usePermissionsStore((state) => state.error);
+  const isLoaded = usePermissionsStore((state) => state.isLoaded);
+  const initialize = usePermissionsStore((state) => state.initialize);
+  const setPermission = usePermissionsStore((state) => state.setPermission);
+  const resetPermissions = usePermissionsStore(
+    (state) => state.resetPermissions
+  );
   const [activeRole, setActiveRole] = useState("user");
 
   useEffect(() => {
@@ -34,8 +33,8 @@ const Settings = () => {
   }, [authUser?.role, navigate, initialize]);
 
   const roleEntries = useMemo(
-    () => Object.entries(roleDefinitions || {}),
-    [roleDefinitions]
+    () => Object.entries(rolePermissionDefinitions),
+    []
   );
 
   const handleToggle = async (roleKey, permissionKey, checked) => {
@@ -43,7 +42,9 @@ const Settings = () => {
     toast.success(
       `${checked ? "Enabled" : "Disabled"} ${permissionKey
         .replace(/([A-Z])/g, " $1")
-        .toLowerCase()} for ${rolePermissionDefinitions[roleKey].label}`
+        .toLowerCase()} for ${
+        rolePermissionDefinitions[roleKey]?.label || roleKey
+      }`
     );
   };
 
@@ -53,16 +54,34 @@ const Settings = () => {
     });
   };
 
-  const activeRoleConfig = roleDefinitions?.[activeRole];
+  const activeRoleConfig = rolePermissionDefinitions?.[activeRole];
 
   if (authUser?.role !== "admin") {
     return null;
   }
 
-  if (isLoading || !activeRoleConfig) {
+  if (isLoading && !isLoaded) {
     return (
       <div className="min-h-screen bg-base-100 flex items-center justify-center">
         <span className="loading loading-spinner loading-lg" />
+      </div>
+    );
+  }
+
+  if (!activeRoleConfig) {
+    return (
+      <div className="min-h-screen bg-base-100">
+        <AdminSidebar />
+        <main className="lg:ml-20 p-6 transition-all duration-300 flex items-center justify-center">
+          <div className="max-w-lg text-center space-y-4">
+            <h1 className="text-2xl font-bold">Permissions not loaded</h1>
+            <p className="text-base-content/70">
+              {error
+                ? error
+                : "No role definitions are available from the server. Please try refreshing the page or check the server logs."}
+            </p>
+          </div>
+        </main>
       </div>
     );
   }

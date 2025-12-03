@@ -25,10 +25,8 @@ const normalizeCategoryKey = (value = "") => value.trim().toLowerCase();
 const BookingModal = ({ package: pkg, isOpen, onClose }) => {
   const navigate = useNavigate();
   const { authUser } = useAuthStore();
-  const { isLoaded: permsLoaded, isAllowed } = usePermissionsStore((state) => ({
-    isLoaded: state.isLoaded,
-    isAllowed: state.isAllowed,
-  }));
+  const permsLoaded = usePermissionsStore((state) => state.isLoaded);
+  const isAllowed = usePermissionsStore((state) => state.isAllowed);
   const canSubmitRequests =
     authUser?.role === "user" && permsLoaded
       ? isAllowed("user", "submitRequests")

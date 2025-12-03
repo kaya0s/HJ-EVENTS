@@ -30,12 +30,17 @@ const App = () => {
 
   useEffect(() => {
     checkAuth();
-  }, [checkAuth]);
+    // We intentionally run this only once on mount. The `checkAuth` action from
+    // the store is stable, but including it in the dependency array can cause
+    // unnecessary re-runs if its reference ever changes.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
-  // Load server-driven permissions after we know the auth state.
   useEffect(() => {
-    initializePermissions();
-  }, [initializePermissions]);
+    if (!isCheckingAuth && authUser) {
+      initializePermissions();
+    }
+  }, [authUser, isCheckingAuth, initializePermissions]);
 
   if (isCheckingAuth && !authUser)
     return (
