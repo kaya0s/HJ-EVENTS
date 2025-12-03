@@ -2,13 +2,50 @@ import { useState } from "react";
 import { CheckCircle, XCircle, Eye, Loader, BadgeCheck } from "lucide-react";
 import dayjs from "dayjs";
 import { useBookingStore } from "../../store/useBookingStore";
+import { confirmDialog } from "../../utils/confirmDialog";
 
 const BookingsTable = ({ bookings, onViewDetails }) => {
   const { acceptBooking, rejectBooking, completeBooking } = useBookingStore();
   const [processingId, setProcessingId] = useState(null);
   const [completingId, setCompletingId] = useState(null);
 
-  const handleAccept = async (bookingId) => {
+  const handleAccept = async (booking) => {
+    const bookingId = booking._id;
+    const bookingIdShort = bookingId.slice(-8).toUpperCase();
+    const userName =
+      booking.user?.fullName || booking.user?.id?.fullName || "N/A";
+    const eventDate = dayjs(booking.weddingDate).format("MMMM DD, YYYY");
+
+    const confirmed = await confirmDialog({
+      title: "Accept Booking",
+      html: `
+        <div class="text-left space-y-3">
+          <p class="text-base">Are you sure you want to accept this booking?</p>
+          <div class="bg-base-200 rounded-lg p-4 space-y-2">
+            <div class="flex justify-between">
+              <span class="font-semibold">Booking ID:</span>
+              <span class="font-mono text-sm">${bookingIdShort}</span>
+            </div>
+            <div class="flex justify-between">
+              <span class="font-semibold">User Name:</span>
+              <span>${userName}</span>
+            </div>
+            <div class="flex justify-between">
+              <span class="font-semibold">Event Date:</span>
+              <span>${eventDate}</span>
+            </div>
+          </div>
+        </div>
+      `,
+      confirmText: "Accept",
+      cancelText: "Cancel",
+      confirmButtonClass: "btn-success",
+      cancelButtonClass: "btn-outline",
+      icon: "question",
+    });
+
+    if (!confirmed) return;
+
     setProcessingId(bookingId);
     try {
       await acceptBooking(bookingId);
@@ -19,8 +56,43 @@ const BookingsTable = ({ bookings, onViewDetails }) => {
     }
   };
 
-  const handleReject = async (bookingId) => {
-    if (!confirm("Are you sure you want to reject this booking?")) return;
+  const handleReject = async (booking) => {
+    const bookingId = booking._id;
+    const bookingIdShort = bookingId.slice(-8).toUpperCase();
+    const userName =
+      booking.user?.fullName || booking.user?.id?.fullName || "N/A";
+    const eventDate = dayjs(booking.weddingDate).format("MMMM DD, YYYY");
+
+    const confirmed = await confirmDialog({
+      title: "Reject Booking",
+      html: `
+        <div class="text-left space-y-3">
+          <p class="text-base">Are you sure you want to reject this booking?</p>
+          <div class="bg-base-200 rounded-lg p-4 space-y-2">
+            <div class="flex justify-between">
+              <span class="font-semibold">Booking ID:</span>
+              <span class="font-mono text-sm">${bookingIdShort}</span>
+            </div>
+            <div class="flex justify-between">
+              <span class="font-semibold">User Name:</span>
+              <span>${userName}</span>
+            </div>
+            <div class="flex justify-between">
+              <span class="font-semibold">Event Date:</span>
+              <span>${eventDate}</span>
+            </div>
+          </div>
+        </div>
+      `,
+      confirmText: "Reject",
+      cancelText: "Cancel",
+      confirmButtonClass: "btn-error",
+      cancelButtonClass: "btn-outline",
+      icon: "warning",
+    });
+
+    if (!confirmed) return;
+
     setProcessingId(bookingId);
     try {
       await rejectBooking(bookingId);
@@ -102,7 +174,7 @@ const BookingsTable = ({ bookings, onViewDetails }) => {
               <td>
                 <div className="flex items-center gap-2">
                   {getStatusBadge(booking.status)}
-                  {booking.payment?.status === 'paid' && (
+                  {booking.payment?.status === "paid" && (
                     <span className="badge badge-success">Paid</span>
                   )}
                 </div>
@@ -130,7 +202,7 @@ const BookingsTable = ({ bookings, onViewDetails }) => {
                     <>
                       <button
                         className="btn btn-sm btn-success"
-                        onClick={() => handleAccept(booking._id)}
+                        onClick={() => handleAccept(booking)}
                         disabled={processingId === booking._id}
                         title="Accept"
                       >
@@ -142,7 +214,7 @@ const BookingsTable = ({ bookings, onViewDetails }) => {
                       </button>
                       <button
                         className="btn btn-sm btn-error"
-                        onClick={() => handleReject(booking._id)}
+                        onClick={() => handleReject(booking)}
                         disabled={processingId === booking._id}
                         title="Reject"
                       >

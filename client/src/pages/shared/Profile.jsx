@@ -3,6 +3,7 @@ import { User, Mail, Lock, Camera, Phone, MapPin } from "lucide-react";
 import { useAuthStore } from "../../store/useAuthStore";
 import { usePermissionsStore } from "../../store/usePermissionsStore";
 import toast from "react-hot-toast";
+import { alertDialog } from "../../utils/confirmDialog";
 
 const Profile = () => {
   const { authUser, updateProfile, changePassword, isUpdatingProfile } =
@@ -120,12 +121,20 @@ const Profile = () => {
       return;
     }
     if (passwordForm.newPassword !== passwordForm.confirmPassword) {
-      alert("New passwords do not match");
+      await alertDialog({
+        title: "Password Mismatch",
+        text: "New passwords do not match",
+        icon: "error",
+      });
       return;
     }
 
     if (passwordForm.newPassword.length < 6) {
-      alert("Password must be at least 6 characters");
+      await alertDialog({
+        title: "Invalid Password",
+        text: "Password must be at least 6 characters",
+        icon: "warning",
+      });
       return;
     }
 

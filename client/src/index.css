@@ -6,7 +6,6 @@
     acid, lemonade, night, coffee, winter, dim, nord, sunset;
 }
 
-
 /* Remove ONLY PayPal background wrappers */
 .paypal-buttons,
 .paypal-button-row,
@@ -20,4 +19,94 @@
 .paypal-button-row {
   padding: 0 !important;
   margin: 0 !important;
+}
+
+/* SweetAlert2 DaisyUI Theme Integration */
+.swal2-popup-daisy {
+  background: transparent !important;
+  box-shadow: none !important;
+  border: none !important;
+  padding: 1rem !important;
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: center !important;
+  justify-content: center !important;
+}
+
+.swal2-title-daisy {
+  @apply text-xl md:text-2xl font-bold;
+  color: hsl(var(--bc)) !important;
+  margin-bottom: 0.75rem !important;
+  text-align: center !important;
+}
+
+.swal2-html-container-daisy {
+  @apply text-sm md:text-base;
+  color: hsl(var(--bc) / 0.8) !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  width: 100% !important;
+}
+
+/* Card wrapper inside dialog */
+.swal2-html-container-daisy .card {
+  margin: 0 auto !important;
+  max-width: 100% !important;
+  width: 100% !important;
+}
+
+/* Ensure proper spacing for card content */
+.swal2-html-container-daisy .card-body {
+  padding: 1rem !important;
+}
+
+.swal2-confirm-daisy,
+.swal2-cancel-daisy {
+  @apply btn btn-sm min-w-20 md:min-w-24;
+  margin: 0.25rem !important;
+  border: none !important;
+  box-shadow: none !important;
+  font-size: 0.875rem !important;
+}
+
+.swal2-confirm-daisy:hover,
+.swal2-cancel-daisy:hover {
+  @apply opacity-90;
+}
+
+.swal2-toast-daisy {
+  @apply rounded-xl shadow-lg border border-base-300;
+  background-color: hsl(var(--b1)) !important;
+  color: hsl(var(--bc)) !important;
+  max-width: 90vw !important;
+  min-width: 250px !important;
+}
+
+/* SweetAlert2 button container */
+.swal2-actions {
+  @apply gap-2 flex-wrap;
+  margin-top: 1rem !important;
+  justify-content: flex-end !important;
+}
+
+/* Responsive adjustments */
+@media (max-width: 640px) {
+  .swal2-popup-daisy {
+    padding: 1rem !important;
+  }
+
+  .swal2-title-daisy {
+    font-size: 1.125rem !important;
+  }
+
+  .swal2-confirm-daisy,
+  .swal2-cancel-daisy {
+    width: 100% !important;
+    margin: 0.25rem 0 !important;
+  }
+
+  .swal2-actions {
+    flex-direction: column-reverse !important;
+    width: 100% !important;
+  }
 }
