@@ -80,7 +80,7 @@ const App = () => {
       className="min-h-screen bg-base-100 text-base-content flex flex-col"
     >
       {showBackgroundVideo ? (
-        <BackgroundVideo videoSrc="https://www.pexels.com/download/video/34506425/">
+        <BackgroundVideo videoSrc="https://cdn.pixabay.com/video/2016/09/13/5131-183300018_large.mp4">
           {content}
         </BackgroundVideo>
       ) : (
