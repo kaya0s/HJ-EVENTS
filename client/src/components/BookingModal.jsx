@@ -22,6 +22,18 @@ import { usePermissionsStore } from "../store/usePermissionsStore";
 
 const normalizeCategoryKey = (value = "") => value.trim().toLowerCase();
 
+// Helper to get unique/normalized categories from suppliers
+const getUniqueNormalizedCategories = (suppliersArr) => {
+  const categoryMap = new Map();
+  for (const s of suppliersArr) {
+    const normalized = normalizeCategoryKey(s.category || "");
+    if (!categoryMap.has(normalized)) {
+      categoryMap.set(normalized, s.category); // Store original capitalization
+    }
+  }
+  return Array.from(categoryMap.values());
+};
+
 const BookingModal = ({ package: pkg, isOpen, onClose }) => {
   const navigate = useNavigate();
   const { authUser } = useAuthStore();
@@ -39,13 +51,13 @@ const BookingModal = ({ package: pkg, isOpen, onClose }) => {
   const [externalSelections, setExternalSelections] = useState({});
   const [showVerification, setShowVerification] = useState(false);
   const [showConfirmation, setShowConfirmation] = useState(false);
-  const [showReview, setShowReview] = useState(false); // New: review step before sending email verification
+  const [showReview, setShowReview] = useState(false);
   const [verificationCode, setVerificationCode] = useState("");
   const [isSendingCode, setIsSendingCode] = useState(false);
   const [isVerifying, setIsVerifying] = useState(false);
   const {
     suppliers,
-    categories,
+    categories, // Not used for supplier dropdown anymore!
     fetchAllSuppliers,
     isLoading: isLoadingSuppliers,
   } = useSupplierStore();
@@ -61,6 +73,9 @@ const BookingModal = ({ package: pkg, isOpen, onClose }) => {
     authUser?.role === "user" && permsLoaded
       ? isAllowed("user", "viewBookings")
       : false;
+
+  // Fix: compute unique supplier categories from the suppliers array, normalized case-insensitively
+  const uniqueCategories = getUniqueNormalizedCategories(suppliers);
 
   // Check authentication when modal opens
   useEffect(() => {
@@ -196,13 +211,14 @@ const BookingModal = ({ package: pkg, isOpen, onClose }) => {
   };
 
   const getSuppliersByCategory = (category) => {
-    return suppliers.filter((s) => s.category === category);
+    // Find suppliers whose category, when normalized, equals the normalized argument
+    const norm = normalizeCategoryKey(category);
+    return suppliers.filter((s) => normalizeCategoryKey(s.category) === norm);
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    // Check if user is logged in
     if (!authUser) {
       toast.error("Please login first to book a package");
       onClose();
@@ -210,7 +226,6 @@ const BookingModal = ({ package: pkg, isOpen, onClose }) => {
       return;
     }
 
-    // Check if user is a client
     if (authUser.role !== "user") {
       toast.error("Only clients can book packages");
       onClose();
@@ -242,7 +257,6 @@ const BookingModal = ({ package: pkg, isOpen, onClose }) => {
       toast.error("Please enter a wedding title");
       return;
     }
-    // Show a review confirmation modal before sending verification
     setShowReview(true);
   };
 
@@ -276,7 +290,6 @@ const BookingModal = ({ package: pkg, isOpen, onClose }) => {
     }
   };
 
-  // Called by the review confirmation: close review and start send verification flow
   const handleConfirmReview = async () => {
     setShowReview(false);
     await handleSendVerificationCode();
@@ -310,10 +323,8 @@ const BookingModal = ({ package: pkg, isOpen, onClose }) => {
   };
 
   const handleConfirmBooking = async () => {
-    // Booking is already created after verification, just close and refresh
     toast.success("Booking confirmed successfully!");
     onClose();
-    // Refresh the page or navigate to bookings
     if (canViewBookings) {
       window.location.href = "/my-bookings";
     } else {
@@ -815,12 +826,12 @@ const BookingModal = ({ package: pkg, isOpen, onClose }) => {
                 <div className="text-center py-4">
                   <span className="loading loading-spinner loading-md"></span>
                 </div>
-              ) : categories.length === 0 ? (
+              ) : uniqueCategories.length === 0 ? (
                 <p className="text-sm text-base-content/60 text-center py-4">
                   No suppliers available
                 </p>
               ) : (
-                categories.map((category) => {
+                uniqueCategories.map((category) => {
                   const categorySuppliers = getSuppliersByCategory(category);
                   if (categorySuppliers.length === 0) return null;
                   const unavailableForDate = selectedDate
@@ -859,7 +870,6 @@ const BookingModal = ({ package: pkg, isOpen, onClose }) => {
                               disabled={Boolean(isUnavailable)}
                             >
                               {supplier.name}
-                              {/* rating removed */}
                               {supplier.priceRange &&
                                 ` - ${supplier.priceRange}`}
                               {isUnavailable ? " (Unavailable)" : ""}
