@@ -6,6 +6,7 @@ import axiosInstance from "../../lib/axios";
 import toast from "react-hot-toast";
 import { Loader } from "lucide-react";
 import AdminSidebar from "../../components/admin/AdminSidebar";
+import { confirmDialog } from "../../utils/confirmDialog";
 
 const ManageClients = () => {
   const { authUser } = useAuthStore();
@@ -94,7 +95,10 @@ const ManageClients = () => {
 
     try {
       // Attach lastKnownUpdatedAt for concurrency checks
-      const payload = { ...editFormData, lastKnownUpdatedAt: selectedUser.updatedAt };
+      const payload = {
+        ...editFormData,
+        lastKnownUpdatedAt: selectedUser.updatedAt,
+      };
       await axiosInstance.put(`/users/${selectedUser._id}`, payload);
       toast.success("User updated successfully");
       setIsEditModalOpen(false);
@@ -103,10 +107,16 @@ const ManageClients = () => {
     } catch (error) {
       // Handle concurrency conflict specially
       if (error.response?.status === 409) {
-        toast.error(error.response?.data?.message || "User was updated by someone else. Please refresh.");
+        toast.error(
+          error.response?.data?.message ||
+            "User was updated by someone else. Please refresh."
+        );
         fetchUsers();
       } else if (error.response?.status === 403) {
-        toast.error(error.response?.data?.message || "Cannot grant admin role via this interface.");
+        toast.error(
+          error.response?.data?.message ||
+            "Cannot grant admin role via this interface."
+        );
       } else {
         toast.error(error.response?.data?.message || "Failed to update user");
       }
@@ -114,12 +124,20 @@ const ManageClients = () => {
   };
 
   const handleDeleteUser = async (userId) => {
-    if (
-      !confirm(
-        "Are you sure you want to delete this user? This action cannot be undone."
-      )
-    )
-      return;
+    const user = users.find((u) => u._id === userId);
+    const userName = user?.fullName || "this user";
+
+    const confirmed = await confirmDialog({
+      title: "Delete User",
+      text: `Are you sure you want to delete ${userName}? This action cannot be undone.`,
+      confirmText: "Delete",
+      cancelText: "Cancel",
+      confirmButtonClass: "btn-error",
+      cancelButtonClass: "btn-outline",
+      icon: "warning",
+    });
+
+    if (!confirmed) return;
 
     try {
       await axiosInstance.delete(`/users/${userId}`);
@@ -209,7 +227,9 @@ const ManageClients = () => {
                 <option value="supplier">Supplier</option>
               </select>
               {selectedUser?._id === authUser?._id && (
-                <p className="text-sm text-base-content/60 mt-1">You cannot change your own role.</p>
+                <p className="text-sm text-base-content/60 mt-1">
+                  You cannot change your own role.
+                </p>
               )}
             </div>
 

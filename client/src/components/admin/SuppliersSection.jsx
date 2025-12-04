@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { Search, Plus, Edit, Trash2 } from "lucide-react";
 import { useSupplierStore } from "../../store/useSupplierStore";
 import SupplierModal from "./SupplierModal";
+import { confirmDialog } from "../../utils/confirmDialog";
 
 const SuppliersSection = () => {
   const {
@@ -41,7 +42,21 @@ const SuppliersSection = () => {
   };
 
   const handleDeleteSupplier = async (supplierId) => {
-    if (!confirm("Are you sure you want to delete this supplier?")) return;
+    const supplier = suppliers.find((s) => s._id === supplierId);
+    const supplierName = supplier?.name || "this supplier";
+
+    const confirmed = await confirmDialog({
+      title: "Delete Supplier",
+      text: `Are you sure you want to delete "${supplierName}"?`,
+      confirmText: "Delete",
+      cancelText: "Cancel",
+      confirmButtonClass: "btn-error",
+      cancelButtonClass: "btn-outline",
+      icon: "warning",
+    });
+
+    if (!confirmed) return;
+
     try {
       await deleteSupplier(supplierId);
     } catch {

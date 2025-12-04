@@ -12,7 +12,13 @@ import toast from "react-hot-toast";
 const Settings = () => {
   const navigate = useNavigate();
   const { authUser } = useAuthStore();
+  // Select each field separately to avoid creating a new object on every render,
+  // which can cause unnecessary effects and render loops.
   const permissions = usePermissionsStore((state) => state.permissions);
+  const isLoading = usePermissionsStore((state) => state.isLoading);
+  const error = usePermissionsStore((state) => state.error);
+  const isLoaded = usePermissionsStore((state) => state.isLoaded);
+  const initialize = usePermissionsStore((state) => state.initialize);
   const setPermission = usePermissionsStore((state) => state.setPermission);
   const resetPermissions = usePermissionsStore(
     (state) => state.resetPermissions
@@ -23,31 +29,61 @@ const Settings = () => {
     if (authUser?.role !== "admin") {
       navigate("/");
     }
-  }, [authUser?.role, navigate]);
+    initialize();
+  }, [authUser?.role, navigate, initialize]);
 
   const roleEntries = useMemo(
     () => Object.entries(rolePermissionDefinitions),
     []
   );
 
-  const handleToggle = (roleKey, permissionKey, checked) => {
-    setPermission(roleKey, permissionKey, checked);
+  const handleToggle = async (roleKey, permissionKey, checked) => {
+    await setPermission(roleKey, permissionKey, checked);
     toast.success(
       `${checked ? "Enabled" : "Disabled"} ${permissionKey
         .replace(/([A-Z])/g, " $1")
-        .toLowerCase()} for ${rolePermissionDefinitions[roleKey].label}`
+        .toLowerCase()} for ${
+        rolePermissionDefinitions[roleKey]?.label || roleKey
+      }`
     );
   };
 
   const handleReset = () => {
-    resetPermissions();
-    toast.success("Permissions restored to defaults");
+    resetPermissions().then(() => {
+      toast.success("Permissions restored to defaults");
+    });
   };
 
-  const activeRoleConfig = rolePermissionDefinitions[activeRole];
+  const activeRoleConfig = rolePermissionDefinitions?.[activeRole];
 
   if (authUser?.role !== "admin") {
     return null;
+  }
+
+  if (isLoading && !isLoaded) {
+    return (
+      <div className="min-h-screen bg-base-100 flex items-center justify-center">
+        <span className="loading loading-spinner loading-lg" />
+      </div>
+    );
+  }
+
+  if (!activeRoleConfig) {
+    return (
+      <div className="min-h-screen bg-base-100">
+        <AdminSidebar />
+        <main className="lg:ml-20 p-6 transition-all duration-300 flex items-center justify-center">
+          <div className="max-w-lg text-center space-y-4">
+            <h1 className="text-2xl font-bold">Permissions not loaded</h1>
+            <p className="text-base-content/70">
+              {error
+                ? error
+                : "No role definitions are available from the server. Please try refreshing the page or check the server logs."}
+            </p>
+          </div>
+        </main>
+      </div>
+    );
   }
 
   return (

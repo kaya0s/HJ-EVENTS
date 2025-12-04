@@ -22,29 +22,42 @@ import { usePermissionsStore } from "../store/usePermissionsStore";
 
 const normalizeCategoryKey = (value = "") => value.trim().toLowerCase();
 
+// Helper to get unique/normalized categories from suppliers
+const getUniqueNormalizedCategories = (suppliersArr) => {
+  const categoryMap = new Map();
+  for (const s of suppliersArr) {
+    const normalized = normalizeCategoryKey(s.category || "");
+    if (!categoryMap.has(normalized)) {
+      categoryMap.set(normalized, s.category); // Store original capitalization
+    }
+  }
+  return Array.from(categoryMap.values());
+};
+
 const BookingModal = ({ package: pkg, isOpen, onClose }) => {
   const navigate = useNavigate();
   const { authUser } = useAuthStore();
-  const canSubmitRequests = usePermissionsStore((state) =>
-    authUser?.role === "user"
-      ? state.isAllowed("user", "submitRequests")
-      : false
-  );
+  const permsLoaded = usePermissionsStore((state) => state.isLoaded);
+  const isAllowed = usePermissionsStore((state) => state.isAllowed);
+  const canSubmitRequests =
+    authUser?.role === "user" && permsLoaded
+      ? isAllowed("user", "submitRequests")
+      : false;
   const [selectedDate, setSelectedDate] = useState(null);
   const [title, setTitle] = useState("");
   const [venue, setVenue] = useState("");
   const [bookedDates, setBookedDates] = useState([]);
   const [selectedSuppliers, setSelectedSuppliers] = useState({});
   const [externalSelections, setExternalSelections] = useState({});
-    const [showVerification, setShowVerification] = useState(false); 
-    const [showConfirmation, setShowConfirmation] = useState(false);
-    const [showReview, setShowReview] = useState(false); // New: review step before sending email verification
+  const [showVerification, setShowVerification] = useState(false);
+  const [showConfirmation, setShowConfirmation] = useState(false);
+  const [showReview, setShowReview] = useState(false);
   const [verificationCode, setVerificationCode] = useState("");
   const [isSendingCode, setIsSendingCode] = useState(false);
   const [isVerifying, setIsVerifying] = useState(false);
   const {
     suppliers,
-    categories,
+    categories, // Not used for supplier dropdown anymore!
     fetchAllSuppliers,
     isLoading: isLoadingSuppliers,
   } = useSupplierStore();
@@ -54,10 +67,15 @@ const BookingModal = ({ package: pkg, isOpen, onClose }) => {
     isLoading: isLoadingDeductions,
   } = useDeductionStore();
 
-  const isRequestsDisabled = authUser?.role === "user" && !canSubmitRequests;
-  const canViewBookings = usePermissionsStore((state) =>
-    authUser?.role === "user" ? state.isAllowed("user", "viewBookings") : false
-  );
+  const isRequestsDisabled =
+    authUser?.role === "user" && permsLoaded && !canSubmitRequests;
+  const canViewBookings =
+    authUser?.role === "user" && permsLoaded
+      ? isAllowed("user", "viewBookings")
+      : false;
+
+  // Fix: compute unique supplier categories from the suppliers array, normalized case-insensitively
+  const uniqueCategories = getUniqueNormalizedCategories(suppliers);
 
   // Check authentication when modal opens
   useEffect(() => {
@@ -193,13 +211,14 @@ const BookingModal = ({ package: pkg, isOpen, onClose }) => {
   };
 
   const getSuppliersByCategory = (category) => {
-    return suppliers.filter((s) => s.category === category);
+    // Find suppliers whose category, when normalized, equals the normalized argument
+    const norm = normalizeCategoryKey(category);
+    return suppliers.filter((s) => normalizeCategoryKey(s.category) === norm);
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    // Check if user is logged in
     if (!authUser) {
       toast.error("Please login first to book a package");
       onClose();
@@ -207,7 +226,6 @@ const BookingModal = ({ package: pkg, isOpen, onClose }) => {
       return;
     }
 
-    // Check if user is a client
     if (authUser.role !== "user") {
       toast.error("Only clients can book packages");
       onClose();
@@ -239,7 +257,6 @@ const BookingModal = ({ package: pkg, isOpen, onClose }) => {
       toast.error("Please enter a wedding title");
       return;
     }
-    // Show a review confirmation modal before sending verification
     setShowReview(true);
   };
 
@@ -273,7 +290,6 @@ const BookingModal = ({ package: pkg, isOpen, onClose }) => {
     }
   };
 
-  // Called by the review confirmation: close review and start send verification flow
   const handleConfirmReview = async () => {
     setShowReview(false);
     await handleSendVerificationCode();
@@ -307,10 +323,8 @@ const BookingModal = ({ package: pkg, isOpen, onClose }) => {
   };
 
   const handleConfirmBooking = async () => {
-    // Booking is already created after verification, just close and refresh
     toast.success("Booking confirmed successfully!");
     onClose();
-    // Refresh the page or navigate to bookings
     if (canViewBookings) {
       window.location.href = "/my-bookings";
     } else {
@@ -349,8 +363,13 @@ const BookingModal = ({ package: pkg, isOpen, onClose }) => {
           )}
           <div className="flex items-center justify-between mb-6">
             <div>
-              <h3 className="font-bold text-2xl mb-1">Confirm Booking Details</h3>
-              <p className="text-sm text-base-content/60">Please confirm your booking details before we send a verification code to your email.</p>
+              <h3 className="font-bold text-2xl mb-1">
+                Confirm Booking Details
+              </h3>
+              <p className="text-sm text-base-content/60">
+                Please confirm your booking details before we send a
+                verification code to your email.
+              </p>
             </div>
             <button
               type="button"
@@ -366,31 +385,60 @@ const BookingModal = ({ package: pkg, isOpen, onClose }) => {
             <div className="bg-base-200 rounded-lg p-4">
               <h4 className="font-semibold mb-2">Package</h4>
               <p className="text-primary font-medium">{pkg.name}</p>
-              <p className="text-sm text-base-content/70 mt-1">{pkg.description ?? ''}</p>
+              <p className="text-sm text-base-content/70 mt-1">
+                {pkg.description ?? ""}
+              </p>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="bg-base-200 rounded-lg p-4">
                 <h4 className="font-semibold mb-2">Event Info</h4>
-                <p><strong>Date:</strong> {selectedDate ? dayjs(selectedDate).format('MMMM DD, YYYY') : 'N/A'}</p>
-                <p><strong>Title:</strong> {title || 'Untitled'}</p>
-                <p><strong>Venue:</strong> {venue || 'N/A'}</p>
+                <p>
+                  <strong>Date:</strong>{" "}
+                  {selectedDate
+                    ? dayjs(selectedDate).format("MMMM DD, YYYY")
+                    : "N/A"}
+                </p>
+                <p>
+                  <strong>Title:</strong> {title || "Untitled"}
+                </p>
+                <p>
+                  <strong>Venue:</strong> {venue || "N/A"}
+                </p>
               </div>
               <div className="bg-base-200 rounded-lg p-4">
                 <h4 className="font-semibold mb-2">Suppliers</h4>
-                <p className="text-sm">{selectedSupplierNames.length ? selectedSupplierNames.map(s => s.name).join(', ') : 'No supplier selected'}</p>
-                <p className="text-sm mt-2">External suppliers: {selectedExternalNames.length ? selectedExternalNames.join(', ') : 'None'}</p>
+                <p className="text-sm">
+                  {selectedSupplierNames.length
+                    ? selectedSupplierNames.map((s) => s.name).join(", ")
+                    : "No supplier selected"}
+                </p>
+                <p className="text-sm mt-2">
+                  External suppliers:{" "}
+                  {selectedExternalNames.length
+                    ? selectedExternalNames.join(", ")
+                    : "None"}
+                </p>
               </div>
             </div>
 
             <div className="bg-base-200 rounded-lg p-4">
               <h4 className="font-semibold mb-2">Price</h4>
-              <p className="text-lg font-bold">{finalPrice?.toLocaleString ? finalPrice.toLocaleString() : finalPrice} PHP</p>
+              <p className="text-lg font-bold">
+                {finalPrice?.toLocaleString
+                  ? finalPrice.toLocaleString()
+                  : finalPrice}{" "}
+                PHP
+              </p>
             </div>
           </div>
 
           <div className="flex gap-3 justify-end pt-4 border-t border-base-200">
-            <button type="button" className="btn btn-ghost" onClick={() => setShowReview(false)}>
+            <button
+              type="button"
+              className="btn btn-ghost"
+              onClick={() => setShowReview(false)}
+            >
               Back
             </button>
             <button
@@ -399,13 +447,15 @@ const BookingModal = ({ package: pkg, isOpen, onClose }) => {
               onClick={handleConfirmReview}
               disabled={isSendingCode || isRequestsDisabled}
             >
-              {isSendingCode ? 'Sending...' : 'Confirm & Send Verification'}
+              {isSendingCode ? "Sending..." : "Confirm & Send Verification"}
             </button>
           </div>
         </div>
 
         <form method="dialog" className="modal-backdrop">
-          <button type="button" onClick={onClose} aria-label="Close modal">close</button>
+          <button type="button" onClick={onClose} aria-label="Close modal">
+            close
+          </button>
         </form>
       </dialog>
     );
@@ -580,15 +630,15 @@ const BookingModal = ({ package: pkg, isOpen, onClose }) => {
                 </h4>
                 <div className="space-y-2">
                   {selectedSupplierNames.map(({ category, name }) => (
-                        <div
-                          key={`${category}-${name}`}
-                          className="flex items-center gap-2 text-sm"
-                        >
-                          <CheckCircle className="w-4 h-4 text-success" />
-                          <span className="badge badge-outline badge-sm">
-                            <span className="font-medium">{name}</span>
-                          </span>
-                        </div>
+                    <div
+                      key={`${category}-${name}`}
+                      className="flex items-center gap-2 text-sm"
+                    >
+                      <CheckCircle className="w-4 h-4 text-success" />
+                      <span className="badge badge-outline badge-sm">
+                        <span className="font-medium">{name}</span>
+                      </span>
+                    </div>
                   ))}
                 </div>
               </div>
@@ -776,12 +826,12 @@ const BookingModal = ({ package: pkg, isOpen, onClose }) => {
                 <div className="text-center py-4">
                   <span className="loading loading-spinner loading-md"></span>
                 </div>
-              ) : categories.length === 0 ? (
+              ) : uniqueCategories.length === 0 ? (
                 <p className="text-sm text-base-content/60 text-center py-4">
                   No suppliers available
                 </p>
               ) : (
-                categories.map((category) => {
+                uniqueCategories.map((category) => {
                   const categorySuppliers = getSuppliersByCategory(category);
                   if (categorySuppliers.length === 0) return null;
                   const unavailableForDate = selectedDate
@@ -820,7 +870,6 @@ const BookingModal = ({ package: pkg, isOpen, onClose }) => {
                               disabled={Boolean(isUnavailable)}
                             >
                               {supplier.name}
-                              {/* rating removed */}
                               {supplier.priceRange &&
                                 ` - ${supplier.priceRange}`}
                               {isUnavailable ? " (Unavailable)" : ""}

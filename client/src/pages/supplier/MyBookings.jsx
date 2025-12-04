@@ -14,9 +14,9 @@ const MyBookings = () => {
   const { bookings, isLoadingBookings, fetchSupplierBookings } =
     useSupplierDashboardStore();
   const [selectedBooking, setSelectedBooking] = useState(null);
-  const canViewBookings = usePermissionsStore((state) =>
-    state.isAllowed("supplier", "viewBookings")
-  );
+  const permsLoaded = usePermissionsStore((state) => state.isLoaded);
+  const isAllowed = usePermissionsStore((state) => state.isAllowed);
+  const canViewBookings = permsLoaded && isAllowed("supplier", "viewBookings");
 
   useEffect(() => {
     if (authUser?.role !== "supplier") {
@@ -30,6 +30,16 @@ const MyBookings = () => {
 
   if (authUser?.role !== "supplier") {
     return null;
+  }
+
+  if (!permsLoaded) {
+    return (
+      <div className="min-h-screen bg-base-100 flex items-center justify-center px-4 text-center">
+        <div className="max-w-xl space-y-4">
+          <p className="text-base-content/70">Loading your supplier access…</p>
+        </div>
+      </div>
+    );
   }
 
   if (!canViewBookings) {
@@ -49,7 +59,7 @@ const MyBookings = () => {
   return (
     <div className="min-h-screen bg-base-100 lg:flex">
       <SupplierSidebar />
-      <main className="flex-1 p-6 transition-all duration-300">
+      <main className="flex-1 p-6 transition-all duration-300 lg:ml-20">
         <div className="max-w-6xl mx-auto space-y-6">
           <header>
             <h1 className="text-3xl font-bold mb-2">My Bookings</h1>

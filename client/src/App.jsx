@@ -11,6 +11,7 @@ import NotFound from "./pages/shared/NotFound";
 
 import { useAuthStore } from "./store/useAuthStore";
 import { useThemeStore } from "./store/useThemeStore";
+import { usePermissionsStore } from "./store/usePermissionsStore";
 import {
   AuthRoutes,
   ClientRoutes,
@@ -23,10 +24,23 @@ const App = () => {
   const location = useLocation();
   const { authUser, checkAuth, isCheckingAuth } = useAuthStore();
   const { theme } = useThemeStore();
+  const initializePermissions = usePermissionsStore(
+    (state) => state.initialize
+  );
 
   useEffect(() => {
     checkAuth();
-  }, [checkAuth]);
+    // We intentionally run this only once on mount. The `checkAuth` action from
+    // the store is stable, but including it in the dependency array can cause
+    // unnecessary re-runs if its reference ever changes.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  useEffect(() => {
+    if (!isCheckingAuth && authUser) {
+      initializePermissions();
+    }
+  }, [authUser, isCheckingAuth, initializePermissions]);
 
   if (isCheckingAuth && !authUser)
     return (
@@ -66,7 +80,7 @@ const App = () => {
       className="min-h-screen bg-base-100 text-base-content flex flex-col"
     >
       {showBackgroundVideo ? (
-        <BackgroundVideo videoSrc="https://www.pexels.com/download/video/34506425/">
+        <BackgroundVideo videoSrc="https://cdn.pixabay.com/video/2016/09/13/5131-183300018_large.mp4">
           {content}
         </BackgroundVideo>
       ) : (

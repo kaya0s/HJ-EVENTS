@@ -1,213 +1,348 @@
 # HJ Wedding Event Booking System
 
-Simple full-stack wedding event booking application for couples, bookings, and basic auth flows.
+A full-stack wedding event booking application for managing bookings, packages, suppliers, and payments.
 
-## Summary
+## Overview
 
-HJ Wedding Event Booking System is a two-tier (client + server) app:
+HJ Wedding Event Booking System is a comprehensive platform that enables couples to book wedding packages, manage suppliers, make payments, and leave reviews. The system supports three user roles: **clients** (couples), **suppliers**, and **administrators**.
 
-- Client: React + Vite UI (pages: signup, login, forgot-password, reset-password, dashboard)
-- Server: Node.js + Express + MongoDB (Mongoose models: User, Couple, Booking, auth routes)
+## Features
 
-It includes authentication, password reset (email/code + reset token stored in sessionStorage), booking management, and basic user flows.
+- **Authentication & Authorization**
 
-## Tech stack
+  - Email/password registration and login
+  - Google OAuth integration
+  - Email verification
+  - Password reset via email code
+  - Role-based access control (user, admin, supplier)
+  - Permission-based feature access
+  - reCAPTCHA v3 protection
 
-- Client: React, Vite, TypeScript (project patterns use import.meta.env for VITE\_\* vars), axios
-- Server: Node.js, Express, Mongoose, dotenv
-- Database: MongoDB
-- UI: Tailwind / component primitives (Card, Input, Button, etc.)
+- **Booking Management**
 
-## Repo layout
+  - Create bookings with packages and suppliers
+  - Booking status workflow (pending → accepted → completed)
+  - Date availability checking (15-day advance booking required)
+  - Automatic booking expiration
+  - External supplier selections with price deductions
+  - Calendar view for availability
 
-- `client/` — React + Vite frontend
-- `server/` — Express API, Mongoose models
+- **Package & Supplier Management**
 
-## Environment variables(development)
+  - Pre-configured wedding packages
+  - Supplier categories: Food/Catering, Decoration, Photography, Videography, Music, Florist
+  - Supplier availability management
+  - Package pricing and customization
 
-Create `.env` files in each project root and add them to `.gitignore`.
+- **Payment Integration**
 
-Client (`client/.env`):
+  - PayPal sandbox/live integration
+  - Payment status tracking
+  - Webhook support for payment events
+  - Transaction history and audit trail
 
-```text
-# Must include full URL with protocol (http:// or https://)
-VITE_API_URL=http://localhost:3000/api
-# reCAPTCHA v3 Site Key (get from https://www.google.com/recaptcha/admin)
-VITE_RECAPTCHA_SITE_KEY=your_recaptcha_v3_site_key
-VITE_PAYPAL_CLIENT_ID=your_paypal_sandbox_client_id
+- **Reviews & Feedback**
+
+  - Post-booking reviews
+  - Rating system (1-5 stars)
+  - Review management
+
+- **Admin Features**
+
+  - Dashboard with statistics and analytics
+  - Booking management and calendar
+  - Client and supplier management
+  - Package management
+  - FAQ management
+  - Announcements system
+  - Reports generation (PDF)
+  - Database backup functionality
+  - Activity logging
+
+- **Additional Features**
+  - Optimistic concurrency control for data integrity
+  - Theme customization
+  - Responsive UI with Tailwind CSS
+  - Email notifications
+
+## Tech Stack
+
+**Frontend:**
+
+- React + Vite
+- TypeScript patterns
+- Tailwind CSS
+- Axios for API calls
+- React Router for navigation
+- Zustand for state management
+
+**Backend:**
+
+- Node.js + Express
+- MongoDB with Mongoose
+- JWT authentication
+- Session management
+- PayPal SDK integration
+
+**Services:**
+
+- MongoDB database
+- Gmail SMTP for emails
+- Google OAuth
+- Google reCAPTCHA v3
+- PayPal API
+- Cloudinary (for image uploads)
+- Google Drive (for backups)
+
+## Project Structure
+
+```
+HJ-EVENTS/
+├── client/          # React + Vite frontend
+│   ├── src/
+│   │   ├── components/   # Reusable UI components
+│   │   ├── pages/        # Page components
+│   │   ├── routes/       # Route definitions
+│   │   ├── store/        # Zustand state management
+│   │   └── utils/        # Utility functions
+│   └── package.json
+├── server/          # Express API backend
+│   ├── src/
+│   │   ├── controllers/  # Request handlers
+│   │   ├── models/       # Mongoose models
+│   │   ├── routes/       # API routes
+│   │   ├── middlewares/  # Auth & validation
+│   │   └── utils/        # Helper functions
+│   └── package.json
+└── package.json     # Root scripts (concurrently)
 ```
 
-**Important:**
+## Getting Started
 
-- `VITE_API_URL` must be a complete URL starting with `http://` or `https://`. Do not use relative paths like `/api` or paths without protocol like `localhost:3000/api`.
-- This implementation uses **reCAPTCHA v3**, which runs invisibly in the background without user interaction. Make sure to register for reCAPTCHA v3 keys (not v2) at [Google reCAPTCHA Admin](https://www.google.com/recaptcha/admin).
+### Prerequisites
 
-Server (`server/.env`):
+- Node.js (v14 or higher)
+- MongoDB (local or cloud instance)
+- npm or yarn
 
-```env
-# Database
-MONGODB_URI=mongodb://localhost:27017/database
+### Installation
 
-# JWT Secret
-JWT_SECRET=secret-test-key
+1. **Clone the repository**
 
-# Session Secret
-SESSION_SECRET=your-test-key
+   ```bash
+   git clone https://github.com/kaya0s/HJ-EVENTS.git
+   cd HJ-EVENTS
+   ```
 
-# Client URL
-CLIENT_URL=http://localhost:5173
+2. **Install dependencies**
 
-# Email Configuration (Gmail)
-EMAIL_USER=your_email
-EMAIL_PASS=your_email_pass
+   ```bash
+   # Install root dependencies
+   npm install
 
+   # Install server dependencies
+   cd server
+   npm install
 
-# Google OAuth
-GOOGLE_CLIENT_ID=your_oauth_client_id
-GOOGLE_CLIENT_SECRET=your_oauth_client_secret
+   # Install client dependencies
+   cd ../client
+   npm install
+   ```
 
-# reCAPTCHA v3 (optional but recommended)
-RECAPTCHA_SECRET_KEY=your_recaptcha_v3_secret_key
-# Score threshold for reCAPTCHA v3 (0.0 to 1.0, default: 0.5)
-# Lower values are more permissive, higher values are stricter
-RECAPTCHA_SCORE_THRESHOLD=0.5
+3. **Configure environment variables**
 
-# Client URL
-CLIENT_URL=http://localhost:5173
-SERVER_URL=http://localhost:3000
+   Create `client/.env`:
 
-# Server
-PORT=3000
-NODE_ENV=development
-# PayPal Sandbox / Live settings
-# PAYPAL_MODE = sandbox | live
-PAYPAL_MODE=sandbox
-# PayPal REST API credentials for sandbox/live
-PAYPAL_CLIENT_ID=your_paypal_client_id
-PAYPAL_CLIENT_SECRET=your_paypal_client_secret
-# PayPal webhook ID (get from PayPal developer dashboard)
-PAYPAL_WEBHOOK_ID=your_paypal_webhook_id
+   ```env
+   VITE_API_URL=http://localhost:3000/api
+   VITE_RECAPTCHA_SITE_KEY=your_recaptcha_v3_site_key
+   VITE_PAYPAL_CLIENT_ID=your_paypal_client_id
+   ```
 
-```
+   Create `server/.env`:
 
-Client code reads `import.meta.env.VITE_API_URL`. Server code reads `process.env.*` (use dotenv).
+   ```env
+   # Database
+   MONGODB_URI=mongodb://localhost:27017/hj-wedding
 
-## Clone, install & run (development)
+   # Authentication
+   JWT_SECRET=your_jwt_secret_key
+   SESSION_SECRET=your_session_secret_key
 
-Follow these steps to clone the repository and run the app locally. The project has two folders: `server/` (Express + MongoDB) and `client/` (React + Vite). You can run them in two terminals.
+   # Server Configuration
+   PORT=3000
+   NODE_ENV=development
+   CLIENT_URL=http://localhost:5173
+   SERVER_URL=http://localhost:3000
 
-1. Clone the repo
+   # Email (Gmail SMTP)
+   EMAIL_USER=your_email@gmail.com
+   EMAIL_PASS=your_app_password
 
-```bash
-git clone https://github.com/kaya0s/HJ-EVENTS.git
-cd HJ-EVENTS
-```
+   # Google OAuth
+   GOOGLE_CLIENT_ID=your_google_client_id
+   GOOGLE_CLIENT_SECRET=your_google_client_secret
 
-2. Create env files
+   # reCAPTCHA v3
+   RECAPTCHA_SECRET_KEY=your_recaptcha_secret_key
+   RECAPTCHA_SCORE_THRESHOLD=0.5
 
-- `client/.env` should include at least:
+   # PayPal
+   PAYPAL_MODE=sandbox
+   PAYPAL_CLIENT_ID=your_paypal_client_id
+   PAYPAL_CLIENT_SECRET=your_paypal_client_secret
+   PAYPAL_WEBHOOK_ID=your_paypal_webhook_id
+   ```
 
-```text
-VITE_API_URL=http://localhost:3000
-```
+   **Important Notes:**
 
-- `server/.env` should include required server secrets (see the "Environment variables(development)" section above). Example:
+   - `VITE_API_URL` must be a complete URL with protocol (http:// or https://)
+   - Use reCAPTCHA v3 keys (not v2) from [Google reCAPTCHA Admin](https://www.google.com/recaptcha/admin)
+   - For Gmail, use an [App Password](https://support.google.com/accounts/answer/185833) instead of your regular password
 
-```text
-MONGODB_URI=mongodb://localhost:27017/hj-wedding
-JWT_SECRET=your_jwt_secret
-SESSION_SECRET=your_session_secret
-CLIENT_URL=http://localhost:5173
-SERVER_URL=http://localhost:3000
-PORT=3000
-NODE_ENV=development
-# EMAIL_USER / EMAIL_PASS for password reset emails
-```
+4. **Start MongoDB**
+   Ensure MongoDB is running on your system or update `MONGODB_URI` to point to your cloud instance.
 
-3. Install dependencies and run the server
+5. **Run the application**
 
-Open a terminal and run:
+   **Option 1: Run both server and client together (from root)**
 
-```bash
-cd server
-npm install
-npm run dev
-```
+   ```bash
+   npm start
+   ```
 
-This starts the Express API (by default on port `3000`). Make sure MongoDB is running and `MONGODB_URI` points to a reachable database.
+   **Option 2: Run separately (recommended for development)**
 
-4. Install dependencies and run the client
+   Terminal 1 - Server:
 
-Open another terminal and run:
+   ```bash
+   cd server
+   npm run dev
+   ```
 
-```bash
-cd client
-npm install
-npm run dev
-```
+   Terminal 2 - Client:
 
-Vite will show a local URL (usually `http://localhost:5173`). The client reads the API base URL from `import.meta.env.VITE_API_URL`.
+   ```bash
+   cd client
+   npm run dev
+   ```
 
-Tips
+6. **Access the application**
+   - Client: http://localhost:5173
+   - Server API: http://localhost:3000/api
 
-- If you change `.env` files, restart the server/client so the new vars are loaded.
-- To run both in one terminal you can use a process manager (`concurrently`, `npm-run-all`) or a terminal multiplexer.
+## API Endpoints
 
-## API routes
+### Authentication
 
-Common endpoints under `/api/auth` (server):
+- `POST /api/auth/register` - Register new user
+- `POST /api/auth/login` - User login
+- `POST /api/auth/google` - Google OAuth login
+- `POST /api/auth/forgot-password` - Request password reset code
+- `POST /api/auth/reset-password` - Reset password with code
+- `POST /api/auth/verify-email` - Verify email with code
+- `POST /api/auth/resend-verification` - Resend verification code
 
-- `POST /api/auth/register` — register a new user
-- `POST /api/auth/login` — login (sets cookie / returns token)
-- `POST /api/auth/forgot-password` — request reset code (returns `{ message, resetToken }`)
-- `POST /api/auth/reset-password` — submit code + new password + resetToken
+### Bookings
 
-Booking endpoints (example):
+- `GET /api/bookings` - Get bookings (filtered by role)
+- `POST /api/bookings` - Create new booking
+- `GET /api/bookings/:id` - Get booking details
+- `PUT /api/bookings/:id` - Update booking (admin/supplier)
+- `DELETE /api/bookings/:id` - Cancel booking
+- `POST /api/bookings/:id/paypal/create-order` - Create PayPal order
+- `POST /api/bookings/:id/paypal/capture` - Capture PayPal payment
 
-- `POST /api/bookings` — create a booking (body: couple, eventDate, eventType, ...)
+### Packages
 
-Note on concurrency
-- Timeline-based optimistic concurrency control is used for several sensitive update flows (bookings and user profile updates).
-- When updating your profile via `PUT /api/users/me`, include `lastKnownUpdatedAt` set to the user's current `updatedAt` value to ensure the server only applies your changes if the record hasn't changed since.
-- When admin updates a user via `PUT /api/users/:id`, you may include `lastKnownUpdatedAt` as well to prevent accidental overwrites in collaborative workflows.
+- `GET /api/packages` - Get all packages
+- `POST /api/packages` - Create package (admin)
+- `PUT /api/packages/:id` - Update package (admin)
+- `DELETE /api/packages/:id` - Delete package (admin)
 
-Note: client uses axios with `withCredentials` where needed.
+### Suppliers
 
-## PayPal Integration (Sandbox)
+- `GET /api/suppliers` - Get all suppliers
+- `POST /api/suppliers` - Create supplier (admin)
+- `PUT /api/suppliers/:id` - Update supplier
+- `DELETE /api/suppliers/:id` - Delete supplier (admin)
 
-This repository includes a sandbox PayPal integration that allows clients to pay for a booking when its status is `pending`.
+### Reviews
 
-Setup:
-- Create a PayPal developer sandbox account and create an app. Get the `Client ID` and `Secret` and set them in `server/.env` as `PAYPAL_CLIENT_ID` and `PAYPAL_CLIENT_SECRET`.
-- In the PayPal developer dashboard, set up a webhook to call `POST {SERVER_URL}/api/webhooks/paypal` and subscribe to events:
-	- `PAYMENT.CAPTURE.COMPLETED`
-	- `PAYMENT.CAPTURE.REFUNDED`
-	- `CHECKOUT.ORDER.APPROVED` (optional)
-- Set `PAYPAL_WEBHOOK_ID` in `server/.env` to the webhook ID created in the PayPal dashboard.
+- `GET /api/reviews` - Get all reviews
+- `POST /api/reviews` - Create review (user)
+- `PUT /api/reviews/:id` - Update review
+- `DELETE /api/reviews/:id` - Delete review
 
-High-level payment flow:
-1. Client sees a `Pay Now` button for bookings with `status: pending` and `payment.status: pending`.
-2. Clicking the button opens a PayPal modal loaded with the `VITE_PAYPAL_CLIENT_ID` client id in `client/.env`.
-3. The PayPal button calls `POST /api/bookings/:id/paypal/create-order` to create an order on the server (linked to the booking by reference_id).
-4. PayPal proceeds — upon approval the client calls `POST /api/bookings/:id/paypal/capture` which performs a server-side capture using PayPal v2 API.
-5. Server verifies the capture and updates the booking `payment` object (transactionId, amount, currency, paidAt, payer info, providerResponse) and sets `payment.status: paid`. Admins can query payment and booking status from the admin UI.
-6. PayPal webhooks (configured in the sandbox developer account) are used for final confirmation and any third-party notifications (like refunds).
+### Admin
 
-Notes:
-- The SDK uses sandbox mode by default when `PAYPAL_MODE=sandbox`.
-- If you prefer client-side order creation/capture, you can adapt the PayPal button to use direct `actions.order.create` and `actions.order.capture`. This server-side flow ensures secure verification and auditability.
-- Make sure to restart server and client after adding env variables.
+- `GET /api/admin/dashboard` - Admin dashboard stats
+- `GET /api/admin/users` - Get all users
+- `PUT /api/admin/users/:id` - Update user
+- `GET /api/admin/reports` - Generate reports
+- `POST /api/admin/backup` - Create database backup
 
-Quick test flow (local):
-1. Ensure server is reachable from the PayPal dashboard for webhook testing (use ngrok if needed):
-	- `ngrok http 3000` and set `SERVER_URL` to the HTTPS ngrok URL (e.g. https://abc123.ngrok.io)
-2. Add your sandbox `VITE_PAYPAL_CLIENT_ID` to `client/.env` and server `PAYPAL_CLIENT_ID`/`PAYPAL_CLIENT_SECRET`.
-3. Create a booking as a user (status: pending) via client.
-4. Open `My Bookings` page; click `Pay Now` for the pending booking.
-5. Complete the PayPal checkout (sandbox account email). The PayPal JS button will create an order via the backend and capture via server-side endpoint.
-6. Verify booking `payment.status` changes to `paid` and `payment.transactionId` is recorded in the admin booking details.
-7. In the PayPal Developer Dashboard, check the webhook event deliveries for any webhook-based updates.
+### Webhooks
 
-If anything fails:
-- Check server logs for `createPaypalOrder`, `capturePaypalOrder`, or webhook verification warnings.
-- If webhook verification fails, ensure you set `PAYPAL_WEBHOOK_ID` in the server environment to the correct id. You may inspect the returned verification result in logs.
+- `POST /api/webhooks/paypal` - PayPal webhook handler
+
+## Key Features Details
+
+### Booking System
+
+- Bookings must be made at least 15 days in advance
+- Only one accepted booking per date
+- Automatic expiration of pending bookings
+- Support for prenuptial and wedding dates
+- External supplier selections with price adjustments
+
+### Payment Flow
+
+1. User creates a booking (status: `pending`)
+2. Admin accepts booking
+3. User clicks "Pay Now" button
+4. PayPal modal opens (client-side)
+5. Order created via backend API
+6. Payment captured server-side
+7. Booking payment status updated to `paid`
+8. Webhook confirms payment completion
+
+### Concurrency Control
+
+The system uses optimistic concurrency control to prevent data conflicts. When updating resources, include `lastKnownUpdatedAt` timestamp to ensure changes are only applied if the record hasn't been modified.
+
+### User Roles
+
+- **User**: Create bookings, make payments, leave reviews
+- **Supplier**: View assigned bookings, update availability
+- **Admin**: Full system access, manage all resources
+
+## Development Notes
+
+- Client uses `import.meta.env` for environment variables (Vite)
+- Server uses `process.env` with dotenv
+- All API requests use axios with `withCredentials: true` for cookies
+- Session-based authentication with JWT tokens
+- MongoDB models use optimistic concurrency for critical updates
+
+## PayPal Setup (Sandbox)
+
+1. Create a PayPal Developer account
+2. Create a sandbox app and get credentials
+3. Set up webhook in PayPal dashboard:
+   - URL: `{SERVER_URL}/api/webhooks/paypal`
+   - Events: `PAYMENT.CAPTURE.COMPLETED`, `PAYMENT.CAPTURE.REFUNDED`
+4. Add webhook ID to `server/.env`
+5. For local testing, use ngrok to expose your server:
+   ```bash
+   ngrok http 3000
+   ```
+   Update `SERVER_URL` in `.env` to the ngrok HTTPS URL
+
+## License
+
+See [LICENSE](LICENSE) file for details.
+
+## Support
+
+For issues and questions, please open an issue on the GitHub repository.

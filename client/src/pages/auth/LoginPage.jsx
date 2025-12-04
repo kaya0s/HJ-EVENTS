@@ -33,6 +33,9 @@ const LoginPage = () => {
     if (!/\S+@\S+\.\S+/.test(formData.email))
       return toast.error("Invalid email format");
     if (!formData.password) return toast.error("Password is required");
+
+    if (formData.password.length < 8)
+      return toast.error("Password must be at least 8 characters");
     return true;
   };
 
@@ -70,7 +73,7 @@ const LoginPage = () => {
         }
       } catch (error) {
         console.error("Form submission error:", error);
-        toast.error("An error occurred. Please try again.");
+        // Error message is already handled by the auth store
       }
     }
   };
@@ -127,9 +130,18 @@ const LoginPage = () => {
             </div>
 
             <div className="form-control">
-              <label className="label">
-                <span className="label-text font-medium">Password</span>
-              </label>
+              <div className="flex items-center justify-between">
+                <label className="label mb-0">
+                  <span className="label-text font-medium">Password</span>
+                </label>
+                <Link
+                  to="/forgot-password"
+                  className="text-primary text-sm hover:underline transition"
+                  style={{ textDecoration: "none" }}
+                >
+                  Forgot password?
+                </Link>
+              </div>
               <div className="relative">
                 <div className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-primary z-10">
                   <LockKeyhole className="h-5 w-5" />
@@ -198,11 +210,6 @@ const LoginPage = () => {
               Don&apos;t have an account?{" "}
               <Link to="/signup" className="link link-primary">
                 Create account
-              </Link>
-            </p>
-            <p className="text-base-content/60">
-              <Link to="/forgot-password" className="link link-primary">
-                Forgot password?
               </Link>
             </p>
           </div>

@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { useAuthStore } from "../../store/useAuthStore";
 import { Link, useNavigate } from "react-router-dom";
-import { Eye, EyeOff, Lock, Loader2 } from "lucide-react";
+import { Eye, EyeOff, Lock, Loader2, LockKeyhole } from "lucide-react";
 import toast from "react-hot-toast";
 import Logo from "../../components/Logo";
 const NewPassword = () => {

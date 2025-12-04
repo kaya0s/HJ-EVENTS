@@ -135,8 +135,8 @@ const VerifyEmailPage = () => {
           </p>
         </div>
 
+        {/* Bottom logo/contact block removed */}
         <div className="text-center text-xs text-base-content/50">
-          <Logo className="mx-auto mb-2 h-6" />
           Need help? Contact{" "}
           <a
             className="link link-hover"

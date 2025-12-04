@@ -4,6 +4,7 @@ import { useAuthStore } from "../../store/useAuthStore";
 import useFaqStore from "../../store/useFaqStore";
 import { Loader, Edit2, Trash2, Plus } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import { confirmDialog } from "../../utils/confirmDialog";
 
 const emptyForm = {
   question: "",
@@ -61,7 +62,21 @@ const FaqManager = () => {
   };
 
   const handleDelete = async (faqId) => {
-    if (!confirm("Delete this FAQ?")) return;
+    const faq = faqs.find((f) => f._id === faqId);
+    const question = faq?.question || "this FAQ";
+
+    const confirmed = await confirmDialog({
+      title: "Delete FAQ",
+      text: `Are you sure you want to delete "${question}"?`,
+      confirmText: "Delete",
+      cancelText: "Cancel",
+      confirmButtonClass: "btn-error",
+      cancelButtonClass: "btn-outline",
+      icon: "warning",
+    });
+
+    if (!confirmed) return;
+
     await deleteFaq(faqId);
   };
 

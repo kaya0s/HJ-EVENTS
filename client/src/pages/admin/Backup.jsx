@@ -17,6 +17,7 @@ import {
 import { useNavigate } from "react-router-dom";
 import toast from "react-hot-toast";
 import axiosInstance from "../../lib/axios";
+import { confirmDialog } from "../../utils/confirmDialog";
 
 const DisabledOverlay = ({ onBack }) => (
   <div className="fixed inset-0 z-50 flex items-center justify-center">
@@ -158,16 +159,37 @@ const Backup = () => {
 
   // Restore from existing backup
   const restoreBackup = async (backupId, backupName) => {
-    const confirmed = window.confirm(
-      `⚠️ WARNING: This will replace ALL current data with the backup "${backupName}".\n\nThis action cannot be undone. Are you absolutely sure you want to continue?`
-    );
+    const confirmed = await confirmDialog({
+      title: "⚠️ WARNING: Restore Backup",
+      html: `
+        <div class="text-left space-y-3">
+          <p class="text-base font-semibold text-error">This will replace ALL current data with the backup:</p>
+          <div class="bg-base-200 rounded-lg p-4">
+            <p class="font-mono text-sm">${backupName}</p>
+          </div>
+          <p class="text-base text-error font-semibold">This action cannot be undone!</p>
+          <p class="text-sm">Are you absolutely sure you want to continue?</p>
+        </div>
+      `,
+      confirmText: "Yes, Restore",
+      cancelText: "Cancel",
+      confirmButtonClass: "btn-error",
+      cancelButtonClass: "btn-outline",
+      icon: "warning",
+    });
 
     if (!confirmed) return;
 
     // Double confirmation
-    const doubleCheck = window.confirm(
-      "This is your LAST CHANCE to cancel. Click OK to proceed with restore."
-    );
+    const doubleCheck = await confirmDialog({
+      title: "Final Confirmation",
+      text: "This is your LAST CHANCE to cancel. Click OK to proceed with restore.",
+      confirmText: "Proceed with Restore",
+      cancelText: "Cancel",
+      confirmButtonClass: "btn-error",
+      cancelButtonClass: "btn-outline",
+      icon: "error",
+    });
 
     if (!doubleCheck) return;
 
@@ -202,9 +224,16 @@ const Backup = () => {
 
   // Delete backup
   const deleteBackup = async (backupId, backupName) => {
-    const confirmed = window.confirm(
-      `Are you sure you want to delete the backup "${backupName}"?`
-    );
+    const confirmed = await confirmDialog({
+      title: "Delete Backup",
+      text: `Are you sure you want to delete the backup "${backupName}"?`,
+      confirmText: "Delete",
+      cancelText: "Cancel",
+      confirmButtonClass: "btn-error",
+      cancelButtonClass: "btn-outline",
+      icon: "warning",
+    });
+
     if (!confirmed) return;
 
     try {
