@@ -57,7 +57,6 @@ const BookingModal = ({ package: pkg, isOpen, onClose }) => {
   const [isVerifying, setIsVerifying] = useState(false);
   const {
     suppliers,
-    categories, // Not used for supplier dropdown anymore!
     fetchAllSuppliers,
     isLoading: isLoadingSuppliers,
   } = useSupplierStore();
@@ -77,7 +76,7 @@ const BookingModal = ({ package: pkg, isOpen, onClose }) => {
   // Fix: compute unique supplier categories from the suppliers array, normalized case-insensitively
   const uniqueCategories = getUniqueNormalizedCategories(suppliers);
 
-  // Check authentication when modal opens
+  // Check authentication and permissions when modal opens
   useEffect(() => {
     if (isOpen && !authUser) {
       toast.error("Please login first to book a package");
@@ -86,7 +85,8 @@ const BookingModal = ({ package: pkg, isOpen, onClose }) => {
       return;
     }
     if (isOpen && isRequestsDisabled) {
-      toast.error("Booking requests are currently disabled by your admin.");
+      onClose(); // Close the modal immediately without toast
+      return;
     }
   }, [isOpen, authUser, onClose, navigate, isRequestsDisabled]);
 
@@ -226,19 +226,18 @@ const BookingModal = ({ package: pkg, isOpen, onClose }) => {
       return;
     }
 
+    // Check if booking requests are disabled
+    if (isRequestsDisabled) {
+      return;
+    }
+
     if (authUser.role !== "user") {
       toast.error("Only clients can book packages");
       onClose();
       return;
     }
 
-    if (isRequestsDisabled) {
-      toast.error("You do not have access to submit booking requests.");
-      return;
-    }
-
-    if (!canSubmitRequests) {
-      toast.error("Booking requests are disabled by the administrator.");
+    if (isRequestsDisabled || !canSubmitRequests) {
       onClose();
       return;
     }
@@ -739,7 +738,7 @@ const BookingModal = ({ package: pkg, isOpen, onClose }) => {
         {isRequestsDisabled && (
           <div className="alert alert-warning mb-4">
             <span className="font-semibold">
-              You do not have access to this feature.
+              This feature is disabled by the admin.
             </span>
           </div>
         )}
@@ -856,7 +855,9 @@ const BookingModal = ({ package: pkg, isOpen, onClose }) => {
                         onChange={(e) =>
                           handleSupplierChange(category, e.target.value)
                         }
-                        disabled={!!externalSelections[category]}
+                        disabled={
+                          !!externalSelections[category] || isRequestsDisabled
+                        }
                       >
                         <option value="">None (Admin will assign)</option>
                         {categorySuppliers.map((supplier) => {
@@ -883,6 +884,7 @@ const BookingModal = ({ package: pkg, isOpen, onClose }) => {
                           className="checkbox checkbox-sm"
                           checked={!!externalSelections[category]}
                           onChange={() => toggleExternalSupplier(category)}
+                          disabled={isRequestsDisabled}
                         />
                         <span className="text-sm text-base-content/80">
                           I will use my own external supplier{" "}
@@ -971,7 +973,12 @@ const BookingModal = ({ package: pkg, isOpen, onClose }) => {
             <button
               type="submit"
               className="btn btn-primary min-w-[120px]"
-              disabled={!selectedDate || !venue.trim() || !title.trim()}
+              disabled={
+                !selectedDate ||
+                !venue.trim() ||
+                !title.trim() ||
+                isRequestsDisabled
+              }
             >
               Book Now
             </button>

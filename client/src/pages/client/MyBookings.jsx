@@ -33,6 +33,7 @@ const MyBookings = () => {
   const [payBooking, setPayBooking] = useState(null);
   const [isSubmittingReview, setIsSubmittingReview] = useState(false);
   const [reviewForm, setReviewForm] = useState({ rating: 5, comment: "" });
+  const [fetchError, setFetchError] = useState(null);
   const permsLoaded = usePermissionsStore((state) => state.isLoaded);
   const isAllowed = usePermissionsStore((state) => state.isAllowed);
   const canViewBookings =
@@ -43,11 +44,24 @@ const MyBookings = () => {
   useEffect(() => {
     if (authUser?.role !== "user" || !canViewBookings) {
       setBookings([]);
+      setFetchError(null);
       return;
     }
     const loadBookings = async () => {
-      const data = await fetchMyBookings();
-      setBookings(data);
+      try {
+        setFetchError(null);
+        const data = await fetchMyBookings();
+        setBookings(data);
+      } catch (error) {
+        // Error is already shown as toast in the store
+        // Extract the error message for UI display
+        const errorMessage =
+          error?.response?.data?.message ||
+          error?.message ||
+          "Failed to fetch bookings";
+        setFetchError(`Failed to fetch bookings: ${errorMessage}`);
+        setBookings([]);
+      }
     };
     loadBookings();
   }, [authUser?.role, canViewBookings, fetchMyBookings]);
@@ -265,11 +279,9 @@ const MyBookings = () => {
     return (
       <section className="min-h-screen flex items-center justify-center px-4">
         <div className="max-w-lg text-center space-y-4 bg-base-100 border border-base-200 rounded-3xl p-8 shadow-lg">
-          <h1 className="text-2xl font-bold">Bookings hidden</h1>
+          <h1 className="text-2xl font-bold">Feature Disabled</h1>
           <p className="text-base-content/70">
-            An administrator has temporarily disabled access to client bookings.
-            Please check back later or contact support if you need specific
-            details.
+            This feature is disabled by the admin.
           </p>
         </div>
       </section>
@@ -291,11 +303,19 @@ const MyBookings = () => {
       </header>
 
       <div className="w-full max-w-6xl">
+        {fetchError && (
+          <div className="alert alert-error mb-6">
+            <div>
+              <h3 className="font-semibold">Error</h3>
+              <p className="text-sm">{fetchError}</p>
+            </div>
+          </div>
+        )}
         {isLoading ? (
           <div className="text-center py-12">
             <Loader className="animate-spin mx-auto" size={32} />
           </div>
-        ) : bookings.length === 0 ? (
+        ) : fetchError ? null : bookings.length === 0 ? (
           <div className="text-center py-12">
             <p className="text-base-content/60">No bookings found</p>
             <p className="text-sm text-base-content/50 mt-2">

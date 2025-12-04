@@ -38,20 +38,35 @@ const Settings = () => {
   );
 
   const handleToggle = async (roleKey, permissionKey, checked) => {
-    await setPermission(roleKey, permissionKey, checked);
-    toast.success(
-      `${checked ? "Enabled" : "Disabled"} ${permissionKey
-        .replace(/([A-Z])/g, " $1")
-        .toLowerCase()} for ${
-        rolePermissionDefinitions[roleKey]?.label || roleKey
-      }`
-    );
+    try {
+      await setPermission(roleKey, permissionKey, checked);
+      toast.success(
+        `${checked ? "Enabled" : "Disabled"} ${permissionKey
+          .replace(/([A-Z])/g, " $1")
+          .toLowerCase()} for ${
+          rolePermissionDefinitions[roleKey]?.label || roleKey
+        }`
+      );
+      // Don't reload immediately - trust the optimistic update and server response
+      // The state is already updated in setPermission
+    } catch (error) {
+      toast.error("Failed to update permission. Please try again.");
+      console.error("Permission update error:", error);
+      // Reload permissions on error to revert to server state
+      await initialize(true);
+    }
   };
 
-  const handleReset = () => {
-    resetPermissions().then(() => {
+  const handleReset = async () => {
+    try {
+      await resetPermissions();
       toast.success("Permissions restored to defaults");
-    });
+      // Reload permissions to ensure consistency
+      await initialize(true);
+    } catch (error) {
+      toast.error("Failed to reset permissions. Please try again.");
+      console.error("Permission reset error:", error);
+    }
   };
 
   const activeRoleConfig = rolePermissionDefinitions?.[activeRole];

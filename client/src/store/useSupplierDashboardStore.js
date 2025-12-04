@@ -54,10 +54,14 @@ export const useSupplierDashboardStore = create((set, get) => ({
       return bookings;
     } catch (error) {
       console.error("Failed to fetch supplier bookings:", error);
-      toast.error(
-        error?.response?.data?.message || "Failed to load bookings data"
-      );
+      // Don't show toast for permission errors (403) - let UI handle it
+      if (error?.response?.status !== 403) {
+        const errorMessage =
+          error?.response?.data?.message || "Failed to load bookings data";
+        toast.error(errorMessage);
+      }
       set({ bookings: [], isLoadingBookings: false });
+      // Throw error so component can catch and display it in UI
       throw error;
     }
   },

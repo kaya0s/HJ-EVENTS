@@ -37,8 +37,15 @@ const App = () => {
   }, []);
 
   useEffect(() => {
-    if (!isCheckingAuth && authUser) {
-      initializePermissions();
+    if (!isCheckingAuth) {
+      if (authUser) {
+        // Force reload permissions when user is authenticated
+        initializePermissions(true);
+      } else {
+        // Reset permissions when user logs out
+        const { reset } = usePermissionsStore.getState();
+        if (reset) reset();
+      }
     }
   }, [authUser, isCheckingAuth, initializePermissions]);
 

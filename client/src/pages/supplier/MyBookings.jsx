@@ -14,6 +14,7 @@ const MyBookings = () => {
   const { bookings, isLoadingBookings, fetchSupplierBookings } =
     useSupplierDashboardStore();
   const [selectedBooking, setSelectedBooking] = useState(null);
+  const [fetchError, setFetchError] = useState(null);
   const permsLoaded = usePermissionsStore((state) => state.isLoaded);
   const isAllowed = usePermissionsStore((state) => state.isAllowed);
   const canViewBookings = permsLoaded && isAllowed("supplier", "viewBookings");
@@ -24,7 +25,21 @@ const MyBookings = () => {
       return;
     }
     if (!canViewBookings) return;
-    fetchSupplierBookings();
+    const loadBookings = async () => {
+      try {
+        setFetchError(null);
+        await fetchSupplierBookings();
+      } catch (error) {
+        // Error is already shown as toast in the store
+        // Extract the error message for UI display
+        const errorMessage =
+          error?.response?.data?.message ||
+          error?.message ||
+          "Failed to fetch bookings";
+        setFetchError(`Failed to fetch bookings: ${errorMessage}`);
+      }
+    };
+    loadBookings();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [authUser?.role, navigate, canViewBookings]);
 
@@ -46,10 +61,9 @@ const MyBookings = () => {
     return (
       <div className="min-h-screen bg-base-100 flex items-center justify-center px-4 text-center">
         <div className="max-w-xl space-y-4">
-          <h1 className="text-3xl font-bold">Bookings disabled</h1>
+          <h1 className="text-3xl font-bold">Feature Disabled</h1>
           <p className="text-base-content/70">
-            Contact your administrator if you need temporary read access to the
-            booking queue.
+            This feature is disabled by the admin.
           </p>
         </div>
       </div>
@@ -77,7 +91,14 @@ const MyBookings = () => {
                   {bookings.length} total
                 </span>
               </div>
-              {isLoadingBookings ? (
+              {fetchError ? (
+                <div className="alert alert-error">
+                  <div>
+                    <h3 className="font-semibold">Error</h3>
+                    <p className="text-sm">{fetchError}</p>
+                  </div>
+                </div>
+              ) : isLoadingBookings ? (
                 <div className="flex items-center justify-center py-12">
                   <Loader className="animate-spin text-primary" size={28} />
                 </div>

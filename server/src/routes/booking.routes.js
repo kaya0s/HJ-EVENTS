@@ -1,5 +1,6 @@
 import express from 'express';
 import { protect, authorize } from '../middlewares/auth.js';
+import { checkPermission } from '../middlewares/permissions.js';
 import {
   createBooking,
   getMyBookings,
@@ -18,19 +19,25 @@ import {
 } from '../controllers/booking.controller.js';
 
 const router = express.Router();
-  
+
 // Public route for availability calendar
 router.get('/availability', getBookedDates);
 
-// Booking verification endpoints
-router.post('/send-verification', protect, sendBookingVerificationCode);
-router.post('/verify-code', protect, verifyBookingCode);
+// Booking verification endpoints - require submitRequests permission
+router.post(
+  '/send-verification',
+  protect,
+  checkPermission('user', 'submitRequests'),
+  sendBookingVerificationCode
+);
+router.post('/verify-code', protect, checkPermission('user', 'submitRequests'), verifyBookingCode);
 
-// User can create bookings (client role) - kept for backward compatibility but will be deprecated
-router.post('/', protect, createBooking);
-router.get('/me', protect, getMyBookings);
-router.post('/cancel/:id', protect, cancelBooking);
-router.patch('/:id', protect, updateBooking);
+// User can create bookings (client role) - require submitRequests permission
+router.post('/', protect, checkPermission('user', 'submitRequests'), createBooking);
+// User can view bookings - require viewBookings permission
+router.get('/me', protect, checkPermission('user', 'viewBookings'), getMyBookings);
+router.post('/cancel/:id', protect, checkPermission('user', 'viewBookings'), cancelBooking);
+router.patch('/:id', protect, checkPermission('user', 'viewBookings'), updateBooking);
 
 // PayPal payment flow for bookings
 router.post('/:id/paypal/create-order', protect, createPaypalOrder);
