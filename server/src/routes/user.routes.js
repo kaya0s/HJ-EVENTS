@@ -1,5 +1,6 @@
 import express from 'express';
 import { protect, authorize } from '../middlewares/auth.js';
+import { checkProfilePermission } from '../middlewares/permissions.js';
 import upload from '../middlewares/upload.js';
 import {
   getProfile,
@@ -13,8 +14,9 @@ import {
 const router = express.Router();
 
 router.get('/me', protect, getProfile);
-router.put('/me', protect, upload.single('profilePic'), updateProfile);
-router.put('/me/password', protect, changePassword);
+// Update profile requires updateProfile permission for users, manageProducts for suppliers
+router.put('/me', protect, checkProfilePermission(), upload.single('profilePic'), updateProfile);
+router.put('/me/password', protect, checkProfilePermission(), changePassword);
 
 // Admin - specific routes first
 router.post('/supplier-account', protect, authorize('admin'), createSupplierAccount);

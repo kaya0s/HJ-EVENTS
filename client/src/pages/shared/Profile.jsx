@@ -2,7 +2,6 @@ import { useState, useRef, useEffect } from "react";
 import { User, Mail, Lock, Camera, Phone, MapPin } from "lucide-react";
 import { useAuthStore } from "../../store/useAuthStore";
 import { usePermissionsStore } from "../../store/usePermissionsStore";
-import toast from "react-hot-toast";
 import { alertDialog } from "../../utils/confirmDialog";
 
 const Profile = () => {
@@ -35,7 +34,6 @@ const Profile = () => {
 
   const openEditModal = () => {
     if (!canEditProfile) {
-      toast.error("Profile editing is disabled by your admin.");
       return;
     }
     setEditForm({
@@ -50,7 +48,6 @@ const Profile = () => {
 
   const openPasswordModal = () => {
     if (!canEditProfile) {
-      toast.error("Profile editing is disabled by your admin.");
       return;
     }
     setPasswordForm({
@@ -63,7 +60,6 @@ const Profile = () => {
 
   const handleProfilePicClick = () => {
     if (!canEditProfile) {
-      toast.error("Profile editing is disabled by your admin.");
       return;
     }
     fileInputRef.current?.click();
@@ -73,7 +69,6 @@ const Profile = () => {
     const file = e.target.files?.[0];
     if (!file) return;
     if (!canEditProfile) {
-      toast.error("Profile editing is disabled by your admin.");
       return;
     }
 
@@ -94,7 +89,6 @@ const Profile = () => {
   const handleEditSubmit = async (e) => {
     e.preventDefault();
     if (!canEditProfile) {
-      toast.error("Profile editing is disabled by your admin.");
       return;
     }
     const formData = new FormData();
@@ -117,7 +111,6 @@ const Profile = () => {
   const handlePasswordSubmit = async (e) => {
     e.preventDefault();
     if (!canEditProfile) {
-      toast.error("Profile editing is disabled by your admin.");
       return;
     }
     if (passwordForm.newPassword !== passwordForm.confirmPassword) {
@@ -176,9 +169,7 @@ const Profile = () => {
 
         {!canEditProfile && (
           <div className="alert alert-warning mb-6">
-            <p className="text-sm">
-              Profile edits are temporarily disabled by your administrator.
-            </p>
+            <p className="text-sm">This feature is disabled by the admin.</p>
           </div>
         )}
 

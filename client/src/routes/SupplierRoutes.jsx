@@ -2,6 +2,7 @@ import { Route, Navigate } from "react-router-dom";
 import SupplierDashboard from "../pages/supplier/Dashboard";
 import SupplierBookings from "../pages/supplier/MyBookings";
 import SupplierProfile from "../pages/supplier/Profile";
+import PermissionGuard from "../components/PermissionGuard";
 
 export const SupplierRoutes = ({ authUser }) => (
   <>
@@ -9,7 +10,9 @@ export const SupplierRoutes = ({ authUser }) => (
       path="/supplier"
       element={
         authUser?.role === "supplier" ? (
-          <SupplierDashboard />
+          <PermissionGuard role="supplier" permission="viewBookings">
+            <SupplierDashboard />
+          </PermissionGuard>
         ) : (
           <Navigate to="/" replace />
         )
@@ -19,7 +22,9 @@ export const SupplierRoutes = ({ authUser }) => (
       path="/supplier/bookings"
       element={
         authUser?.role === "supplier" ? (
-          <SupplierBookings />
+          <PermissionGuard role="supplier" permission="viewBookings">
+            <SupplierBookings />
+          </PermissionGuard>
         ) : (
           <Navigate to="/" replace />
         )

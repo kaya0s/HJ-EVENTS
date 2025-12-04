@@ -2,6 +2,8 @@ import { Route, Navigate } from "react-router-dom";
 import Home from "../pages/client/Home";
 import MyBookings from "../pages/client/MyBookings";
 import Contact from "../pages/client/Contact";
+import PermissionGuard from "../components/PermissionGuard";
+
 export const ClientRoutes = ({ authUser }) => (
   <>
     <Route
@@ -24,7 +26,9 @@ export const ClientRoutes = ({ authUser }) => (
       path="/my-bookings"
       element={
         authUser?.role === "user" ? (
-          <MyBookings />
+          <PermissionGuard role="user" permission="viewBookings">
+            <MyBookings />
+          </PermissionGuard>
         ) : (
           <Navigate to="/login" replace />
         )

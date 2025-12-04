@@ -1,5 +1,6 @@
 import express from 'express';
 import { protect, authorize } from '../middlewares/auth.js';
+import { checkPermission } from '../middlewares/permissions.js';
 import upload from '../middlewares/upload.js';
 import {
   createSupplier,
@@ -18,11 +19,29 @@ const router = express.Router();
 // Public routes
 router.get('/', listSuppliers);
 
-// Supplier access
+// Supplier access - enforce permissions
 router.get('/my-profile', protect, authorize('supplier'), getMyProfile);
-router.put('/my-profile', protect, authorize('supplier'), updateMyProfile);
-router.get('/my-bookings', protect, authorize('supplier'), getMyBookings);
-router.get('/reports/bookings/pdf', protect, authorize('supplier'), downloadMyBookingsReport);
+router.put(
+  '/my-profile',
+  protect,
+  authorize('supplier'),
+  checkPermission('supplier', 'manageProducts'),
+  updateMyProfile
+);
+router.get(
+  '/my-bookings',
+  protect,
+  authorize('supplier'),
+  checkPermission('supplier', 'viewBookings'),
+  getMyBookings
+);
+router.get(
+  '/reports/bookings/pdf',
+  protect,
+  authorize('supplier'),
+  checkPermission('supplier', 'generateReports'),
+  downloadMyBookingsReport
+);
 
 // Admin access
 router.post('/', protect, authorize('admin'), upload.single('image'), createSupplier);

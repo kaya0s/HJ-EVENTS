@@ -275,15 +275,20 @@ export const useBookingStore = create((set) => ({
       if (!Array.isArray(bookings)) bookings = [];
       return bookings;
     } catch (error) {
-      let msg = "Failed to fetch bookings";
-      if (error?.response?.data?.message) {
-        msg += ": " + error.response.data.message;
-      } else if (error?.message) {
-        msg += ": " + error.message;
+      // Don't show toast for permission errors - let UI handle it
+      // Only show toast for other errors
+      if (error?.response?.status !== 403) {
+        let msg = "Failed to fetch bookings";
+        if (error?.response?.data?.message) {
+          msg += ": " + error.response.data.message;
+        } else if (error?.message) {
+          msg += ": " + error.message;
+        }
+        toast.error(msg);
       }
       console.error("Error fetching my bookings:", error);
-      toast.error(msg);
-      return [];
+      // Throw error so component can catch and display it in UI
+      throw error;
     } finally {
       set({ isLoading: false });
     }

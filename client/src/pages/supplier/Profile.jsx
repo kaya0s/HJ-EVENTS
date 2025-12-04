@@ -94,7 +94,6 @@ const Profile = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!canManageProducts) {
-      toast.error("Profile editing is disabled by your admin.");
       return;
     }
     const payload = {
@@ -163,9 +162,9 @@ const Profile = () => {
                 {!canManageProducts && (
                   <div className="alert alert-warning">
                     <div>
-                      <h3 className="font-semibold">Read-only mode</h3>
+                      <h3 className="font-semibold">Feature Disabled</h3>
                       <p className="text-sm">
-                        Editing supplier details is disabled by your admin.
+                        This feature is disabled by the admin.
                       </p>
                     </div>
                   </div>

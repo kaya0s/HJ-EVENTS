@@ -92,8 +92,13 @@ export const usePermissionsStore = create((set, get) => ({
   error: null,
 
   // Load boolean overrides from the server and merge with static defaults.
-  initialize: async () => {
-    if (get().isLoading || get().isLoaded) return;
+  // Force reload if forceReload is true (e.g., after login or refresh)
+  initialize: async (forceReload = false) => {
+    // If already loading, skip unless forcing reload
+    if (get().isLoading && !forceReload) return;
+    // If already loaded and not forcing, skip
+    if (get().isLoaded && !forceReload) return;
+
     set({ isLoading: true, error: null });
     try {
       const res = await axiosInstance.get("/permissions");
@@ -122,7 +127,7 @@ export const usePermissionsStore = create((set, get) => ({
         // Logged-out users don't need permissions; keep defaults.
         set({
           isLoading: false,
-          isLoaded: true,
+          isLoaded: false, // Reset so it can reload when user logs in
           error: null,
         });
         return;
@@ -136,6 +141,11 @@ export const usePermissionsStore = create((set, get) => ({
     }
   },
 
+  // Reset loaded state to force reload on next initialize call
+  reset: () => {
+    set({ isLoaded: false, permissions: buildDefaultPermissions() });
+  },
+
   isAllowed: (role, key) => {
     // Admins keep full access and cannot be limited by this toggle system.
     if (!role || role === "admin") return true;
@@ -146,6 +156,9 @@ export const usePermissionsStore = create((set, get) => ({
   },
 
   setPermission: async (role, key, value) => {
+    // Store previous value for rollback
+    const previousValue = get().permissions?.[role]?.[key];
+
     // Optimistic update
     set((state) => ({
       permissions: {
@@ -158,11 +171,31 @@ export const usePermissionsStore = create((set, get) => ({
     }));
 
     try {
-      await axiosInstance.put("/permissions", { role, key, value });
+      const res = await axiosInstance.put("/permissions", { role, key, value });
+      // Update state with server response to ensure consistency
+      if (res.data?.value !== undefined) {
+        set((state) => ({
+          permissions: {
+            ...state.permissions,
+            [role]: {
+              ...(state.permissions[role] || {}),
+              [key]: Boolean(res.data.value),
+            },
+          },
+        }));
+      }
     } catch (error) {
       console.error("Failed to update permission", error);
-      // On failure, revert to previous value by reloading from server next time.
-      set({ isLoaded: false });
+      // Revert optimistic update on failure
+      set((state) => ({
+        permissions: {
+          ...state.permissions,
+          [role]: {
+            ...(state.permissions[role] || {}),
+            [key]: previousValue,
+          },
+        },
+      }));
       throw error;
     }
   },

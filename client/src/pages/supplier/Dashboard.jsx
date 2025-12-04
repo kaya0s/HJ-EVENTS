@@ -129,10 +129,9 @@ const Dashboard = () => {
     return (
       <div className="min-h-screen bg-base-100 flex items-center justify-center px-4 text-center">
         <div className="max-w-xl space-y-4">
-          <h1 className="text-3xl font-bold">Bookings hidden for now</h1>
+          <h1 className="text-3xl font-bold">Feature Disabled</h1>
           <p className="text-base-content/70">
-            The admin disabled supplier booking visibility. You will regain
-            access once it is enabled again.
+            This feature is disabled by the admin.
           </p>
         </div>
       </div>
