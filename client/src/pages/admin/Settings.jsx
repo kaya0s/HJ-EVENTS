@@ -21,7 +21,7 @@ const Settings = () => {
   const initialize = usePermissionsStore((state) => state.initialize);
   const setPermission = usePermissionsStore((state) => state.setPermission);
   const resetPermissions = usePermissionsStore(
-    (state) => state.resetPermissions
+    (state) => state.resetPermissions,
   );
   const [activeRole, setActiveRole] = useState("user");
 
@@ -34,7 +34,7 @@ const Settings = () => {
 
   const roleEntries = useMemo(
     () => Object.entries(rolePermissionDefinitions),
-    []
+    [],
   );
 
   const handleToggle = async (roleKey, permissionKey, checked) => {
@@ -45,7 +45,7 @@ const Settings = () => {
           .replace(/([A-Z])/g, " $1")
           .toLowerCase()} for ${
           rolePermissionDefinitions[roleKey]?.label || roleKey
-        }`
+        }`,
       );
       // Don't reload immediately - trust the optimistic update and server response
       // The state is already updated in setPermission
@@ -87,7 +87,7 @@ const Settings = () => {
     return (
       <div className="min-h-screen bg-base-100">
         <AdminSidebar />
-        <main className="lg:ml-20 p-6 transition-all duration-300 flex items-center justify-center">
+        <main className="lg:ml-64 p-6 transition-all duration-300 flex items-center justify-center">
           <div className="max-w-lg text-center space-y-4">
             <h1 className="text-2xl font-bold">Permissions not loaded</h1>
             <p className="text-base-content/70">
@@ -104,7 +104,7 @@ const Settings = () => {
   return (
     <div className="min-h-screen bg-base-100">
       <AdminSidebar />
-      <main className="lg:ml-20 p-6 transition-all duration-300">
+      <main className="lg:ml-64 p-6 transition-all duration-300">
         <div className="max-w-5xl mx-auto space-y-6">
           <header className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
             <div>
@@ -193,7 +193,7 @@ const Settings = () => {
                             handleToggle(
                               activeRole,
                               permission.key,
-                              event.target.checked
+                              event.target.checked,
                             )
                           }
                         />

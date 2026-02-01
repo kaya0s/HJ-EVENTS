@@ -33,8 +33,8 @@ const ManageClients = () => {
       const usersList = Array.isArray(res.data?.users)
         ? res.data.users
         : Array.isArray(res.data)
-        ? res.data
-        : [];
+          ? res.data
+          : [];
       setUsers(usersList);
       setFilteredUsers(usersList);
     } catch (error) {
@@ -70,7 +70,7 @@ const ManageClients = () => {
         (user) =>
           user.fullName?.toLowerCase().includes(term) ||
           user.email?.toLowerCase().includes(term) ||
-          user.phone?.toLowerCase().includes(term)
+          user.phone?.toLowerCase().includes(term),
       );
     }
 
@@ -109,13 +109,13 @@ const ManageClients = () => {
       if (error.response?.status === 409) {
         toast.error(
           error.response?.data?.message ||
-            "User was updated by someone else. Please refresh."
+            "User was updated by someone else. Please refresh.",
         );
         fetchUsers();
       } else if (error.response?.status === 403) {
         toast.error(
           error.response?.data?.message ||
-            "Cannot grant admin role via this interface."
+            "Cannot grant admin role via this interface.",
         );
       } else {
         toast.error(error.response?.data?.message || "Failed to update user");
@@ -299,7 +299,7 @@ const ManageClients = () => {
   return (
     <div className="min-h-screen bg-base-100">
       <AdminSidebar />
-      <main className="lg:ml-20 p-6 transition-all duration-300">
+      <main className="lg:ml-64 p-6 transition-all duration-300">
         <div className="max-w-7xl mx-auto space-y-6">
           <div className="mb-6">
             <h1 className="text-3xl font-bold mb-2">Manage Clients & Users</h1>

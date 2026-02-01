@@ -83,7 +83,7 @@ const Packages = ({ showSidebar = true }) => {
   const totalCount = packages.length;
   const enabledCount = useMemo(
     () => packages.filter((p) => p.isAvailable).length,
-    [packages]
+    [packages],
   );
 
   const content = (
@@ -317,7 +317,7 @@ const Packages = ({ showSidebar = true }) => {
     return (
       <div className="min-h-screen bg-base-100">
         <AdminSidebar />
-        <main className="lg:ml-20 p-6 transition-all duration-300">
+        <main className="lg:ml-64 p-6 transition-all duration-300">
           {content}
         </main>
         {modal}

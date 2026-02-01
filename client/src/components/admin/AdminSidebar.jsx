@@ -14,7 +14,7 @@ import {
 import { useState } from "react";
 
 const AdminSidebar = () => {
-  const [isCollapsed, setIsCollapsed] = useState(true);
+  const [isCollapsed, setIsCollapsed] = useState(false);
 
   const navItems = [
     {
@@ -111,8 +111,6 @@ const AdminSidebar = () => {
       className={`hidden lg:block fixed left-0 top-16 h-[calc(100vh-4rem)] bg-base-200 border-r border-base-300 transition-all duration-300 z-30 ${
         isCollapsed ? "w-20" : "w-64"
       }`}
-      onMouseEnter={() => setIsCollapsed(false)}
-      onMouseLeave={() => setIsCollapsed(true)}
     >
       <div className="h-full flex flex-col overflow-hidden">
         {/* Header - icon is fixed left, label slides in/out */}
