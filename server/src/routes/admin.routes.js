@@ -4,6 +4,7 @@ import {
   getDashboard,
   getMonthlyRevenue,
   downloadBookingsReport,
+  getDateRangeStats,
 } from '../controllers/reports.controller.js';
 import {
   postAnnouncement,
@@ -19,6 +20,7 @@ router.get('/revenue', protect, authorize('admin'), getMonthlyRevenue);
 router.get('/activity', protect, authorize('admin'), getActivityLogs);
 router.post('/announcement', protect, authorize('admin'), postAnnouncement);
 router.get('/reports/bookings/pdf', protect, authorize('admin'), downloadBookingsReport);
+router.get('/reports/date-range', protect, authorize('admin'), getDateRangeStats);
 
 // Public: announcements
 router.get('/announcements', listAnnouncements);
