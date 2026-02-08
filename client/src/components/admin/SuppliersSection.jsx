@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Search, Plus, Edit, Trash2 } from "lucide-react";
+import { Search, Plus, Edit, Trash2, X, MoreHorizontal } from "lucide-react";
 import { useSupplierStore } from "../../store/useSupplierStore";
 import SupplierModal from "./SupplierModal";
 import { confirmDialog } from "../../utils/confirmDialog";
@@ -11,11 +11,19 @@ const SuppliersSection = () => {
     isLoading,
     fetchAllSuppliers,
     deleteSupplier,
+    addCategory,
+    updateCategory,
+    deleteCategory,
   } = useSupplierStore();
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("");
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedSupplier, setSelectedSupplier] = useState(null);
+  const [isAddCategoryModalOpen, setIsAddCategoryModalOpen] = useState(false);
+  const [newCategoryName, setNewCategoryName] = useState("");
+  const [isEditCategoryModalOpen, setIsEditCategoryModalOpen] = useState(false);
+  const [editCategoryName, setEditCategoryName] = useState("");
+  const [categoryToEdit, setCategoryToEdit] = useState("");
 
   useEffect(() => {
     fetchAllSuppliers();
@@ -69,6 +77,32 @@ const SuppliersSection = () => {
     setSelectedSupplier(null);
   };
 
+  const handleEditCategory = (category) => {
+    setCategoryToEdit(category);
+    setEditCategoryName(category);
+    setIsEditCategoryModalOpen(true);
+  };
+
+  const handleDeleteCategory = async (category) => {
+    const confirmed = await confirmDialog({
+      title: "Delete Category",
+      text: `Are you sure you want to delete "${category}"? This will remove all suppliers in this category.`,
+      confirmText: "Delete",
+      cancelText: "Cancel",
+      confirmButtonClass: "btn-error",
+      cancelButtonClass: "btn-outline",
+      icon: "warning",
+    });
+
+    if (!confirmed) return;
+
+    try {
+      await deleteCategory(category);
+    } catch (error) {
+      // Error already handled in store
+    }
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex flex-col md:flex-row gap-4 items-center justify-between">
@@ -89,18 +123,34 @@ const SuppliersSection = () => {
           <label className="label">
             <span className="label-text">Category</span>
           </label>
-          <select
-            className="select select-bordered"
-            value={selectedCategory}
-            onChange={(e) => setSelectedCategory(e.target.value)}
-          >
-            <option value="">All Categories</option>
-            {categories.map((cat) => (
-              <option key={cat} value={cat}>
-                {cat}
-              </option>
-            ))}
-          </select>
+          <div className="flex gap-2">
+            <div className="w-64">
+              <select
+                className="select select-bordered select-md w-full rounded-lg"
+                value={selectedCategory || "All Categories"}
+                onChange={(e) =>
+                  setSelectedCategory(
+                    e.target.value === "All Categories" ? "" : e.target.value,
+                  )
+                }
+              >
+                <option value="All Categories">All Categories</option>
+                {categories.map((category) => (
+                  <option key={category} value={category}>
+                    {category}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <button
+              className="btn btn-primary transition-colors"
+              onClick={() => setIsAddCategoryModalOpen(true)}
+              type="button"
+              title="Add Category"
+            >
+              <Plus size={16} />
+            </button>
+          </div>
         </div>
 
         <div className="form-control w-full md:w-64">
@@ -111,11 +161,11 @@ const SuppliersSection = () => {
             <input
               type="text"
               placeholder="Search suppliers..."
-              className="input input-bordered w-full"
+              className="input select-bordered select-md w-full focus:border-blue-500"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
             />
-            <button className="btn btn-square">
+            <button className="ml-2 btn btn-square hover:bg-gray-200">
               <Search size={20} />
             </button>
           </div>
@@ -202,6 +252,137 @@ const SuppliersSection = () => {
         onClose={handleCloseModal}
         supplier={selectedSupplier}
       />
+
+      {/* Add Category Modal */}
+      {isAddCategoryModalOpen && (
+        <div className="modal modal-open">
+          <div className="modal-box bg-white rounded-lg shadow-2xl max-w-md w-full mx-4">
+            <div className="flex items-center justify-between mb-6 border-b pb-4">
+              <h3 className="text-xl font-bold text-gray-800">
+                Add New Category
+              </h3>
+              <button
+                className="btn btn-sm btn-circle btn-ghost hover:bg-gray-100 transition-colors"
+                onClick={() => setIsAddCategoryModalOpen(false)}
+                type="button"
+              >
+                <X size={18} />
+              </button>
+            </div>
+
+            <form
+              onSubmit={(e) => {
+                e.preventDefault();
+                if (newCategoryName.trim()) {
+                  const normalizedName = newCategoryName.trim();
+                  addCategory(normalizedName);
+                  setNewCategoryName("");
+                  setIsAddCategoryModalOpen(false);
+                }
+              }}
+              className="space-y-6"
+            >
+              <div className="form-control w-full">
+                <label className="label">
+                  <span className="label-text text-gray-700 font-medium">
+                    Category Name *
+                  </span>
+                </label>
+                <input
+                  type="text"
+                  value={newCategoryName}
+                  onChange={(e) => setNewCategoryName(e.target.value)}
+                  className="input input-bordered w-full bg-gray-50 border-gray-300 focus:border-blue-500 focus:bg-white transition-all"
+                  placeholder="Enter category name"
+                  required
+                  autoFocus
+                />
+              </div>
+
+              <div className="flex justify-end gap-3 pt-4 border-t">
+                <button
+                  type="button"
+                  className="btn btn-sm btn-outline border-gray-300 text-gray-600 hover:bg-gray-50 transition-colors"
+                  onClick={() => setIsAddCategoryModalOpen(false)}
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="btn btn-sm btn-primary bg-blue-600 hover:bg-blue-700 text-white transition-colors"
+                >
+                  Add Category
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Edit Category Modal */}
+      {isEditCategoryModalOpen && (
+        <div className="modal modal-open">
+          <div className="modal-box bg-white rounded-lg shadow-2xl max-w-md w-full mx-4">
+            <div className="flex items-center justify-between mb-6 border-b pb-4">
+              <h3 className="text-xl font-bold text-gray-800">Edit Category</h3>
+              <button
+                className="btn btn-sm btn-circle btn-ghost hover:bg-gray-100 transition-colors"
+                onClick={() => setIsEditCategoryModalOpen(false)}
+                type="button"
+              >
+                <X size={18} />
+              </button>
+            </div>
+
+            <form
+              onSubmit={(e) => {
+                e.preventDefault();
+                if (editCategoryName.trim()) {
+                  const normalizedName = editCategoryName.trim();
+                  updateCategory(categoryToEdit, normalizedName);
+                  setIsEditCategoryModalOpen(false);
+                  setCategoryToEdit("");
+                  setEditCategoryName("");
+                }
+              }}
+              className="space-y-6"
+            >
+              <div className="form-control w-full">
+                <label className="label">
+                  <span className="label-text text-gray-700 font-medium">
+                    Category Name *
+                  </span>
+                </label>
+                <input
+                  type="text"
+                  value={editCategoryName}
+                  onChange={(e) => setEditCategoryName(e.target.value)}
+                  className="input input-bordered w-full bg-gray-50 border-gray-300 focus:border-blue-500 focus:bg-white transition-all"
+                  placeholder="Enter category name"
+                  required
+                  autoFocus
+                />
+              </div>
+
+              <div className="flex justify-end gap-3 pt-4 border-t">
+                <button
+                  type="button"
+                  className="btn btn-sm btn-outline border-gray-300 text-gray-600 hover:bg-gray-50 transition-colors"
+                  onClick={() => setIsEditCategoryModalOpen(false)}
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="btn btn-sm btn-primary bg-blue-600 hover:bg-blue-700 text-white transition-colors"
+                >
+                  Save Changes
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

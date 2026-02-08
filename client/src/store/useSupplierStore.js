@@ -3,10 +3,149 @@ import axiosInstance from "../lib/axios.js";
 import toast from "react-hot-toast";
 import dayjs from "dayjs";
 
+// Default supplier categories
+const defaultCategories = [
+  "Food",
+  "catering",
+  "Decoration",
+  "Photography",
+  "Videography",
+  "Music",
+  "Florist",
+];
+
 export const useSupplierStore = create((set) => ({
   suppliers: [],
   isLoading: false,
   categories: [],
+
+  /**
+   * Fetches all supplier categories
+   */
+  fetchSupplierCategories: async () => {
+    try {
+      const res = await axiosInstance.get("/suppliers/categories");
+      const existingCategories = res.data.categories || [];
+      const allCategories = [
+        ...new Set([...defaultCategories, ...existingCategories]),
+      ];
+      set({ categories: allCategories });
+    } catch (error) {
+      console.error("Error fetching supplier categories:", error);
+      set({ categories: defaultCategories });
+    }
+  },
+
+  /**
+   * Adds a new supplier category
+   */
+  addCategory: async (categoryName) => {
+    try {
+      // First, check if category already exists
+      const state = useSupplierStore.getState();
+      if (
+        state.categories.some(
+          (cat) => cat.toLowerCase() === categoryName.toLowerCase(),
+        )
+      ) {
+        throw new Error("Category already exists");
+      }
+
+      // Call backend API to add the category
+      const response = await axiosInstance.post("/suppliers/categories", {
+        name: categoryName,
+      });
+
+      // Update local state
+      const newCategories = [...state.categories, categoryName];
+      set({ categories: newCategories });
+
+      toast.success(response.data.message || "Category added successfully");
+    } catch (error) {
+      console.error("Error adding category:", error);
+      toast.error(
+        error.response?.data?.message ||
+          error.message ||
+          "Failed to add category",
+      );
+      throw error;
+    }
+  },
+
+  /**
+   * Updates a supplier category
+   */
+  updateCategory: async (oldCategoryName, newCategoryName) => {
+    try {
+      // Check if old and new category names are the same
+      if (oldCategoryName.toLowerCase() === newCategoryName.toLowerCase()) {
+        throw new Error("Category name is the same");
+      }
+
+      // Check if new category name already exists
+      const state = useSupplierStore.getState();
+      if (
+        state.categories.some(
+          (cat) => cat.toLowerCase() === newCategoryName.toLowerCase(),
+        )
+      ) {
+        throw new Error("Category already exists");
+      }
+
+      // Call backend API to update the category
+      const response = await axiosInstance.put("/suppliers/categories", {
+        oldName: oldCategoryName,
+        newName: newCategoryName,
+      });
+
+      // Update local state
+      const updatedCategories = state.categories.map((cat) =>
+        cat.toLowerCase() === oldCategoryName.toLowerCase()
+          ? newCategoryName
+          : cat,
+      );
+      set({ categories: updatedCategories });
+
+      toast.success(response.data.message || "Category updated successfully");
+    } catch (error) {
+      console.error("Error updating category:", error);
+      toast.error(
+        error.response?.data?.message ||
+          error.message ||
+          "Failed to update category",
+      );
+      throw error;
+    }
+  },
+
+  /**
+   * Deletes a supplier category
+   */
+  deleteCategory: async (categoryName) => {
+    try {
+      // Call backend API to delete the category
+      const response = await axiosInstance.delete("/suppliers/categories", {
+        data: { name: categoryName },
+      });
+
+      // Update local state
+      const state = useSupplierStore.getState();
+      const updatedCategories = state.categories.filter(
+        (cat) => cat.toLowerCase() !== categoryName.toLowerCase(),
+      );
+      set({ categories: updatedCategories });
+
+      toast.success(response.data.message || "Category deleted successfully");
+    } catch (error) {
+      console.error("Error deleting category:", error);
+      toast.error(
+        error.response?.data?.message ||
+          error.message ||
+          "Failed to delete category",
+      );
+      throw error;
+    }
+  },
 
   /**
    * Fetches all suppliers
@@ -18,8 +157,8 @@ export const useSupplierStore = create((set) => ({
       const rawSuppliers = Array.isArray(res.data?.suppliers)
         ? res.data.suppliers
         : Array.isArray(res.data)
-        ? res.data
-        : [];
+          ? res.data
+          : [];
 
       const suppliers = rawSuppliers.map((supplier) => ({
         ...supplier,
@@ -33,12 +172,11 @@ export const useSupplierStore = create((set) => ({
           : [],
       }));
 
-      // Extract unique categories
-      const categories = [...new Set(suppliers.map((s) => s.category))].filter(
-        Boolean
-      );
+      // Fetch categories from API
+      const state = useSupplierStore.getState();
+      await state.fetchSupplierCategories();
 
-      set({ suppliers, categories });
+      set({ suppliers });
     } catch (error) {
       console.error("Error fetching suppliers:", error);
       toast.error("Failed to fetch suppliers");
@@ -127,7 +265,7 @@ export const useSupplierStore = create((set) => ({
           headers: {
             "Content-Type": "multipart/form-data",
           },
-        }
+        },
       );
 
       toast.success("Supplier updated successfully");

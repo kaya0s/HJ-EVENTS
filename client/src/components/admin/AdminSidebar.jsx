@@ -112,7 +112,7 @@ const AdminSidebar = () => {
         isCollapsed ? "w-20" : "w-64"
       }`}
     >
-      <div className="h-full flex flex-col overflow-hidden">
+      <div className="h-full flex flex-col overflow-hidden pt-4">
         {/* Header - icon is fixed left, label slides in/out */}
 
         {/* Navigation - reduced padding, scrollable if needed */}

@@ -4,7 +4,8 @@ import { X, Upload, CalendarX, MinusCircle } from "lucide-react";
 import toast from "react-hot-toast";
 import { useSupplierStore } from "../../store/useSupplierStore";
 
-const categories = [
+// Default supplier categories
+const defaultCategories = [
   "Food",
   "catering",
   "Decoration",
@@ -33,7 +34,12 @@ const createInitialFormData = () => ({
 });
 
 const SupplierModal = ({ isOpen, onClose, supplier = null }) => {
-  const { createSupplier, updateSupplier } = useSupplierStore();
+  const {
+    createSupplier,
+    updateSupplier,
+    categories,
+    fetchSupplierCategories,
+  } = useSupplierStore();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [formData, setFormData] = useState(() => createInitialFormData());
   const [imageFile, setImageFile] = useState(null);
@@ -44,6 +50,9 @@ const SupplierModal = ({ isOpen, onClose, supplier = null }) => {
 
   useEffect(() => {
     if (!isOpen) return;
+
+    // Fetch categories when modal opens
+    fetchSupplierCategories();
 
     if (supplier) {
       setFormData({
@@ -237,327 +246,329 @@ const SupplierModal = ({ isOpen, onClose, supplier = null }) => {
   if (!isOpen) return null;
 
   return (
-    <div className="modal modal-open">
-      <div className="modal-box max-w-2xl max-h-[90vh] overflow-y-auto">
-        <div className="flex items-center justify-between mb-6">
-          <h3 className="text-2xl font-bold">
-            {supplier ? "Edit Supplier" : "Add New Supplier"}
-          </h3>
-          <button
-            className="btn btn-sm btn-circle btn-ghost"
-            onClick={onClose}
-            type="button"
-          >
-            <X size={20} />
-          </button>
-        </div>
-
-        <form onSubmit={handleSubmit} className="space-y-4">
-          {/* Name */}
-          <div className="form-control w-full">
-            <label className="label">
-              <span className="label-text">Supplier Name *</span>
-            </label>
-            <input
-              type="text"
-              name="name"
-              value={formData.name}
-              onChange={handleChange}
-              className="input input-bordered w-full"
-              required
-            />
-          </div>
-
-          {/* Category */}
-          <div className="form-control w-full">
-            <label className="label">
-              <span className="label-text">Category *</span>
-            </label>
-            <select
-              name="category"
-              value={formData.category}
-              onChange={handleChange}
-              className="select select-bordered w-full"
-              required
+    <>
+      <div className="modal modal-open">
+        <div className="modal-box max-w-2xl max-h-[90vh] overflow-y-auto">
+          <div className="flex items-center justify-between mb-6">
+            <h3 className="text-2xl font-bold">
+              {supplier ? "Edit Supplier" : "Add New Supplier"}
+            </h3>
+            <button
+              className="btn btn-sm btn-circle btn-ghost"
+              onClick={onClose}
+              type="button"
             >
-              <option value="">Select a category</option>
-              {categories.map((cat) => (
-                <option key={cat} value={cat}>
-                  {cat}
-                </option>
-              ))}
-            </select>
+              <X size={20} />
+            </button>
           </div>
 
-          {/* Description */}
-          <div className="form-control w-full">
-            <label className="label">
-              <span className="label-text">Description</span>
-            </label>
-            <textarea
-              name="description"
-              value={formData.description}
-              onChange={handleChange}
-              className="textarea textarea-bordered w-full"
-              rows="3"
-            />
-          </div>
-
-          {/* Price Range */}
-          <div className="form-control w-full">
-            <label className="label">
-              <span className="label-text">Price Range</span>
-            </label>
-            <input
-              type="text"
-              name="priceRange"
-              value={formData.priceRange}
-              onChange={handleChange}
-              className="input input-bordered w-full"
-              placeholder="e.g., PHP 500 - 1,000"
-            />
-          </div>
-
-          {/* Contact Info */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <form onSubmit={handleSubmit} className="space-y-4">
+            {/* Name */}
             <div className="form-control w-full">
               <label className="label">
-                <span className="label-text">Phone</span>
+                <span className="label-text">Supplier Name *</span>
               </label>
               <input
                 type="text"
-                name="contactInfo.phone"
-                value={formData.contactInfo.phone}
+                name="name"
+                value={formData.name}
                 onChange={handleChange}
                 className="input input-bordered w-full"
+                required
+              />
+            </div>
+
+            {/* Category */}
+            <div className="form-control w-full">
+              <label className="label">
+                <span className="label-text">Category *</span>
+              </label>
+              <select
+                name="category"
+                value={formData.category}
+                onChange={handleChange}
+                className="select select-bordered w-full"
+                required
+              >
+                <option value="">Select a category</option>
+                {categories.map((cat) => (
+                  <option key={cat} value={cat}>
+                    {cat}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            {/* Description */}
+            <div className="form-control w-full">
+              <label className="label">
+                <span className="label-text">Description</span>
+              </label>
+              <textarea
+                name="description"
+                value={formData.description}
+                onChange={handleChange}
+                className="textarea textarea-bordered w-full"
+                rows="3"
+              />
+            </div>
+
+            {/* Price Range */}
+            <div className="form-control w-full">
+              <label className="label">
+                <span className="label-text">Price Range</span>
+              </label>
+              <input
+                type="text"
+                name="priceRange"
+                value={formData.priceRange}
+                onChange={handleChange}
+                className="input input-bordered w-full"
+                placeholder="e.g., PHP 500 - 1,000"
+              />
+            </div>
+
+            {/* Contact Info */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="form-control w-full">
+                <label className="label">
+                  <span className="label-text">Phone</span>
+                </label>
+                <input
+                  type="text"
+                  name="contactInfo.phone"
+                  value={formData.contactInfo.phone}
+                  onChange={handleChange}
+                  className="input input-bordered w-full"
+                />
+              </div>
+
+              <div className="form-control w-full">
+                <label className="label">
+                  <span className="label-text">Email</span>
+                </label>
+                <input
+                  type="email"
+                  name="contactInfo.email"
+                  value={formData.contactInfo.email}
+                  onChange={handleChange}
+                  className="input input-bordered w-full"
+                  placeholder="Used for contact and login notifications"
+                />
+              </div>
+            </div>
+
+            {/* Facebook Page */}
+            <div className="form-control w-full">
+              <label className="label">
+                <span className="label-text">Facebook Page</span>
+              </label>
+              <input
+                type="text"
+                name="contactInfo.facebookPage" // ← Change here
+                value={formData.contactInfo.facebookPage} // ← Change here
+                onChange={handleChange}
+                className="input input-bordered w-full"
+                placeholder="https://facebook.com/yourpage"
               />
             </div>
 
             <div className="form-control w-full">
               <label className="label">
-                <span className="label-text">Email</span>
+                <span className="label-text">Address</span>
               </label>
               <input
-                type="email"
-                name="contactInfo.email"
-                value={formData.contactInfo.email}
+                type="text"
+                name="contactInfo.address"
+                value={formData.contactInfo.address}
                 onChange={handleChange}
                 className="input input-bordered w-full"
-                placeholder="Used for contact and login notifications"
               />
             </div>
-          </div>
 
-          {/* Facebook Page */}
-          <div className="form-control w-full">
-            <label className="label">
-              <span className="label-text">Facebook Page</span>
-            </label>
-            <input
-              type="text"
-              name="contactInfo.facebookPage" // ← Change here
-              value={formData.contactInfo.facebookPage} // ← Change here
-              onChange={handleChange}
-              className="input input-bordered w-full"
-              placeholder="https://facebook.com/yourpage"
-            />
-          </div>
-
-          <div className="form-control w-full">
-            <label className="label">
-              <span className="label-text">Address</span>
-            </label>
-            <input
-              type="text"
-              name="contactInfo.address"
-              value={formData.contactInfo.address}
-              onChange={handleChange}
-              className="input input-bordered w-full"
-            />
-          </div>
-
-          <div className="divider">Availability</div>
-          <div className="space-y-3">
-            <div className="alert bg-base-200">
-              <CalendarX className="w-5 h-5 text-primary" />
-              <span className="text-sm text-base-content/70">
-                Add dates when this supplier is unavailable. Clients will see
-                these dates marked as unavailable during booking.
-              </span>
-            </div>
-            <div className="flex flex-col md:flex-row gap-3">
-              <input
-                type="date"
-                className="input input-bordered w-full md:w-auto"
-                value={newUnavailableDate}
-                onChange={(e) => setNewUnavailableDate(e.target.value)}
-              />
-              <button
-                type="button"
-                className="btn btn-outline md:w-auto"
-                onClick={handleAddUnavailableDate}
-                disabled={!newUnavailableDate}
-              >
-                Add Unavailable Date
-              </button>
-            </div>
-            {formData.unavailableDates.length > 0 ? (
-              <div className="flex flex-wrap gap-2">
-                {formData.unavailableDates.map((date) => (
-                  <span key={date} className="badge badge-outline gap-2">
-                    {dayjs(date).format("MMM DD, YYYY")}
-                    <button
-                      type="button"
-                      onClick={() => handleRemoveUnavailableDate(date)}
-                      className="btn btn-ghost btn-xs px-1"
-                      aria-label={`Remove ${date}`}
-                    >
-                      <MinusCircle size={14} />
-                    </button>
-                  </span>
-                ))}
+            <div className="divider">Availability</div>
+            <div className="space-y-3">
+              <div className="alert bg-base-200">
+                <CalendarX className="w-5 h-5 text-primary" />
+                <span className="text-sm text-base-content/70">
+                  Add dates when this supplier is unavailable. Clients will see
+                  these dates marked as unavailable during booking.
+                </span>
               </div>
-            ) : (
-              <p className="text-sm text-base-content/60">
-                No unavailable dates set.
-              </p>
-            )}
-          </div>
+              <div className="flex flex-col md:flex-row gap-3">
+                <input
+                  type="date"
+                  className="input input-bordered w-full md:w-auto"
+                  value={newUnavailableDate}
+                  onChange={(e) => setNewUnavailableDate(e.target.value)}
+                />
+                <button
+                  type="button"
+                  className="btn btn-outline md:w-auto"
+                  onClick={handleAddUnavailableDate}
+                  disabled={!newUnavailableDate}
+                >
+                  Add Unavailable Date
+                </button>
+              </div>
+              {formData.unavailableDates.length > 0 ? (
+                <div className="flex flex-wrap gap-2">
+                  {formData.unavailableDates.map((date) => (
+                    <span key={date} className="badge badge-outline gap-2">
+                      {dayjs(date).format("MMM DD, YYYY")}
+                      <button
+                        type="button"
+                        onClick={() => handleRemoveUnavailableDate(date)}
+                        className="btn btn-ghost btn-xs px-1"
+                        aria-label={`Remove ${date}`}
+                      >
+                        <MinusCircle size={14} />
+                      </button>
+                    </span>
+                  ))}
+                </div>
+              ) : (
+                <p className="text-sm text-base-content/60">
+                  No unavailable dates set.
+                </p>
+              )}
+            </div>
 
-          {/* Image Upload */}
-          <div className="form-control w-full">
-            <label className="label">
-              <span className="label-text">Image</span>
-            </label>
-            <div className="flex items-center gap-4">
-              {imagePreview && (
-                <div className="w-32 h-32 rounded-lg overflow-hidden border border-base-300">
-                  <img
-                    src={imagePreview}
-                    alt="Preview"
-                    className="w-full h-full object-cover"
+            {/* Image Upload */}
+            <div className="form-control w-full">
+              <label className="label">
+                <span className="label-text">Image</span>
+              </label>
+              <div className="flex items-center gap-4">
+                {imagePreview && (
+                  <div className="w-32 h-32 rounded-lg overflow-hidden border border-base-300">
+                    <img
+                      src={imagePreview}
+                      alt="Preview"
+                      className="w-full h-full object-cover"
+                    />
+                  </div>
+                )}
+                <label className="btn btn-outline btn-sm cursor-pointer">
+                  <Upload size={16} />
+                  <span className="ml-2">
+                    {imageFile ? "Change Image" : "Upload Image"}
+                  </span>
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={handleImageChange}
+                    className="hidden"
+                  />
+                </label>
+              </div>
+            </div>
+
+            <div className="divider" />
+
+            {/* Supplier Account */}
+            <div>
+              <h4 className="text-lg font-semibold mb-3">Supplier Account</h4>
+              <p className="text-sm text-base-content/60 mb-4">
+                {requiresCredentials
+                  ? "Provide login credentials so the supplier can access their dashboard."
+                  : "Update the supplier's login credentials. Leave the password fields blank to keep the current password."}
+              </p>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="form-control w-full">
+                  <label className="label">
+                    <span className="label-text">Login Email *</span>
+                  </label>
+                  <input
+                    type="email"
+                    name="accountEmail"
+                    value={formData.accountEmail}
+                    onChange={handleChange}
+                    className="input input-bordered w-full"
+                    required={requiresCredentials}
                   />
                 </div>
-              )}
-              <label className="btn btn-outline btn-sm cursor-pointer">
-                <Upload size={16} />
-                <span className="ml-2">
-                  {imageFile ? "Change Image" : "Upload Image"}
-                </span>
-                <input
-                  type="file"
-                  accept="image/*"
-                  onChange={handleImageChange}
-                  className="hidden"
-                />
-              </label>
-            </div>
-          </div>
 
-          <div className="divider" />
+                <div className="form-control w-full">
+                  <label className="label">
+                    <span className="label-text">
+                      {supplier ? "New Password" : "Password *"}
+                    </span>
+                  </label>
+                  <input
+                    type="password"
+                    name="accountPassword"
+                    value={formData.accountPassword}
+                    onChange={handleChange}
+                    className="input input-bordered w-full"
+                    placeholder={supplier ? "Leave blank to keep current" : ""}
+                    required={requiresCredentials}
+                    minLength={requiresCredentials ? 6 : undefined}
+                  />
+                </div>
 
-          {/* Supplier Account */}
-          <div>
-            <h4 className="text-lg font-semibold mb-3">Supplier Account</h4>
-            <p className="text-sm text-base-content/60 mb-4">
-              {requiresCredentials
-                ? "Provide login credentials so the supplier can access their dashboard."
-                : "Update the supplier's login credentials. Leave the password fields blank to keep the current password."}
-            </p>
+                <div className="form-control w-full">
+                  <label className="label">
+                    <span className="label-text">
+                      {supplier ? "Confirm New Password" : "Confirm Password *"}
+                    </span>
+                  </label>
+                  <input
+                    type="password"
+                    name="accountConfirmPassword"
+                    value={formData.accountConfirmPassword}
+                    onChange={handleChange}
+                    className="input input-bordered w-full"
+                    placeholder={supplier ? "Leave blank to keep current" : ""}
+                    required={requiresCredentials}
+                    minLength={requiresCredentials ? 6 : undefined}
+                  />
+                </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="form-control w-full">
-                <label className="label">
-                  <span className="label-text">Login Email *</span>
-                </label>
-                <input
-                  type="email"
-                  name="accountEmail"
-                  value={formData.accountEmail}
-                  onChange={handleChange}
-                  className="input input-bordered w-full"
-                  required={requiresCredentials}
-                />
-              </div>
-
-              <div className="form-control w-full">
-                <label className="label">
-                  <span className="label-text">
-                    {supplier ? "New Password" : "Password *"}
-                  </span>
-                </label>
-                <input
-                  type="password"
-                  name="accountPassword"
-                  value={formData.accountPassword}
-                  onChange={handleChange}
-                  className="input input-bordered w-full"
-                  placeholder={supplier ? "Leave blank to keep current" : ""}
-                  required={requiresCredentials}
-                  minLength={requiresCredentials ? 6 : undefined}
-                />
-              </div>
-
-              <div className="form-control w-full">
-                <label className="label">
-                  <span className="label-text">
-                    {supplier ? "Confirm New Password" : "Confirm Password *"}
-                  </span>
-                </label>
-                <input
-                  type="password"
-                  name="accountConfirmPassword"
-                  value={formData.accountConfirmPassword}
-                  onChange={handleChange}
-                  className="input input-bordered w-full"
-                  placeholder={supplier ? "Leave blank to keep current" : ""}
-                  required={requiresCredentials}
-                  minLength={requiresCredentials ? 6 : undefined}
-                />
-              </div>
-
-              <div className="form-control w-full">
-                <label className="label">
-                  <span className="label-text">Account Name</span>
-                </label>
-                <input
-                  type="text"
-                  name="accountFullName"
-                  value={formData.accountFullName}
-                  onChange={handleChange}
-                  className="input input-bordered w-full"
-                  placeholder="Name shown in the supplier portal"
-                />
+                <div className="form-control w-full">
+                  <label className="label">
+                    <span className="label-text">Account Name</span>
+                  </label>
+                  <input
+                    type="text"
+                    name="accountFullName"
+                    value={formData.accountFullName}
+                    onChange={handleChange}
+                    className="input input-bordered w-full"
+                    placeholder="Name shown in the supplier portal"
+                  />
+                </div>
               </div>
             </div>
-          </div>
 
-          {/* Action Buttons */}
-          <div className="modal-action">
-            <button
-              type="button"
-              className="btn btn-ghost"
-              onClick={onClose}
-              disabled={isSubmitting}
-            >
-              Cancel
-            </button>
-            <button
-              type="submit"
-              className="btn btn-primary"
-              disabled={isSubmitting}
-            >
-              {isSubmitting
-                ? "Saving..."
-                : supplier
-                ? "Update Supplier"
-                : "Create Supplier"}
-            </button>
-          </div>
-        </form>
+            {/* Action Buttons */}
+            <div className="modal-action">
+              <button
+                type="button"
+                className="btn btn-ghost"
+                onClick={onClose}
+                disabled={isSubmitting}
+              >
+                Cancel
+              </button>
+              <button
+                type="submit"
+                className="btn btn-primary"
+                disabled={isSubmitting}
+              >
+                {isSubmitting
+                  ? "Saving..."
+                  : supplier
+                    ? "Update Supplier"
+                    : "Create Supplier"}
+              </button>
+            </div>
+          </form>
+        </div>
+        <div className="modal-backdrop" onClick={onClose}></div>
       </div>
-      <div className="modal-backdrop" onClick={onClose}></div>
-    </div>
+    </>
   );
 };
 

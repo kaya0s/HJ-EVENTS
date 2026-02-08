@@ -99,8 +99,8 @@ const SupplierSidebar = () => {
           isCollapsed ? "w-20" : "w-64"
         }`}
       >
-        <div className="h-full flex flex-col overflow-hidden">
-          <nav className="space-y-1 px-2 flex-1 overflow-y-auto pt-2">
+        <div className="h-full flex flex-col overflow-hidden pt-4">
+          <nav className="space-y-1 px-2 flex-1 overflow-y-auto">
             <div className="flex items-center gap-2 mb-4 px-2"></div>
             {navItems.map(renderNavLink)}
           </nav>

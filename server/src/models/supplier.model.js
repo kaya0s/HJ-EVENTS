@@ -5,8 +5,10 @@ const supplierSchema = new Schema(
     user: {
       type: Schema.Types.ObjectId,
       ref: 'user',
-      required: true,
-      unique: true,
+      required: false,
+      unique: false,
+      sparse: true,
+      default: null,
     },
     name: {
       type: String,
@@ -14,7 +16,6 @@ const supplierSchema = new Schema(
     },
     category: {
       type: String,
-      enum: ['Food', 'catering', 'Decoration', 'Photography', 'Videography', 'Music', 'Florist'],
       required: true,
     },
     description: {
@@ -42,6 +43,12 @@ const supplierSchema = new Schema(
   },
   { timestamps: true, optimisticConcurrency: true }
 );
+
+// Add sparse index on user field to allow multiple null values
+supplierSchema.index({ user: 1 }, { unique: true, sparse: true });
+
+// Add index on category field for faster queries
+supplierSchema.index({ category: 1 });
 
 const Supplier = model('Supplier', supplierSchema);
 export default Supplier;

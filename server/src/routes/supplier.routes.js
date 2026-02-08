@@ -12,7 +12,16 @@ import {
   updateMyProfile,
   getMyBookings,
   downloadMyBookingsReport,
+  getSupplierCategories,
+  createCategory,
+  updateCategory,
+  deleteCategory,
 } from '../controllers/supplier.controller.js';
+import {
+  validateCategoryCreate,
+  validateCategoryUpdate,
+  validateCategoryDelete,
+} from '../middlewares/validation.js';
 
 const router = express.Router();
 
@@ -42,6 +51,12 @@ router.get(
   checkPermission('supplier', 'generateReports'),
   downloadMyBookingsReport
 );
+
+// Get all supplier categories
+router.get('/categories', protect, authorize('admin'), getSupplierCategories);
+router.post('/categories', protect, authorize('admin'), validateCategoryCreate, createCategory);
+router.put('/categories', protect, authorize('admin'), validateCategoryUpdate, updateCategory);
+router.delete('/categories', protect, authorize('admin'), validateCategoryDelete, deleteCategory);
 
 // Admin access
 router.post('/', protect, authorize('admin'), upload.single('image'), createSupplier);

@@ -1,6 +1,8 @@
 /*eslint no-unused-vars: "off"*/
 
 import Supplier from '../models/supplier.model.js';
+import Category from '../models/category.model.js';
+import mongoose from 'mongoose';
 import cloudinary from '../utils/cloudinary.js';
 import Booking from '../models/booking.model.js';
 import User from '../models/user.model.js';
@@ -196,7 +198,11 @@ export const createSupplier = async (req, res) => {
 
 export const listSuppliers = async (req, res) => {
   try {
-    const suppliers = await Supplier.find({}).sort('-createdAt').populate('user', 'fullName email');
+    const suppliers = await Supplier.find({
+      name: { $not: { $regex: '^__placeholder__' } },
+    })
+      .sort('-createdAt')
+      .populate('user', 'fullName email');
     res.json({ suppliers });
   } catch (error) {
     res.status(500).json({ message: 'Server error' });
@@ -375,6 +381,201 @@ export const updateSupplier = async (req, res) => {
     res.json({ supplier: populatedSupplier });
   } catch (error) {
     console.error('Update supplier error', error.message);
+    res.status(500).json({ message: 'Server error' });
+  }
+};
+
+export const getSupplierCategories = async (req, res) => {
+  try {
+    const categories = await Category.find({
+      type: 'supplier',
+      isActive: true,
+    })
+      .lean()
+      .sort({ displayOrder: 1, name: 1 })
+      .select('name');
+
+    const categoryNames = categories.map((cat) => cat.name);
+    res.json({ categories: categoryNames });
+  } catch (error) {
+    console.error('Get supplier categories error:', error);
+    res.status(500).json({ message: 'Server error', error: error.message });
+  }
+};
+
+export const createCategory = async (req, res) => {
+  try {
+    const { name } = req.body;
+
+    // Validate input
+    if (!name || name.trim() === '') {
+      return res.status(400).json({ message: 'Category name is required' });
+    }
+
+    const normalizedName = name.trim();
+    if (normalizedName.length < 2) {
+      return res.status(400).json({ message: 'Category name must be at least 2 characters long' });
+    }
+    if (normalizedName.length > 50) {
+      return res.status(400).json({ message: 'Category name must be at most 50 characters long' });
+    }
+
+    // Check if category already exists
+    const existingCategory = await Category.findOne({
+      name: { $regex: new RegExp(`^${normalizedName}$`, 'i') },
+      type: 'supplier',
+    });
+
+    if (existingCategory) {
+      return res.status(409).json({ message: 'Category already exists' });
+    }
+
+    // Get max display order to set next value
+    const maxDisplayOrder = await Category.findOne({ type: 'supplier' })
+      .sort({ displayOrder: -1 })
+      .select('displayOrder');
+
+    const displayOrder = maxDisplayOrder ? maxDisplayOrder.displayOrder + 1 : 0;
+
+    // Create new category
+    const newCategory = await Category.create({
+      name: normalizedName,
+      type: 'supplier',
+      isActive: true,
+      displayOrder: displayOrder,
+    });
+
+    res.status(201).json({
+      message: 'Category added successfully',
+      category: newCategory.name,
+    });
+  } catch (error) {
+    console.error('Create category error:', error);
+    if (error.code === 11000) {
+      return res.status(409).json({ message: 'Category already exists' });
+    }
+    res.status(500).json({ message: 'Server error' });
+  }
+};
+
+export const updateCategory = async (req, res) => {
+  try {
+    const { oldName, newName } = req.body;
+
+    if (!oldName || oldName.trim() === '' || !newName || newName.trim() === '') {
+      return res.status(400).json({ message: 'Old and new category names are required' });
+    }
+
+    const normalizedOldName = oldName.trim();
+    const normalizedNewName = newName.trim();
+
+    // Find existing category
+    const existingCategory = await Category.findOne({
+      name: { $regex: new RegExp(`^${normalizedOldName}$`, 'i') },
+      type: 'supplier',
+    });
+
+    if (!existingCategory) {
+      return res.status(404).json({ message: 'Category not found' });
+    }
+
+    // Check if new name already exists
+    const newCategoryExists = await Category.findOne({
+      name: { $regex: new RegExp(`^${normalizedNewName}$`, 'i') },
+      type: 'supplier',
+      _id: { $ne: existingCategory._id },
+    });
+
+    if (newCategoryExists) {
+      return res.status(409).json({ message: 'Category already exists' });
+    }
+
+    // Use transactions to ensure consistency
+    const session = await mongoose.startSession();
+    session.startTransaction();
+
+    try {
+      // Update the category
+      existingCategory.name = normalizedNewName;
+      await existingCategory.save({ session });
+
+      // Update all suppliers with the old category name
+      const updateResult = await Supplier.updateMany(
+        { category: { $regex: new RegExp(`^${normalizedOldName}$`, 'i') } },
+        { $set: { category: normalizedNewName } },
+        { session }
+      );
+
+      await session.commitTransaction();
+
+      res.json({
+        message: 'Category updated successfully',
+        oldCategory: normalizedOldName,
+        newCategory: normalizedNewName,
+        suppliersUpdated: updateResult.modifiedCount,
+      });
+    } catch (transactionError) {
+      await session.abortTransaction();
+      console.error('Update category transaction error:', transactionError);
+      res.status(500).json({ message: 'Server error' });
+    } finally {
+      session.endSession();
+    }
+  } catch (error) {
+    console.error('Update category error:', error);
+    res.status(500).json({ message: 'Server error' });
+  }
+};
+
+export const deleteCategory = async (req, res) => {
+  try {
+    const { name } = req.body;
+
+    if (!name || name.trim() === '') {
+      return res.status(400).json({ message: 'Category name is required' });
+    }
+
+    const normalizedName = name.trim();
+
+    // Find the category
+    const category = await Category.findOne({
+      name: { $regex: new RegExp(`^${normalizedName}$`, 'i') },
+      type: 'supplier',
+    });
+
+    if (!category) {
+      return res.status(404).json({ message: 'Category not found' });
+    }
+
+    // Check if any real suppliers are using this category (exclude placeholders)
+    const suppliersCount = await Supplier.countDocuments({
+      category: { $regex: new RegExp(`^${normalizedName}$`, 'i') },
+      name: { $not: { $regex: '^__placeholder__' } },
+    });
+
+    if (suppliersCount > 0) {
+      return res.status(400).json({
+        message: `Cannot delete category with ${suppliersCount} existing suppliers. Please reassign suppliers first.`,
+        category: normalizedName,
+        suppliersCount: suppliersCount,
+      });
+    }
+
+    // Delete the category
+    await Category.findByIdAndDelete(category._id);
+
+    // Clean up any placeholder suppliers with this category
+    await Supplier.deleteMany({
+      category: { $regex: new RegExp(`^${normalizedName}$`, 'i') },
+      name: { $regex: '^__placeholder__' },
+    });
+
+    res.json({
+      message: 'Category deleted successfully',
+      category: normalizedName,
+    });
+  } catch (error) {
+    console.error('Delete category error:', error);
     res.status(500).json({ message: 'Server error' });
   }
 };
