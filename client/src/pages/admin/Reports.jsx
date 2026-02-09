@@ -62,9 +62,9 @@ const Reports = () => {
           <header className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
             <h1 className="text-3xl font-bold mb-2">Reports & Analytics</h1>
             <div className="space-y-2">
-              <p className="text-base-content/60">
+              {/* <p className="text-base-content/60">
                 Monitor booking performance, revenue, and upcoming events.
-              </p>
+              </p> */}
               <button
                 type="button"
                 className="btn btn-primary w-full md:w-auto"

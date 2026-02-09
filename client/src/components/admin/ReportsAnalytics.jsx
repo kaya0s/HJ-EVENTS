@@ -3,6 +3,7 @@ import { useBookingStore } from "../../store/useBookingStore";
 import DateRangeFilter from "./DateRangeFilter";
 import SalesChart from "./SalesChart";
 import BookingChart from "./BookingChart";
+import ReportsStatisticsCards from "./ReportsStatisticsCards";
 import axiosInstance from "../../lib/axios";
 import { Loader } from "lucide-react";
 
@@ -96,61 +97,29 @@ const ReportsAnalytics = () => {
   };
 
   return (
-    <div className="card bg-base-100 shadow-lg border border-base-300">
-      <div className="card-body">
-        <div className="flex items-center justify-between mb-4">
-          <h2 className="card-title">Reports & Analytics</h2>
-        </div>
+    <div>
+      {/* Statistics Cards */}
+      <div className="mb-8">
+        <ReportsStatisticsCards stats={displayData.stats} />
+      </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-          <div className="stat shadow">
-            <div className="stat-figure text-primary">
-              <div className="stat-title">Total Sales</div>
-              <div className="stat-value">
-                ₱{Number(displayData.stats.totalSales).toLocaleString()}
-              </div>
-            </div>
-          </div>
-          <div className="stat shadow">
-            <div className="stat-figure text-secondary">
-              <div className="stat-title">Bookings</div>
-              <div className="stat-value">{displayData.stats.bookingCount}</div>
-            </div>
-          </div>
-          <div className="stat shadow">
-            <div className="stat-figure text-accent">
-              <div className="stat-title">Avg. Value</div>
-              <div className="stat-value">
-                ₱{displayData.stats.averageValue}
-              </div>
-            </div>
-          </div>
-          <div className="stat shadow">
-            <div className="stat-figure text-warning">
-              <div className="stat-title">Top Package</div>
-              <div className="stat-value">
-                {Object.entries(displayData.stats.topPackage)
-                  .sort(([, a], [, b]) => b - a)
-                  .map(([name, count]) => `${name} (${count})`)
-                  .slice(0, 1) || "No data"}
-              </div>
-            </div>
-          </div>
-        </div>
-
+      {/* Date Range Filter */}
+      <div className="mb-8">
         <DateRangeFilter onDateChange={handleDateChange} />
+      </div>
 
-        {isLoading && (
-          <div className="text-center py-8">
-            <Loader className="animate-spin mx-auto" size={32} />
-            <p className="mt-2 text-base-content/60">Loading statistics...</p>
-          </div>
-        )}
-
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mt-6">
-          <SalesChart data={displayData.monthlyData} />
-          <BookingChart data={displayData.monthlyData} />
+      {/* Loading State */}
+      {isLoading && (
+        <div className="flex flex-col items-center justify-center py-16">
+          <Loader className="animate-spin mx-auto" size={32} />
+          <p className="mt-2 text-base-content/60">Loading statistics...</p>
         </div>
+      )}
+
+      {/* Charts */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <SalesChart data={displayData.monthlyData} />
+        <BookingChart data={displayData.monthlyData} />
       </div>
     </div>
   );
