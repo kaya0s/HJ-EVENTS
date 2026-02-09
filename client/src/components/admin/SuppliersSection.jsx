@@ -1,5 +1,13 @@
-import { useState, useEffect } from "react";
-import { Search, Plus, Edit, Trash2, X, MoreHorizontal } from "lucide-react";
+import { useState, useEffect, useRef } from "react";
+import {
+  Search,
+  Plus,
+  Edit,
+  Trash2,
+  X,
+  MoreVertical,
+  Check,
+} from "lucide-react";
 import { useSupplierStore } from "../../store/useSupplierStore";
 import SupplierModal from "./SupplierModal";
 import { confirmDialog } from "../../utils/confirmDialog";
@@ -24,6 +32,22 @@ const SuppliersSection = () => {
   const [isEditCategoryModalOpen, setIsEditCategoryModalOpen] = useState(false);
   const [editCategoryName, setEditCategoryName] = useState("");
   const [categoryToEdit, setCategoryToEdit] = useState("");
+  const [categoryMenuOpen, setCategoryMenuOpen] = useState(null);
+  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  const dropdownRef = useRef(null);
+
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
+        setIsDropdownOpen(false);
+        setCategoryMenuOpen(null);
+      }
+    };
+
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
 
   useEffect(() => {
     fetchAllSuppliers();
@@ -124,32 +148,134 @@ const SuppliersSection = () => {
             <span className="label-text">Category</span>
           </label>
           <div className="flex gap-2">
-            <div className="w-64">
-              <select
-                className="select select-bordered select-md w-full rounded-lg"
-                value={selectedCategory || "All Categories"}
-                onChange={(e) =>
-                  setSelectedCategory(
-                    e.target.value === "All Categories" ? "" : e.target.value,
-                  )
-                }
+            <div className="relative w-64" ref={dropdownRef}>
+              {/* Dropdown Button */}
+              <button
+                className="select select-bordered select-md w-full rounded-lg text-left flex items-center justify-between"
+                onClick={() => setIsDropdownOpen(!isDropdownOpen)}
+                type="button"
               >
-                <option value="All Categories">All Categories</option>
-                {categories.map((category) => (
-                  <option key={category} value={category}>
-                    {category}
-                  </option>
-                ))}
-              </select>
+                <span>{selectedCategory || "All Categories"}</span>
+                <svg
+                  className={`w-4 h-4 transition-transform ${isDropdownOpen ? "rotate-180" : ""}`}
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M19 9l-7 7-7-7"
+                  />
+                </svg>
+              </button>
+
+              {/* Dropdown Menu */}
+              {isDropdownOpen && (
+                <div className="absolute z-50 w-full mt-1 bg-base-100 border border-base-300 rounded-lg shadow-lg max-h-80 overflow-y-auto">
+                  {/* All Categories Option */}
+                  <div
+                    className="px-4 py-2 hover:bg-base-200 cursor-pointer flex items-center justify-between"
+                    onClick={() => {
+                      setSelectedCategory("");
+                      setIsDropdownOpen(false);
+                    }}
+                  >
+                    <span className="flex items-center gap-2">
+                      {!selectedCategory && (
+                        <Check size={16} className="text-primary" />
+                      )}
+                      All Categories
+                    </span>
+                  </div>
+
+                  {/* Divider */}
+                  <div className="divider my-0"></div>
+
+                  {/* Category List */}
+                  {categories.map((category) => (
+                    <div key={category} className="group relative">
+                      <div className="px-4 py-2 hover:bg-base-200 flex items-center justify-between">
+                        {/* Category Name (clickable to filter) */}
+                        <span
+                          className="flex items-center gap-2 flex-1 cursor-pointer"
+                          onClick={() => {
+                            setSelectedCategory(category);
+                            setIsDropdownOpen(false);
+                            setCategoryMenuOpen(null);
+                          }}
+                        >
+                          {selectedCategory === category && (
+                            <Check size={16} className="text-primary" />
+                          )}
+                          {category}
+                        </span>
+
+                        {/* Three-dot Menu Button */}
+                        <button
+                          className="p-1 hover:bg-base-300 rounded opacity-0 group-hover:opacity-100 transition-opacity"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setCategoryMenuOpen(
+                              categoryMenuOpen === category ? null : category,
+                            );
+                          }}
+                          type="button"
+                        >
+                          <MoreVertical size={16} />
+                        </button>
+                      </div>
+
+                      {/* Context Menu (Edit/Delete) */}
+                      {categoryMenuOpen === category && (
+                        <div className="absolute right-0 top-0 mt-8 mr-2 bg-base-100 border border-base-300 rounded-lg shadow-lg z-50 min-w-32">
+                          <button
+                            className="w-full px-4 py-2 text-left hover:bg-base-200 flex items-center gap-2 rounded-t-lg"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleEditCategory(category);
+                              setCategoryMenuOpen(null);
+                              setIsDropdownOpen(false);
+                            }}
+                            type="button"
+                          >
+                            <Edit size={14} />
+                            Edit
+                          </button>
+                          <button
+                            className="w-full px-4 py-2 text-left hover:bg-base-200 flex items-center gap-2 text-error rounded-b-lg"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleDeleteCategory(category);
+                              setCategoryMenuOpen(null);
+                              setIsDropdownOpen(false);
+                            }}
+                            type="button"
+                          >
+                            <Trash2 size={14} />
+                            Delete
+                          </button>
+                        </div>
+                      )}
+                    </div>
+                  ))}
+
+                  {/* Add Category Option at Bottom */}
+                  <div className="divider my-0"></div>
+                  <div
+                    className="px-4 py-2 hover:bg-base-200 cursor-pointer flex items-center gap-2 text-primary font-medium"
+                    onClick={() => {
+                      setIsAddCategoryModalOpen(true);
+                      setIsDropdownOpen(false);
+                    }}
+                  >
+                    <Plus size={16} />
+                    Add New Category
+                  </div>
+                </div>
+              )}
             </div>
-            <button
-              className="btn btn-primary transition-colors"
-              onClick={() => setIsAddCategoryModalOpen(true)}
-              type="button"
-              title="Add Category"
-            >
-              <Plus size={16} />
-            </button>
           </div>
         </div>
 
