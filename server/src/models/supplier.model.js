@@ -6,8 +6,6 @@ const supplierSchema = new Schema(
       type: Schema.Types.ObjectId,
       ref: 'user',
       required: false,
-      unique: false,
-      sparse: true,
       default: null,
     },
     name: {

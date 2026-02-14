@@ -122,13 +122,8 @@ const Footer = () => {
       </div>
 
       <div className="border-t border-base-300">
-        <div className="container mx-auto flex flex-col gap-3 px-4 py-6 text-sm text-base-content/60 md:flex-row md:items-center md:justify-between">
+        <div className="container mx-auto flex item-center justify-center px-4 py-6 text-sm text-base-content/60 md:flex-row md:items-center ">
           <p>© {currentYear} HJ Weddings. All rights reserved.</p>
-          <p className="flex items-center gap-1">
-            Crafted with{" "}
-            <Heart className="h-4 w-4 text-primary" fill="currentColor" /> for
-            timeless celebrations.
-          </p>
         </div>
       </div>
     </footer>

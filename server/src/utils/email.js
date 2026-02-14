@@ -1,6 +1,15 @@
 import nodemailer from 'nodemailer';
 import dotenv from 'dotenv';
-dotenv.config();
+import path from 'path';
+import { fileURLToPath } from 'url';
+import { dirname } from 'path';
+
+// Get current file and directory path
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
+
+// Load environment variables from server root directory
+dotenv.config({ path: path.resolve(__dirname, '../../.env') });
 
 // Brevo SMTP credentials from environment variables
 const brevoLogin = process.env.BREVO_LOGIN; // Your Brevo email
@@ -96,23 +105,23 @@ export const sendEmailVerificationEmail = async (email, fullName, code) => {
             </div>
             <div style="padding: 0 24px 24px;">
               <h1 style="color: #6b2635; font-size: 22px; margin: 8px 0 12px; text-align: center;">
-                Hey ${fullName || 'there'}!
+              Hey ${fullName || 'there'}!
               </h1>
               <p style="color: #555; line-height: 1.6; text-align: center; margin-bottom: 18px;">
-                Use the verification code below to activate your HJ Events account.
+              Use the verification code below to activate your HJ Events account.
               </p>
               <div style="background: #fff2f2; border-radius: 10px; padding: 18px; margin: 0 auto 20px; text-align: center; max-width: 320px;">
                 <span style="font-size: 30px; letter-spacing: 8px; color: #b14d58; font-weight: 700;">${code}</span>
               </div>
               <p style="color: #777; font-size: 14px; text-align: center; margin-bottom: 24px;">
-                The code expires in <strong>15 minutes</strong>. If you didn't create an account, feel free to ignore this message.
+              The code expires in <strong>15 minutes</strong>. If you didn't create an account, feel free to ignore this message.
               </p>
               <hr style="border: none; border-top: 1px solid #f0e6e6; margin: 20px 0;">
               <p style="color: #999; font-size: 12px; text-align: center; margin: 0 0 18px;">
-                HJ Events • Wedding coordination & planning
+              HJ Events • Wedding coordination & planning
               </p>
               <p style="color: #aaa; font-size: 11px; text-align: center; margin: 0;">
-                This is an automated message, please do not reply to this email.
+              This is an automated message, please do not reply to this email.
               </p>
             </div>
           </div>
