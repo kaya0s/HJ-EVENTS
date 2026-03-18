@@ -87,13 +87,14 @@ server = app.listen(PORT, () => {
 });
 
 // Handle server listen errors
+import { exec } from 'child_process';
+
 server.on('error', (error) => {
   if (error.code === 'EADDRINUSE') {
     console.error(`Port ${PORT} is already in use. Trying to terminate existing process...`);
 
     // Try to find and kill existing process on Windows
     if (process.platform === 'win32') {
-      const { exec } = require('child_process');
       exec(`netstat -ano | findstr :${PORT}`, (err, stdout) => {
         if (stdout) {
           const lines = stdout.split('\n');
