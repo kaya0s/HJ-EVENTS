@@ -34,7 +34,7 @@ const navItems = [
 
 const SupplierSidebar = () => {
   const [isMobileOpen, setIsMobileOpen] = useState(false);
-  const [isCollapsed, setIsCollapsed] = useState(true);
+  const [isCollapsed, setIsCollapsed] = useState(false);
   const isAllowed = usePermissionsStore((state) => state.isAllowed);
   const permsLoaded = usePermissionsStore((state) => state.isLoaded);
 
@@ -98,11 +98,9 @@ const SupplierSidebar = () => {
         className={`hidden lg:block fixed left-0 top-16 h-[calc(100vh-4rem)] bg-base-200 border-r border-base-300 transition-all duration-300 z-30 ${
           isCollapsed ? "w-20" : "w-64"
         }`}
-        onMouseEnter={() => setIsCollapsed(false)}
-        onMouseLeave={() => setIsCollapsed(true)}
       >
-        <div className="h-full flex flex-col overflow-hidden">
-          <nav className="space-y-1 px-2 flex-1 overflow-y-auto pt-2">
+        <div className="h-full flex flex-col overflow-hidden pt-4">
+          <nav className="space-y-1 px-2 flex-1 overflow-y-auto">
             <div className="flex items-center gap-2 mb-4 px-2"></div>
             {navItems.map(renderNavLink)}
           </nav>

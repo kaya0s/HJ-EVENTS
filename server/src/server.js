@@ -20,17 +20,20 @@ import permissionRoutes from './routes/permission.routes.js';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import { dirname } from 'path';
-
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
-dotenv.config();
+// Load environment variables from server root directory
+dotenv.config({ path: path.resolve(__dirname, '../.env') });
 
 // Connect to database
 connectDB();
 
 const app = express();
 const PORT = process.env.PORT;
+
+// Server instance to manage shutdown
+let server = null;
 
 // Middleware
 app.use(
@@ -79,6 +82,67 @@ app.get('*', (req, res) => {
 });
 
 // Start server
-app.listen(PORT, () => {
+server = app.listen(PORT, () => {
   console.log(`Server is running on port ${PORT}`);
 });
+
+// Handle server listen errors
+import { exec } from 'child_process';
+
+server.on('error', (error) => {
+  if (error.code === 'EADDRINUSE') {
+    console.error(`Port ${PORT} is already in use. Trying to terminate existing process...`);
+
+    // Try to find and kill existing process on Windows
+    if (process.platform === 'win32') {
+      exec(`netstat -ano | findstr :${PORT}`, (err, stdout) => {
+        if (stdout) {
+          const lines = stdout.split('\n');
+          lines.forEach((line) => {
+            const matches = line.match(/(\d+)$/);
+            if (matches) {
+              const pid = matches[1];
+              console.log(`Killing process PID: ${pid}`);
+              exec(`taskkill /PID ${pid} /F`, (killErr) => {
+                if (killErr) {
+                  console.error('Error killing process:', killErr);
+                  process.exit(1);
+                } else {
+                  console.log('Process killed. Restarting server...');
+                  setTimeout(() => {
+                    process.exit(0); // Let nodemon restart
+                  }, 1000);
+                }
+              });
+            }
+          });
+        } else {
+          console.error('Port is in use but could not find process');
+          process.exit(1);
+        }
+      });
+    } else {
+      console.error('EADDRINUSE error - please manually kill the process using this port');
+      process.exit(1);
+    }
+  } else {
+    console.error('Server error:', error);
+    process.exit(1);
+  }
+});
+
+// Graceful shutdown handling
+const handleShutdown = () => {
+  console.log('\nReceived shutdown signal. Closing server...');
+  if (server) {
+    server.close(() => {
+      console.log('Server closed');
+      process.exit(0);
+    });
+  } else {
+    process.exit(0);
+  }
+};
+
+process.on('SIGINT', handleShutdown);
+process.on('SIGTERM', handleShutdown);

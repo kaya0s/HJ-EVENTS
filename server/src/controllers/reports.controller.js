@@ -2,6 +2,58 @@ import Booking from '../models/booking.model.js';
 import Review from '../models/review.model.js';
 import { createPdfId, streamBookingsPdf } from '../utils/pdfReports.js';
 
+export const getDateRangeStats = async (req, res) => {
+  try {
+    const { startDate, endDate } = req.query;
+    const start = new Date(startDate);
+    const end = new Date(endDate);
+
+    const [bookings, monthlyData] = await Promise.all([
+      Booking.find({
+        createdAt: { $gte: start, $lte: end },
+      }).populate('package', 'name price'),
+      Booking.aggregate([
+        {
+          $match: {
+            createdAt: { $gte: start, $lte: end },
+          },
+        },
+        {
+          $group: {
+            _id: { year: { $year: '$createdAt' }, month: { $month: '$createdAt' } },
+            totalSales: {
+              $sum: { $cond: [{ $in: ['$status', ['accepted', 'completed']] }, '$totalPrice', 0] },
+            },
+            bookingCount: { $count: {} },
+          },
+        },
+        { $sort: { '_id.year': 1, '_id.month': 1 } },
+      ]),
+    ]);
+
+    const stats = {
+      totalSales: bookings
+        .filter((b) => ['accepted', 'completed'].includes(b.status))
+        .reduce((sum, b) => sum + b.totalPrice, 0),
+      bookingCount: bookings.length,
+      averageValue:
+        bookings.length > 0
+          ? (bookings.reduce((sum, b) => sum + b.totalPrice, 0) / bookings.length).toFixed(2)
+          : 0,
+      topPackage: bookings.reduce((acc, b) => {
+        if (b.package?.name) {
+          acc[b.package.name] = (acc[b.package.name] || 0) + 1;
+        }
+        return acc;
+      }, {}),
+    };
+
+    res.json({ stats, monthlyData });
+  } catch (error) {
+    res.status(500).json({ message: `Server error: ${error}` });
+  }
+};
+
 // Return counts and popular suppliers
 export const getDashboard = async (req, res) => {
   try {

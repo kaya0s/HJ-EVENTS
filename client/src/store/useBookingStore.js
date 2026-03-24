@@ -30,7 +30,7 @@ export const useBookingStore = create((set) => ({
       });
       const query = params.toString();
       const res = await axiosInstance.get(
-        `/bookings/all${query ? `?${query}` : ""}`
+        `/bookings/all${query ? `?${query}` : ""}`,
       );
 
       let bookings = [];
@@ -59,22 +59,22 @@ export const useBookingStore = create((set) => ({
       const stats = {
         total: bookings.length,
         pending: bookings.filter(
-          (b) => b.status === "pending" || b.status === "Pending"
+          (b) => b.status === "pending" || b.status === "Pending",
         ).length,
         accepted: bookings.filter(
-          (b) => b.status === "accepted" || b.status === "Accepted"
+          (b) => b.status === "accepted" || b.status === "Accepted",
         ).length,
         completed: bookings.filter(
-          (b) => b.status === "completed" || b.status === "Completed"
+          (b) => b.status === "completed" || b.status === "Completed",
         ).length,
         cancelled: bookings.filter(
-          (b) => b.status === "cancelled" || b.status === "Cancelled"
+          (b) => b.status === "cancelled" || b.status === "Cancelled",
         ).length,
         rejected: bookings.filter(
-          (b) => b.status === "rejected" || b.status === "Rejected"
+          (b) => b.status === "rejected" || b.status === "Rejected",
         ).length,
         expired: bookings.filter(
-          (b) => b.status === "expired" || b.status === "Expired"
+          (b) => b.status === "expired" || b.status === "Expired",
         ).length,
       };
 
@@ -119,7 +119,7 @@ export const useBookingStore = create((set) => ({
       });
       set((state) => ({
         bookings: state.bookings.map((b) =>
-          b._id === bookingId ? { ...b, status: "accepted" } : b
+          b._id === bookingId ? { ...b, status: "accepted" } : b,
         ),
       }));
       toast.success("Booking accepted");
@@ -152,7 +152,7 @@ export const useBookingStore = create((set) => ({
       });
       set((state) => ({
         bookings: state.bookings.map((b) =>
-          b._id === bookingId ? { ...b, status: "rejected" } : b
+          b._id === bookingId ? { ...b, status: "rejected" } : b,
         ),
       }));
       toast.success("Booking rejected");
@@ -185,7 +185,7 @@ export const useBookingStore = create((set) => ({
       });
       set((state) => ({
         bookings: state.bookings.map((b) =>
-          b._id === bookingId ? { ...b, status: "completed" } : b
+          b._id === bookingId ? { ...b, status: "completed" } : b,
         ),
       }));
       toast.success("Booking marked as completed");
@@ -217,11 +217,11 @@ export const useBookingStore = create((set) => ({
         {
           suppliers: supplierIds,
           lastKnownUpdatedAt: booking?.updatedAt,
-        }
+        },
       );
       set((state) => ({
         bookings: state.bookings.map((b) =>
-          b._id === bookingId ? res.data.booking : b
+          b._id === bookingId ? res.data.booking : b,
         ),
       }));
       toast.success("Suppliers assigned successfully");
@@ -240,7 +240,7 @@ export const useBookingStore = create((set) => ({
         if (fresh) {
           set((state) => ({
             bookings: state.bookings.map((b) =>
-              b._id === fresh._id ? fresh : b
+              b._id === fresh._id ? fresh : b,
             ),
           }));
           return { booking: fresh, conflict: true };
@@ -296,12 +296,10 @@ export const useBookingStore = create((set) => ({
   /**
    * Cancels a booking (client initiated)
    */
-  cancelMyBooking: async (bookingId) => {
+  cancelMyBooking: async (bookingId, lastKnownUpdatedAt) => {
     try {
-      const state = useBookingStore.getState();
-      const booking = state.bookings.find((b) => b._id === bookingId);
       const res = await axiosInstance.post(`/bookings/cancel/${bookingId}`, {
-        lastKnownUpdatedAt: booking?.updatedAt,
+        lastKnownUpdatedAt,
       });
       toast.success("Booking cancelled");
       return res.data?.booking;
@@ -338,7 +336,7 @@ export const useBookingStore = create((set) => ({
       if (error?.response?.status === 409) {
         toast.error(
           error?.response?.data?.message ||
-            "Someone else updated this booking. Please refresh."
+            "Someone else updated this booking. Please refresh.",
         );
       } else {
         const msg =
@@ -359,7 +357,7 @@ export const useBookingStore = create((set) => ({
       const booking = state.bookings.find((b) => b._id === bookingId);
       const res = await axiosInstance.post(
         `/bookings/${bookingId}/paypal/create-order`,
-        { lastKnownUpdatedAt: booking?.updatedAt }
+        { lastKnownUpdatedAt: booking?.updatedAt },
       );
       return res.data?.orderId || (res.data?.id && res.data.id) || null;
     } catch (error) {
@@ -385,13 +383,13 @@ export const useBookingStore = create((set) => ({
       const booking = state.bookings.find((b) => b._id === bookingId);
       const res = await axiosInstance.post(
         `/bookings/${bookingId}/paypal/capture`,
-        { orderId, lastKnownUpdatedAt: booking?.updatedAt }
+        { orderId, lastKnownUpdatedAt: booking?.updatedAt },
       );
       // update booking in store
       const updatedBooking = res.data?.booking || res.data;
       set((state) => ({
         bookings: state.bookings.map((b) =>
-          b._id === bookingId ? updatedBooking : b
+          b._id === bookingId ? updatedBooking : b,
         ),
       }));
       toast.success("Payment successful");

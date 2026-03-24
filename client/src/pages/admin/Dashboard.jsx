@@ -78,7 +78,7 @@ const Dashboard = () => {
       <AdminSidebar />
 
       {/* Main Content */}
-      <main className="lg:ml-20 p-6 transition-all duration-300">
+      <main className="lg:ml-64 p-6 transition-all duration-300">
         <div className="max-w-7xl mx-auto">
           {/* Header */}
           <div className="mb-8 flex flex-col gap-3 md:flex-row md:items-center md:justify-between">

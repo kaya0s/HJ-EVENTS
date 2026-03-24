@@ -50,13 +50,13 @@ const Dashboard = () => {
   const stats = useMemo(() => {
     const total = bookings.length;
     const upcoming = bookings.filter((booking) =>
-      dayjs(booking.weddingDate).isAfter(dayjs(), "day")
+      dayjs(booking.weddingDate).isAfter(dayjs(), "day"),
     ).length;
     const completed = bookings.filter(
-      (booking) => booking.status?.toLowerCase() === "completed"
+      (booking) => booking.status?.toLowerCase() === "completed",
     ).length;
     const pending = bookings.filter(
-      (booking) => booking.status?.toLowerCase() === "pending"
+      (booking) => booking.status?.toLowerCase() === "pending",
     ).length;
 
     return [
@@ -92,11 +92,11 @@ const Dashboard = () => {
       .filter((booking) =>
         booking.weddingDate
           ? dayjs(booking.weddingDate).isSameOrAfter(dayjs(), "day")
-          : false
+          : false,
       )
       .sort(
         (a, b) =>
-          dayjs(a.weddingDate).valueOf() - dayjs(b.weddingDate).valueOf()
+          dayjs(a.weddingDate).valueOf() - dayjs(b.weddingDate).valueOf(),
       )
       .slice(0, 5);
   }, [bookings]);
@@ -141,7 +141,7 @@ const Dashboard = () => {
   return (
     <div className="min-h-screen bg-base-100 lg:flex">
       <SupplierSidebar />
-      <main className="flex-1 p-6 transition-all duration-300 lg:ml-20">
+      <main className="flex-1 p-6 transition-all duration-300 lg:ml-64">
         <div className="max-w-6xl mx-auto space-y-6">
           <header>
             <h1 className="text-3xl font-bold mb-2">
@@ -199,7 +199,7 @@ const Dashboard = () => {
                             </p>
                             <p className="text-sm text-base-content/60">
                               {dayjs(booking.weddingDate).format(
-                                "MMMM DD, YYYY"
+                                "MMMM DD, YYYY",
                               )}
                             </p>
                             <p className="text-xs text-base-content/70">

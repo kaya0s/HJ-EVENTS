@@ -97,12 +97,6 @@ const ensureDefaultsSeeded = async () => {
               defaultValue,
               value: defaultValue,
             },
-            $set: {
-              // keep metadata in sync if you change definitions in code
-              label: permissionDef.label,
-              description: permissionDef.description || '',
-              readOnly: Boolean(permissionDef.readOnly),
-            },
           },
           { new: true, upsert: true }
         )

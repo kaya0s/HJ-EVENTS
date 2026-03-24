@@ -5,7 +5,7 @@ import axiosInstance from "../lib/axios";
 // Only the boolean values live in the database.
 export const rolePermissionDefinitions = {
   user: {
-    label: "Normal User",
+    label: "Client",
     description: "Controls what clients can do in the self-service portal.",
     permissions: [
       {

@@ -75,7 +75,7 @@ const Backup = () => {
         setDisabledInProduction(true);
         setDisableMessage(
           error.response.data?.message ||
-            "Backup feature is disabled for admin in production."
+            "Backup feature is disabled for admin in production.",
         );
       } else {
         toast.error(error.response?.data?.message || "Failed to fetch backups");
@@ -109,7 +109,7 @@ const Backup = () => {
         setDisabledInProduction(true);
         setDisableMessage(
           error.response.data?.message ||
-            "Backup feature is disabled for admin in production."
+            "Backup feature is disabled for admin in production.",
         );
       } else {
         toast.error(error.response?.data?.message || "Failed to create backup");
@@ -147,11 +147,11 @@ const Backup = () => {
         setDisabledInProduction(true);
         setDisableMessage(
           error.response.data?.message ||
-            "Backup feature is disabled for admin in production."
+            "Backup feature is disabled for admin in production.",
         );
       } else {
         toast.error(
-          error.response?.data?.message || "Failed to download backup"
+          error.response?.data?.message || "Failed to download backup",
         );
       }
     }
@@ -210,11 +210,11 @@ const Backup = () => {
         setDisabledInProduction(true);
         setDisableMessage(
           error.response.data?.message ||
-            "Backup feature is disabled for admin in production."
+            "Backup feature is disabled for admin in production.",
         );
       } else {
         toast.error(
-          error.response?.data?.message || "Failed to restore backup"
+          error.response?.data?.message || "Failed to restore backup",
         );
       }
     } finally {
@@ -245,7 +245,7 @@ const Backup = () => {
         setDisabledInProduction(true);
         setDisableMessage(
           error.response.data?.message ||
-            "Backup feature is disabled for admin in production."
+            "Backup feature is disabled for admin in production.",
         );
       } else {
         toast.error(error.response?.data?.message || "Failed to delete backup");
@@ -284,7 +284,7 @@ const Backup = () => {
   return (
     <div className="min-h-screen bg-base-100 relative">
       <AdminSidebar />
-      <main className="lg:ml-20 p-6 transition-all duration-300">
+      <main className="lg:ml-64 p-6 transition-all duration-300">
         <div className="max-w-5xl mx-auto space-y-6">
           <header className="flex flex-col gap-2">
             <h1 className="text-3xl font-bold">Backup & Restore</h1>

@@ -83,7 +83,7 @@ const FaqManager = () => {
   return (
     <div className="min-h-screen bg-base-100">
       <AdminSidebar />
-      <main className="lg:ml-20 p-6 transition-all duration-300">
+      <main className="lg:ml-64 p-6 transition-all duration-300">
         <div className="max-w-5xl mx-auto space-y-6">
           <header className="flex flex-col gap-2">
             <h1 className="text-3xl font-bold">FAQ Management</h1>
