@@ -5,6 +5,7 @@ import useFaqStore from "../../store/useFaqStore";
 import { Loader, Edit2, Trash2, Plus } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { confirmDialog } from "../../utils/confirmDialog";
+import toast from "react-hot-toast";
 
 const emptyForm = {
   question: "",
@@ -41,7 +42,14 @@ const FaqManager = () => {
 
   const handleSubmit = async (event) => {
     event.preventDefault();
-    if (!form.question.trim() || !form.answer.trim()) return;
+    if (!form.question.trim()) {
+      toast.error("Question is required");
+      return;
+    }
+    if (!form.answer.trim()) {
+      toast.error("Answer is required");
+      return;
+    }
     if (editingId) {
       await updateFaq(editingId, form);
     } else {

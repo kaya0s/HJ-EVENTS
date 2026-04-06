@@ -300,7 +300,12 @@ export const approveBooking = async (req, res) => {
     });
 
     // Send email notification to client
-    if (booking.user?.id?.email) {
+    // Use .get() to bypass the Mongoose .id virtual that returns a plain string
+    const clientUser = booking.get('user.id');
+    const clientEmail = clientUser?.email;
+    const clientName = clientUser?.fullName || booking.user?.fullName || 'Client';
+
+    if (clientEmail) {
       try {
         const eventDate = booking.weddingDate
           ? new Date(booking.weddingDate).toLocaleDateString('en-US', {
@@ -310,10 +315,10 @@ export const approveBooking = async (req, res) => {
             })
           : 'N/A';
 
-        console.log('Sending email to:', booking.user.id.email);
+        console.log('Sending email to:', clientEmail);
         await sendBookingApprovalEmail(
-          booking.user.id.email,
-          booking.user.fullName || booking.user.id.fullName,
+          clientEmail,
+          clientName,
           booking._id.toString().slice(-8).toUpperCase(),
           eventDate
         );
@@ -599,7 +604,7 @@ export const assignSuppliersToBooking = async (req, res) => {
  */
 export const updateBooking = async (req, res) => {
   try {
-    const { title, venue, lastKnownUpdatedAt } = req.body;
+    const { title, venue, weddingDate, packageId, suppliers, lastKnownUpdatedAt } = req.body;
     if (!lastKnownUpdatedAt) {
       return res.status(400).json({ message: 'Missing lastKnownUpdatedAt for concurrency control' });
     }
@@ -616,6 +621,9 @@ export const updateBooking = async (req, res) => {
     const updateObj = {};
     if (title !== undefined) updateObj.title = title.trim();
     if (venue !== undefined) updateObj.venue = venue.trim();
+    if (weddingDate !== undefined) updateObj.weddingDate = new Date(weddingDate);
+    if (packageId !== undefined) updateObj.package = packageId;
+    if (suppliers !== undefined) updateObj.suppliers = Array.isArray(suppliers) ? suppliers : [];
 
     // Attempt atomic update using timestamp match
     const updatedBooking = await updateByUpdatedAt(

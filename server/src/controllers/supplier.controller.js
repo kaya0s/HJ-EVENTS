@@ -91,6 +91,32 @@ const uploadBufferToCloudinary = async (buffer, filename = 'upload') => {
   return result.secure_url;
 };
 
+// Controller function to update supplier availability
+export const updateMyAvailability = async (req, res) => {
+  try {
+    const { unavailableDates } = req.body;
+
+    if (!Array.isArray(unavailableDates)) {
+      return res.status(400).json({ message: 'unavailableDates must be an array' });
+    }
+
+    const dateRegex = /^\d{4}-\d{2}-\d{2}$/;
+    const validDates = unavailableDates.filter((d) => dateRegex.test(d));
+
+    const supplier = await Supplier.findOne({ user: req.user._id });
+    if (!supplier) {
+      return res.status(404).json({ message: 'Supplier not found' });
+    }
+
+    supplier.unavailableDates = validDates;
+    await supplier.save();
+
+    res.json({ supplier });
+  } catch (error) {
+    res.status(500).json({ message: 'Server error', error: error.message });
+  }
+};
+
 export const createSupplier = async (req, res) => {
   try {
     const data = req.body || {};

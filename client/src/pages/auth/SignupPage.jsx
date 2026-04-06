@@ -32,10 +32,16 @@ const SignUpPage = () => {
     }
   }, []);
 
+  const nameRegex = /^[a-zA-Z\s'-]+$/;
+
   const validateForm = () => {
     if (!formData.firstName.trim())
       return toast.error("First name is required");
+    if (!nameRegex.test(formData.firstName.trim()))
+      return toast.error("First name must contain only letters");
     if (!formData.lastName.trim()) return toast.error("Last name is required");
+    if (!nameRegex.test(formData.lastName.trim()))
+      return toast.error("Last name must contain only letters");
     if (!formData.email.trim()) return toast.error("Email is required");
     if (!/\S+@\S+\.\S+/.test(formData.email))
       return toast.error("Invalid email format");

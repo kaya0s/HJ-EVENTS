@@ -89,4 +89,24 @@ export const useSupplierDashboardStore = create((set, get) => ({
       set({ isUpdatingProfile: false });
     }
   },
+
+  updateSupplierAvailability: async (unavailableDates) => {
+    set({ isUpdatingProfile: true });
+    try {
+      const res = await axiosInstance.patch("/suppliers/my-availability", { unavailableDates });
+      const updated = res.data?.supplier || null;
+      if (updated) {
+        updated.unavailableDates = normalizeUnavailableDates(updated.unavailableDates);
+        set({ profile: updated });
+      }
+      toast.success("Availability updated successfully");
+      return updated;
+    } catch (error) {
+      console.error("Failed to update supplier availability:", error);
+      toast.error(error?.response?.data?.message || "Failed to update availability");
+      throw error;
+    } finally {
+      set({ isUpdatingProfile: false });
+    }
+  },
 }));
