@@ -11,7 +11,8 @@
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
     "format": "prettier --write .",
-    "seed": "node seeder.js"
+    "seed": "node seeder.js",
+    "seed:admin": "node admin-seeder.js"
   },
   "keywords": [
     "express",

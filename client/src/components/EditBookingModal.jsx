@@ -299,34 +299,38 @@ const EditBookingModal = ({ booking, isOpen, onClose, onSave, isSaving }) => {
           </div>
 
           {/* Action Buttons */}
-          <div className="modal-action">
-            <button
-              type="button"
-              className="btn btn-ghost"
-              onClick={onClose}
-              disabled={isSaving}
-            >
-              Cancel
-            </button>
-            <button
-              type="submit"
-              className="btn btn-primary"
-              disabled={isSaving || !title.trim() || !venue.trim() || !weddingDate || !canEdit}
-            >
-              {isSaving ? (
-                <>
-                  <span className="loading loading-spinner loading-sm"></span>
-                  Saving...
-                </>
-              ) : (
-                "Save Changes"
+          <div className="flex flex-col-reverse sm:flex-row sm:items-center sm:justify-between gap-4 mt-6 pt-6 border-t border-base-200">
+            <div>
+              {!canEdit && (
+                <p className="text-sm text-base-content/60">
+                  Booking cannot be edited unless it is pending.
+                </p>
               )}
-            </button>
-            {!canEdit && (
-              <p className="text-sm text-base-content/60">
-                Booking cannot be edited unless it is pending.
-              </p>
-            )}
+            </div>
+            <div className="flex justify-end gap-2">
+              <button
+                type="button"
+                className="btn btn-ghost"
+                onClick={onClose}
+                disabled={isSaving}
+              >
+                Cancel
+              </button>
+              <button
+                type="submit"
+                className="btn btn-primary"
+                disabled={isSaving || !title.trim() || !venue.trim() || !weddingDate || !canEdit}
+              >
+                {isSaving ? (
+                  <>
+                    <span className="loading loading-spinner loading-sm"></span>
+                    Saving...
+                  </>
+                ) : (
+                  "Save Changes"
+                )}
+              </button>
+            </div>
           </div>
         </form>
       </div>

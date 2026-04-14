@@ -289,8 +289,8 @@ const MyBookings = () => {
   }
 
   return (
-    <section className="bg-linear-to-b from-base-100/80 via-base-200/40 to-base-100/80 min-h-screen w-full px-4 pt-6 pb-16 flex flex-col items-center">
-      <header className="w-full max-w-6xl flex flex-col gap-2 md:flex-row md:items-end md:justify-between mb-10">
+    <section className="bg-linear-to-b from-base-100/80 via-base-200/40 to-base-100/80 min-h-screen w-full px-4 md:px-8 xl:px-12 pt-6 pb-16 flex flex-col items-center">
+      <header className="w-full max-w-[90rem] flex flex-col gap-2 md:flex-row md:items-end md:justify-between mb-10">
         <div>
           <p className="text-sm font-semibold uppercase tracking-[0.3em] text-primary/70">
             Your Weddings
@@ -302,7 +302,7 @@ const MyBookings = () => {
         </div>
       </header>
 
-      <div className="w-full max-w-6xl">
+      <div className="w-full max-w-[90rem]">
         {fetchError && (
           <div className="alert alert-error mb-6">
             <div>
@@ -324,18 +324,18 @@ const MyBookings = () => {
           </div>
         ) : (
           <div className="overflow-x-auto rounded-3xl border border-base-300 bg-base-100 shadow-lg">
-            <table className="hidden min-w-full table-fixed text-left text-sm md:table">
+            <table className="hidden min-w-full table-auto text-left text-sm md:table">
               <thead className="bg-base-200 text-xs uppercase text-base-content/60">
                 <tr>
-                  <th className="px-6 py-4 font-semibold">Booking ID</th>
-                  <th className="px-6 py-4 font-semibold">Event Date</th>
-                  <th className="px-6 py-4 font-semibold">Wedding Title</th>
-                  <th className="px-6 py-4 font-semibold">Venue</th>
-                  <th className="px-6 py-4 font-semibold">
+                  <th className="px-4 py-4 font-semibold whitespace-nowrap">Booking ID</th>
+                  <th className="px-4 py-4 font-semibold whitespace-nowrap">Event Date</th>
+                  <th className="px-4 py-4 font-semibold">Wedding Title</th>
+                  <th className="px-4 py-4 font-semibold">Venue</th>
+                  <th className="px-4 py-4 font-semibold">
                     Assigned Suppliers
                   </th>
-                  <th className="px-6 py-4 font-semibold">Status</th>
-                  <th className="px-6 py-4 font-semibold">Actions</th>
+                  <th className="px-4 py-4 font-semibold whitespace-nowrap">Status</th>
+                  <th className="px-4 py-4 font-semibold text-right">Actions</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-base-300">
@@ -356,7 +356,7 @@ const MyBookings = () => {
                     <td className="px-6 py-4 text-base-content/70 text-sm">
                       {formatSuppliers(booking.suppliers)}
                     </td>
-                    <td className="px-6 py-4">
+                    <td className="px-4 py-4">
                       <div className="flex items-center gap-2">
                         {getStatusBadge(booking.status)}
                         {booking.payment?.status === "paid" && (
@@ -364,8 +364,8 @@ const MyBookings = () => {
                         )}
                       </div>
                     </td>
-                    <td className="px-6 py-4">
-                      <div className="flex gap-2">
+                    <td className="px-4 py-4 align-middle whitespace-nowrap">
+                      <div className="flex items-center justify-end gap-2">
                         {canEdit(booking.status) && (
                           <button
                             className="btn btn-sm btn-outline btn-primary"
@@ -513,7 +513,7 @@ const MyBookings = () => {
       </div>
 
       {!isLoading && (
-        <div className="w-full max-w-6xl mt-10">
+        <div className="w-full max-w-[90rem] mt-10">
           <div className="card bg-base-100 shadow-lg border border-base-200">
             <div className="card-body space-y-4">
               <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
