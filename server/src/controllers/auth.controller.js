@@ -343,11 +343,9 @@ export const ForgotPassword = async (req, res) => {
     const resetToken = generateResetToken();
 
     // Save reset token and expiry (15 minutes)
-    user.resetPasswordToken = hashResetToken(resetToken);
-    user.resetPasswordExpires = new Date(Date.now() + 15 * 60 * 1000); // 15 minutes
-
-    user.resetCode = resetCode;
     user.resetPasswordToken = resetToken;
+    user.resetPasswordExpires = new Date(Date.now() + 15 * 60 * 1000); // 15 minutes
+    user.resetCode = resetCode;
     await user.save();
 
     // Send email with reset code
@@ -356,10 +354,8 @@ export const ForgotPassword = async (req, res) => {
     if (emailResult.success) {
       res.status(200).json({
         message: 'Reset code sent to your email',
-        resetToken, // Send token to client for verification
+        resetToken, // Send token to client for the multi-step reset flow
       });
-      console.log('Reset Token (for testing):', resetToken);
-      console.log('Reset Code (for testing):', resetCode);
     } else {
       res.status(500).json({ message: 'Failed to send reset email' });
     }
