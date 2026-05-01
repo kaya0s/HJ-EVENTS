@@ -3,6 +3,7 @@ import { useAuthStore } from "../../store/useAuthStore";
 import { usePackageStore } from "../../store/usePackageStore";
 import AdminSidebar from "../../components/admin/AdminSidebar";
 import ExternalSupplierSettings from "../../components/admin/ExternalSupplierSettings";
+import { confirmDialog } from "../../utils/confirmDialog";
 import {
   Loader,
   Plus,
@@ -78,6 +79,18 @@ const Packages = ({ showSidebar = true }) => {
       await createPackage(fd);
     }
     onClose();
+  };
+
+  const handleDeletePackage = async (pkg) => {
+    const confirmed = await confirmDialog({
+      title: "Delete Package",
+      text: `Are you sure you want to delete "${pkg.name}"? This action cannot be undone.`,
+      confirmText: "Delete",
+      confirmButtonClass: "btn-error",
+    });
+    if (!confirmed) return;
+
+    await deletePackage(pkg._id);
   };
 
   const totalCount = packages.length;
@@ -206,7 +219,7 @@ const Packages = ({ showSidebar = true }) => {
                           <button
                             type="button"
                             className="btn btn-ghost btn-sm text-error"
-                            onClick={() => deletePackage(pkg._id)}
+                            onClick={() => handleDeletePackage(pkg)}
                           >
                             <Trash2 />
                           </button>
