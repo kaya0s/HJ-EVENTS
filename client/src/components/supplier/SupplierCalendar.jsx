@@ -65,7 +65,7 @@ const SupplierCalendar = ({ bookings = [] }) => {
             events.length ? "border-primary/40" : ""
           }`}
         >
-          <div className="flex items-center justify-between text-sm font-semibold">
+          <div className="flex items-center justify-between text-base font-semibold">
             <span>{day}</span>
             {events.length > 0 && (
               <span className="badge badge-sm badge-primary">
@@ -73,6 +73,12 @@ const SupplierCalendar = ({ bookings = [] }) => {
               </span>
             )}
           </div>
+
+          {events.length === 0 && (
+            <div className="text-xs text-base-content/50 italic">
+              no event
+            </div>
+          )}
 
           {events.slice(0, 2).map((event) => (
             <div
@@ -86,7 +92,7 @@ const SupplierCalendar = ({ bookings = [] }) => {
                 {event.client}
               </p>
               <span
-                className={`badge badge-xs ${
+                className={`badge badge-sm ${
                   statusClasses[event.status] || "badge-ghost"
                 }`}
               >

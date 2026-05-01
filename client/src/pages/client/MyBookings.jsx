@@ -364,8 +364,8 @@ const MyBookings = () => {
                         )}
                       </div>
                     </td>
-                    <td className="px-4 py-4 align-middle whitespace-nowrap">
-                      <div className="flex items-center justify-end gap-2">
+                     <td className="px-4 py-4 align-middle">
+                        <div className="flex items-center justify-end gap-2">
                         {canEdit(booking.status) && (
                           <button
                             className="btn btn-sm btn-outline btn-primary"
@@ -462,49 +462,49 @@ const MyBookings = () => {
                       {formatSuppliers(booking.suppliers)}
                     </p>
                   </div>
-                  <div className="flex gap-2 mt-3 justify-end">
-                    {canEdit(booking.status) && (
-                      <button
-                        className="btn btn-sm btn-outline btn-primary flex-1"
-                        onClick={() => handleEdit(booking)}
-                      >
-                        <Edit2 size={16} className="mr-1" />
-                        Edit
-                      </button>
-                    )}
-                    {canReview(booking) && (
-                      <button
-                        className="btn btn-sm btn-secondary flex-1"
-                        onClick={() => openReviewModal(booking)}
-                      >
-                        <Star size={16} className="mr-1" />
-                        {booking.review ? "Edit" : "Review"}
-                      </button>
-                    )}
-                    {isPending(booking.status) && (
-                      <>
-                        {booking.payment?.status !== "paid" && (
-                          <button
-                            className="btn btn-sm btn-primary flex-1"
-                            onClick={() => openPaymentModal(booking)}
-                          >
-                            Pay Now
-                          </button>
-                        )}
-                        <button
-                          className="btn btn-sm btn-outline btn-error flex-1"
-                          onClick={() => handleCancel(booking._id)}
-                          disabled={cancellingId === booking._id}
-                        >
-                          {cancellingId === booking._id ? (
-                            <Loader className="animate-spin" size={16} />
-                          ) : (
-                            "Cancel"
-                          )}
-                        </button>
-                      </>
-                    )}
-                  </div>
+                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mt-3">
+                     {canEdit(booking.status) && (
+                       <button
+                         className="btn btn-sm btn-outline btn-primary"
+                         onClick={() => handleEdit(booking)}
+                       >
+                         <Edit2 size={16} className="mr-1" />
+                         Edit
+                       </button>
+                     )}
+                     {canReview(booking) && (
+                       <button
+                         className="btn btn-sm btn-secondary"
+                         onClick={() => openReviewModal(booking)}
+                       >
+                         <Star size={16} className="mr-1" />
+                         {booking.review ? "Edit" : "Review"}
+                       </button>
+                     )}
+                     {isPending(booking.status) && (
+                       <>
+                         {booking.payment?.status !== "paid" && (
+                           <button
+                             className="btn btn-sm btn-primary"
+                             onClick={() => openPaymentModal(booking)}
+                           >
+                             Pay Now
+                           </button>
+                         )}
+                         <button
+                           className="btn btn-sm btn-outline btn-error"
+                           onClick={() => handleCancel(booking._id)}
+                           disabled={cancellingId === booking._id}
+                         >
+                           {cancellingId === booking._id ? (
+                             <Loader className="animate-spin" size={16} />
+                           ) : (
+                             "Cancel"
+                           )}
+                         </button>
+                       </>
+                     )}
+                   </div>
                 </div>
               ))}
             </div>
