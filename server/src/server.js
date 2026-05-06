@@ -1,4 +1,5 @@
 import express, { json } from 'express';
+import { exec } from 'child_process';
 import cors from 'cors';
 import connectDB from './config/database.js';
 import authRoutes from './routes/auth.routes.js';
@@ -30,7 +31,7 @@ dotenv.config({ path: path.resolve(__dirname, '../.env') });
 connectDB();
 
 const app = express();
-const PORT = process.env.PORT;
+const PORT = process.env.PORT || 5001;
 
 // Server instance to manage shutdown
 let server = null;
@@ -87,7 +88,6 @@ server = app.listen(PORT, () => {
 });
 
 // Handle server listen errors
-import { exec } from 'child_process';
 
 server.on('error', (error) => {
   if (error.code === 'EADDRINUSE') {

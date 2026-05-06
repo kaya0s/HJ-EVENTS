@@ -344,20 +344,22 @@ const Profile = () => {
           <div className="modal-box max-w-2xl">
             <h3 className="font-bold text-lg mb-4">Edit Profile</h3>
             <form className="space-y-4" onSubmit={handleEditSubmit}>
-              <div className="form-control w-full">
-                <label className="label">
-                  <span className="label-text">Full Name</span>
-                </label>
-                <input
-                  type="text"
-                  className="input input-bordered w-full"
-                  value={editForm.fullName}
-                  onChange={(e) =>
-                    setEditForm((f) => ({ ...f, fullName: e.target.value }))
-                  }
-                  required
-                />
-              </div>
+               <div className="form-control w-full">
+                 <label className="label">
+                   <span className="label-text">Full Name</span>
+                 </label>
+                 <input
+                   type="text"
+                   className="input input-bordered w-full"
+                   value={editForm.fullName}
+                   onChange={(e) =>
+                     setEditForm((f) => ({ ...f, fullName: e.target.value }))
+                   }
+                   pattern="^[a-zA-Z\s]+$"
+                   title="Only letters and spaces allowed"
+                   required
+                 />
+               </div>
 
               <div className="form-control w-full">
                 <label className="label">
@@ -374,33 +376,37 @@ const Profile = () => {
                 />
               </div>
 
-              <div className="form-control w-full">
-                <label className="label">
-                  <span className="label-text">Phone</span>
-                </label>
-                <input
-                  type="text"
-                  className="input input-bordered w-full"
-                  value={editForm.phone}
-                  onChange={(e) =>
-                    setEditForm((f) => ({ ...f, phone: e.target.value }))
-                  }
-                />
-              </div>
+               <div className="form-control w-full">
+                 <label className="label">
+                   <span className="label-text">Phone</span>
+                 </label>
+                 <input
+                   type="tel"
+                   className="input input-bordered w-full"
+                   value={editForm.phone}
+                   onChange={(e) =>
+                     setEditForm((f) => ({ ...f, phone: e.target.value }))
+                   }
+                   pattern="^\+?[0-9\s\-\(\)]+$"
+                   title="Enter a valid phone number"
+                 />
+               </div>
 
-              <div className="form-control w-full">
-                <label className="label">
-                  <span className="label-text">Address</span>
-                </label>
-                <input
-                  type="text"
-                  className="input input-bordered w-full"
-                  value={editForm.address}
-                  onChange={(e) =>
-                    setEditForm((f) => ({ ...f, address: e.target.value }))
-                  }
-                />
-              </div>
+               <div className="form-control w-full">
+                 <label className="label">
+                   <span className="label-text">Address</span>
+                 </label>
+                 <input
+                   type="text"
+                   className="input input-bordered w-full"
+                   value={editForm.address}
+                   onChange={(e) =>
+                     setEditForm((f) => ({ ...f, address: e.target.value }))
+                   }
+                   pattern="^[a-zA-Z0-9\s,.\-#]+$"
+                   title="Only letters, numbers, spaces, commas, periods, hyphens, and hash allowed"
+                 />
+               </div>
 
               <div className="form-control w-full">
                 <label className="label">

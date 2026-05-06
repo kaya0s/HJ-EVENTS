@@ -16,6 +16,7 @@ import {
   createCategory,
   updateCategory,
   deleteCategory,
+  updateMyAvailability,
 } from '../controllers/supplier.controller.js';
 import {
   validateCategoryCreate,
@@ -37,6 +38,7 @@ router.put(
   checkPermission('supplier', 'manageProducts'),
   updateMyProfile
 );
+router.patch('/my-availability', protect, authorize('supplier'), updateMyAvailability);
 router.get(
   '/my-bookings',
   protect,

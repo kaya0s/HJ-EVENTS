@@ -8,6 +8,7 @@ import StatisticsCards from "../../components/admin/StatisticsCards";
 import BookingsTable from "../../components/admin/BookingsTable";
 import BookingDetailsModal from "../../components/admin/BookingDetailsModal";
 import NotificationsPanel from "../../components/admin/NotificationsPanel";
+import ReportsAnalytics from "../../components/admin/ReportsAnalytics";
 import { Loader } from "lucide-react";
 import toast from "react-hot-toast";
 
@@ -93,7 +94,7 @@ const Dashboard = () => {
               className="btn btn-primary w-full md:w-auto"
               onClick={handleOpenDashboardReport}
             >
-              View bookings PDF
+              View Bookings PDF
             </button>
           </div>
 
@@ -136,6 +137,12 @@ const Dashboard = () => {
               <div className="lg:col-span-1">
                 <NotificationsPanel />
               </div>
+            </div>
+
+            {/* Reports & Analytics Section */}
+            <div className="space-y-6">
+              <h2 className="text-2xl font-bold">Reports & Analytics</h2>
+              <ReportsAnalytics />
             </div>
           </div>
         </div>

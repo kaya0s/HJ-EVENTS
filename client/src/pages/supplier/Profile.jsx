@@ -11,13 +11,14 @@ import toast from "react-hot-toast";
 const Profile = () => {
   const { authUser } = useAuthStore();
   const navigate = useNavigate();
-  const {
-    profile,
-    isLoadingProfile,
-    isUpdatingProfile,
-    fetchSupplierProfile,
-    updateSupplierProfile,
-  } = useSupplierDashboardStore();
+const {
+  profile,
+  isLoadingProfile,
+  isUpdatingProfile,
+  fetchSupplierProfile,
+  updateSupplierProfile,
+  updateSupplierAvailability,
+} = useSupplierDashboardStore();
 
   const [formState, setFormState] = useState({
     name: "",
@@ -91,7 +92,7 @@ const Profile = () => {
     }
   };
 
-  const handleSubmit = async (e) => {
+    const handleSubmit = async (e) => {
     e.preventDefault();
     if (!canManageProducts) {
       return;
@@ -105,7 +106,6 @@ const Profile = () => {
         address: formState.contactInfo.address,
         email: formState.contactInfo.email,
       },
-      unavailableDates: formState.unavailableDates,
     };
     await updateSupplierProfile(payload);
   };
@@ -261,6 +261,49 @@ const Profile = () => {
                     />
                   </div>
 
+
+
+                  <div className="divider">Account</div>
+
+                  <div className="form-control w-full">
+                    <label className="label">
+                      <span className="label-text">Login Email</span>
+                    </label>
+                    <input
+                      type="email"
+                      className="input input-bordered bg-base-200 cursor-not-allowed w-full"
+                      value={
+                        profile?.user?.email || formState.contactInfo.email
+                      }
+                      readOnly
+                    />
+                    <label className="label">
+                      <span className="label-text-alt text-base-content/50">
+                        Contact support to change your login email.
+                      </span>
+                    </label>
+                  </div>
+
+                  <div className="card-actions justify-end mt-4">
+                    <button
+                      type="submit"
+                      className="btn btn-primary"
+                      disabled={isUpdatingProfile || !canManageProducts}
+                    >
+                      {isUpdatingProfile ? (
+                        <Loader className="animate-spin" size={18} />
+                      ) : (
+                        <>
+                          <Save size={18} className="mr-2" />
+                          Save Changes
+                        </>
+                      )}
+                    </button>
+                  </div>
+                </fieldset>
+                
+                {/* Availability Section - Available regardless of manageProducts permission */}
+                <section className="mt-6">
                   <div className="divider">Availability</div>
                   <div className="space-y-3">
                     <div className="alert bg-base-200">
@@ -311,45 +354,32 @@ const Profile = () => {
                       </p>
                     )}
                   </div>
-
-                  <div className="divider">Account</div>
-
-                  <div className="form-control w-full">
-                    <label className="label">
-                      <span className="label-text">Login Email</span>
-                    </label>
-                    <input
-                      type="email"
-                      className="input input-bordered bg-base-200 cursor-not-allowed w-full"
-                      value={
-                        profile?.user?.email || formState.contactInfo.email
-                      }
-                      readOnly
-                    />
-                    <label className="label">
-                      <span className="label-text-alt text-base-content/50">
-                        Contact support to change your login email.
-                      </span>
-                    </label>
-                  </div>
-
-                  <div className="card-actions justify-end mt-4">
+                  
+                  {/* Save Availability Button */}
+                  <div className="mt-4">
                     <button
-                      type="submit"
-                      className="btn btn-primary"
-                      disabled={isUpdatingProfile || !canManageProducts}
+                      type="button"
+                      onClick={async () => {
+                        try {
+                          await updateSupplierAvailability(formState.unavailableDates);
+                        } catch (error) {
+                          // Error handled in store action
+                        }
+                      }}
+                      className="btn btn-primary w-full"
+                      disabled={isUpdatingProfile}
                     >
                       {isUpdatingProfile ? (
-                        <Loader className="animate-spin" size={18} />
+                        <Loader className="animate-spin mr-2" size={18} />
                       ) : (
                         <>
                           <Save size={18} className="mr-2" />
-                          Save Changes
+                          Save Availability
                         </>
                       )}
                     </button>
                   </div>
-                </fieldset>
+                </section>
               </div>
             </form>
           )}

@@ -214,7 +214,6 @@ export const getMyBookings = async (req, res) => {
       .populate('review', 'rating comment createdAt')
       .sort('-createdAt');
     res.json({ bookings });
-    console.log(bookings);
   } catch (error) {
     console.error('Get my bookings error:', error);
     res.status(500).json({ message: `Server error: ${error.message}` });
@@ -253,7 +252,7 @@ export const cancelBooking = async (req, res) => {
     }
     res.json({ booking: updated });
   } catch (error) {
-    res.status(500).json({ message: `Server error${error}` });
+    res.status(500).json({ message: `Server error: ${error}` });
   }
 };
 
@@ -300,7 +299,12 @@ export const approveBooking = async (req, res) => {
     });
 
     // Send email notification to client
-    if (booking.user?.id?.email) {
+    // Use .get() to bypass the Mongoose .id virtual that returns a plain string
+    const clientUser = booking.get('user.id');
+    const clientEmail = clientUser?.email;
+    const clientName = clientUser?.fullName || booking.user?.fullName || 'Client';
+
+    if (clientEmail) {
       try {
         const eventDate = booking.weddingDate
           ? new Date(booking.weddingDate).toLocaleDateString('en-US', {
@@ -310,10 +314,10 @@ export const approveBooking = async (req, res) => {
             })
           : 'N/A';
 
-        console.log('Sending email to:', booking.user.id.email);
+        console.log('Sending email to:', clientEmail);
         await sendBookingApprovalEmail(
-          booking.user.id.email,
-          booking.user.fullName || booking.user.id.fullName,
+          clientEmail,
+          clientName,
           booking._id.toString().slice(-8).toUpperCase(),
           eventDate
         );
@@ -599,7 +603,7 @@ export const assignSuppliersToBooking = async (req, res) => {
  */
 export const updateBooking = async (req, res) => {
   try {
-    const { title, venue, lastKnownUpdatedAt } = req.body;
+    const { title, venue, weddingDate, packageId, suppliers, lastKnownUpdatedAt } = req.body;
     if (!lastKnownUpdatedAt) {
       return res.status(400).json({ message: 'Missing lastKnownUpdatedAt for concurrency control' });
     }
@@ -616,6 +620,9 @@ export const updateBooking = async (req, res) => {
     const updateObj = {};
     if (title !== undefined) updateObj.title = title.trim();
     if (venue !== undefined) updateObj.venue = venue.trim();
+    if (weddingDate !== undefined) updateObj.weddingDate = new Date(weddingDate);
+    if (packageId !== undefined) updateObj.package = packageId;
+    if (suppliers !== undefined) updateObj.suppliers = Array.isArray(suppliers) ? suppliers : [];
 
     // Attempt atomic update using timestamp match
     const updatedBooking = await updateByUpdatedAt(
@@ -659,16 +666,12 @@ export const updateBooking = async (req, res) => {
  */
 export const getBookedDates = async (req, res) => {
   try {
-    console.log('Fetching booked dates...');
-
     // Get only accepted bookings for availability calendar
     const bookings = await Booking.find({
       status: 'accepted',
     })
       .select('weddingDate prenuptDate')
       .lean();
-
-    console.log(`Found ${bookings.length} bookings`);
 
     // Extract all booked dates
     const bookedDates = new Set();
@@ -680,7 +683,6 @@ export const getBookedDates = async (req, res) => {
           if (!isNaN(weddingDate.getTime())) {
             const dateStr = weddingDate.toISOString().split('T')[0]; // Format: YYYY-MM-DD
             bookedDates.add(dateStr);
-            console.log('Added wedding date:', dateStr);
           }
         } catch (err) {
           console.error('Error processing weddingDate:', err);
@@ -692,7 +694,6 @@ export const getBookedDates = async (req, res) => {
           if (!isNaN(prenuptDate.getTime())) {
             const dateStr = prenuptDate.toISOString().split('T')[0]; // Format: YYYY-MM-DD
             bookedDates.add(dateStr);
-            console.log('Added prenupt date:', dateStr);
           }
         } catch (err) {
           console.error('Error processing prenuptDate:', err);
@@ -701,7 +702,6 @@ export const getBookedDates = async (req, res) => {
     });
 
     const datesArray = Array.from(bookedDates).sort();
-    console.log(`Returning ${datesArray.length} booked dates:`, datesArray);
 
     res.json({ bookedDates: datesArray });
   } catch (error) {

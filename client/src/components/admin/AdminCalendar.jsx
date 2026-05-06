@@ -93,7 +93,7 @@ const AdminCalendar = ({ bookings = [] }) => {
                   {event.title}
                 </p>
                 <span
-                  className={`badge badge-xs ${
+                  className={`badge badge-sm ${
                     statusClasses[event.status] || "badge-ghost"
                   }`}
                 >
@@ -129,7 +129,7 @@ const AdminCalendar = ({ bookings = [] }) => {
               events.length ? "border-primary/40" : ""
             }`}
           >
-            <div className="flex items-center justify-between text-sm font-semibold">
+            <div className="flex items-center justify-between text-base font-semibold">
               <span>{day}</span>
               {events.length > 0 && (
                 <span className="badge badge-sm badge-primary">
@@ -153,7 +153,7 @@ const AdminCalendar = ({ bookings = [] }) => {
                   {event.title}
                 </p>
                 <span
-                  className={`badge badge-xs ${
+                  className={`badge badge-sm ${
                     statusClasses[event.status] || "badge-ghost"
                   }`}
                 >

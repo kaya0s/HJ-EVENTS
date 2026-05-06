@@ -57,6 +57,7 @@ export const createSupplierAccount = async (req, res) => {
     const supplierProfile = new Supplier({
       name: fullName,
       category: 'Uncategorized', // Default category, can be updated later
+      user: newSupplier._id,
       contactInfo: {
         email: email,
       },
@@ -270,7 +271,7 @@ export const updateUser = async (req, res) => {
     }
     res.json({ user });
   } catch (error) {
-    res.status(500).json({ message: `Server error${error}` });
+    res.status(500).json({ message: `Server error: ${error}` });
   }
 };
 
@@ -286,7 +287,7 @@ export const deleteUser = async (req, res) => {
 
     // If deleting a supplier account, also delete from Supplier collection
     if (user.role === 'supplier') {
-      await Supplier.findOneAndDelete({ 'contactInfo.email': user.email });
+      await Supplier.findOneAndDelete({ user: user._id });
     }
 
     // Delete the user
@@ -301,6 +302,6 @@ export const deleteUser = async (req, res) => {
 
     res.json({ message: 'User deleted successfully' });
   } catch (error) {
-    res.status(500).json({ message: `Server error${error}` });
+    res.status(500).json({ message: `Server error: ${error}` });
   }
 };

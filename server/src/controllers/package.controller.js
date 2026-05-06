@@ -29,6 +29,14 @@ export const createPackage = async (req, res) => {
       return res.status(400).json({ message: 'Name and price are required' });
     }
 
+    const trimmedName = name.trim();
+    const existing = await Package.findOne({
+      name: { $regex: new RegExp(`^${trimmedName.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}$`, 'i') },
+    });
+    if (existing) {
+      return res.status(409).json({ message: 'A package with this name already exists' });
+    }
+
     let imageURL = '';
     if (req.file && req.file.buffer) {
       try {

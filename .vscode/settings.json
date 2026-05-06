@@ -13,5 +13,11 @@
     "source.fixAll.eslint": "explicit"
   },
   "editor.formatOnSave": true,
-  "editor.defaultFormatter": "esbenp.prettier-vscode"
+  "editor.defaultFormatter": "esbenp.prettier-vscode",
+  "mdb.presetConnections": [
+    {
+      "name": "Preset Connection",
+      "connectionString": "mongodb://localhost:27017"
+    }
+  ]
 }

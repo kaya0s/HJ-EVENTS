@@ -290,22 +290,20 @@ const MyBookings = () => {
   }
 
   return (
-    <section className="bg-linear-to-b from-base-100/80 via-base-200/40 to-base-100/80 min-h-screen w-full px-4 pt-6 pb-16 flex flex-col items-center">
-      <header className="w-full max-w-6xl flex flex-col gap-2 md:flex-row md:items-end md:justify-between mb-10">
-        <ScrollReveal animation="slideRight">
-          <div>
-            <p className="text-sm font-semibold uppercase tracking-[0.3em] text-primary/70">
-              Your Weddings
-            </p>
-            <h1 className="text-3xl font-bold text-base-content">My Bookings</h1>
-            <p className="text-base text-base-content/70">
-              Track timelines, packages, and milestones for each celebration.
-            </p>
-          </div>
-        </ScrollReveal>
+    <section className="bg-linear-to-b from-base-100/80 via-base-200/40 to-base-100/80 min-h-screen w-full px-4 md:px-8 xl:px-12 pt-6 pb-16 flex flex-col items-center">
+      <header className="w-full max-w-[90rem] flex flex-col gap-2 md:flex-row md:items-end md:justify-between mb-10">
+        <div>
+          <p className="text-sm font-semibold uppercase tracking-[0.3em] text-primary/70">
+            Your Weddings
+          </p>
+          <h1 className="text-3xl font-bold text-base-content">My Bookings</h1>
+          <p className="text-base text-base-content/70">
+            Track timelines, packages, and milestones for each celebration.
+          </p>
+        </div>
       </header>
 
-      <div className="w-full max-w-6xl">
+      <div className="w-full max-w-[90rem]">
         {fetchError && (
           <ScrollReveal animation="fade">
             <div className="alert alert-error mb-6">
@@ -330,93 +328,86 @@ const MyBookings = () => {
             </div>
           </ScrollReveal>
         ) : (
-          <ScrollReveal animation="slideUp" delay={0.2}>
-            <div className="overflow-x-auto rounded-3xl border border-base-300 bg-base-100 shadow-lg">
-              <table className="hidden min-w-full table-fixed text-left text-sm md:table">
-                <thead className="bg-base-200 text-xs uppercase text-base-content/60">
-                  <tr>
-                    <th className="px-6 py-4 font-semibold">Booking ID</th>
-                    <th className="px-6 py-4 font-semibold">Event Date</th>
-                    <th className="px-6 py-4 font-semibold">Wedding Title</th>
-                    <th className="px-6 py-4 font-semibold">Venue</th>
-                    <th className="px-6 py-4 font-semibold">
-                      Assigned Suppliers
-                    </th>
-                    <th className="px-6 py-4 font-semibold">Status</th>
-                    <th className="px-6 py-4 font-semibold">Actions</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-base-300">
-                  {bookings.map((booking, index) => (
-                    <ScrollReveal
-                      as="tr"
-                      key={booking._id}
-                      animation="fade"
-                      delay={index * 0.05}
-                      className="hover:bg-base-200/40"
-                    >
-                      <td className="px-6 py-4 font-medium text-base-content font-mono text-sm">
-                        {booking._id.slice(-8).toUpperCase()}
-                      </td>
-                      <td className="px-6 py-4 text-base-content/70">
-                        {formatDate(booking.weddingDate)}
-                      </td>
-                      <td className="px-6 py-4 text-base-content/70">
-                        {booking.title || "Untitled Wedding"}
-                      </td>
-                      <td className="px-6 py-4 text-base-content/70">
-                        {booking.venue || "N/A"}
-                      </td>
-                      <td className="px-6 py-4 text-base-content/70 text-sm">
-                        {formatSuppliers(booking.suppliers)}
-                      </td>
-                      <td className="px-6 py-4">
-                        <div className="flex items-center gap-2">
-                          {getStatusBadge(booking.status)}
-                          {booking.payment?.status === "paid" && (
-                            <span className="badge badge-success">Paid</span>
-                          )}
-                        </div>
-                      </td>
-                      <td className="px-6 py-4">
-                        <div className="flex gap-2">
-                          {canEdit(booking.status) && (
-                            <button
-                              className="btn btn-sm btn-outline btn-primary"
-                              onClick={() => handleEdit(booking)}
-                              title="Edit Booking"
-                            >
-                              <Edit2 size={16} />
-                            </button>
-                          )}
-                          {canReview(booking) && (
-                            <button
-                              className="btn btn-sm btn-secondary"
-                              onClick={() => openReviewModal(booking)}
-                              title={
-                                booking.review
-                                  ? "Edit your review"
-                                  : "Share review about HJ Wedding Events"
-                              }
-                            >
-                              <Star size={16} />
-                              {booking.review ? (
-                                <span className="ml-1 hidden lg:inline">
-                                  Edit Review
-                                </span>
-                              ) : null}
-                            </button>
-                          )}
-                          {isPending(booking.status) && (
-                            <>
-                              {booking.payment?.status !== "paid" && (
-                                <button
-                                  className="btn btn-sm btn-primary"
-                                  onClick={() => openPaymentModal(booking)}
-                                >
-                                  Pay Now
-                                </button>
-                              )}
+          <div className="overflow-x-auto rounded-3xl border border-base-300 bg-base-100 shadow-lg">
+            <table className="hidden min-w-full table-auto text-left text-sm md:table">
+              <thead className="bg-base-200 text-xs uppercase text-base-content/60">
+                <tr>
+                  <th className="px-4 py-4 font-semibold whitespace-nowrap">Booking ID</th>
+                  <th className="px-4 py-4 font-semibold whitespace-nowrap">Event Date</th>
+                  <th className="px-4 py-4 font-semibold">Wedding Title</th>
+                  <th className="px-4 py-4 font-semibold">Venue</th>
+                  <th className="px-4 py-4 font-semibold">
+                    Assigned Suppliers
+                  </th>
+                  <th className="px-4 py-4 font-semibold whitespace-nowrap">Status</th>
+                  <th className="px-4 py-4 font-semibold text-right">Actions</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-base-300">
+                {bookings.map((booking) => (
+                  <tr key={booking._id} className="hover:bg-base-200/40">
+                    <td className="px-6 py-4 font-medium text-base-content font-mono text-sm">
+                      {booking._id.slice(-8).toUpperCase()}
+                    </td>
+                    <td className="px-6 py-4 text-base-content/70">
+                      {formatDate(booking.weddingDate)}
+                    </td>
+                    <td className="px-6 py-4 text-base-content/70">
+                      {booking.title || "Untitled Wedding"}
+                    </td>
+                    <td className="px-6 py-4 text-base-content/70">
+                      {booking.venue || "N/A"}
+                    </td>
+                    <td className="px-6 py-4 text-base-content/70 text-sm">
+                      {formatSuppliers(booking.suppliers)}
+                    </td>
+                    <td className="px-4 py-4">
+                      <div className="flex items-center gap-2">
+                        {getStatusBadge(booking.status)}
+                        {booking.payment?.status === "paid" && (
+                          <span className="badge badge-success">Paid</span>
+                        )}
+                      </div>
+                    </td>
+                     <td className="px-4 py-4 align-middle">
+                        <div className="flex items-center justify-end gap-2">
+                        {canEdit(booking.status) && (
+                          <button
+                            className="btn btn-sm btn-outline btn-primary"
+                            onClick={() => handleEdit(booking)}
+                            title="Edit Booking"
+                          >
+                            <Edit2 size={16} />
+                          </button>
+                        )}
+                        {canReview(booking) && (
+                          <button
+                            className="btn btn-sm btn-secondary"
+                            onClick={() => openReviewModal(booking)}
+                            title={
+                              booking.review
+                                ? "Edit your review"
+                                : "Share review about HJ Wedding Events"
+                            }
+                          >
+                            <Star size={16} />
+                            {booking.review ? (
+                              <span className="ml-1 hidden lg:inline">
+                                Edit Review
+                              </span>
+                            ) : null}
+                          </button>
+                        )}
+                        {isPending(booking.status) && (
+                          <>
+                            {booking.payment?.status !== "paid" && (
+                              <button
+                                className="btn btn-sm btn-primary"
+                                onClick={() => openPaymentModal(booking)}
+                              >
+                                Pay Now
+                              </button>
+                            )}
 
                               <button
                                 className="btn btn-sm btn-outline btn-error"
@@ -439,112 +430,109 @@ const MyBookings = () => {
                 </tbody>
               </table>
 
-              <div className="space-y-4 p-4 md:hidden">
-                {bookings.map((booking, index) => (
-                  <ScrollReveal key={booking._id} animation="slideUp" delay={index * 0.1}>
-                    <div
-                      className="space-y-2 rounded-2xl border border-base-200 bg-base-100 p-4 shadow-sm"
-                    >
-                      <div className="flex items-center justify-between">
-                        <div>
-                          <p className="font-semibold text-base-content">
-                            {booking.title || "Untitled Wedding"}
-                          </p>
-                          <p className="text-xs uppercase tracking-wide text-base-content/50 font-mono">
-                            {booking._id.slice(-8).toUpperCase()}
-                          </p>
-                        </div>
-                        <div className="ml-4">{getStatusBadge(booking.status)}</div>
-                      </div>
-                      <div className="space-y-1 text-sm text-base-content/70 mt-2">
-                        <p>
-                          <span className="font-medium text-base-content">
-                            Event date:
-                          </span>{" "}
-                          {formatDate(booking.weddingDate)}
-                        </p>
-                        <p>
-                          <span className="font-medium text-base-content">
-                            Venue:
-                          </span>{" "}
-                          {booking.venue || "N/A"}
-                        </p>
-                        <p>
-                          <span className="font-medium text-base-content">
-                            Suppliers:
-                          </span>{" "}
-                          {formatSuppliers(booking.suppliers)}
-                        </p>
-                      </div>
-                      <div className="flex gap-2 mt-3 justify-end">
-                        {canEdit(booking.status) && (
-                          <button
-                            className="btn btn-sm btn-outline btn-primary flex-1"
-                            onClick={() => handleEdit(booking)}
-                          >
-                            <Edit2 size={16} className="mr-1" />
-                            Edit
-                          </button>
-                        )}
-                        {canReview(booking) && (
-                          <button
-                            className="btn btn-sm btn-secondary flex-1"
-                            onClick={() => openReviewModal(booking)}
-                          >
-                            <Star size={16} className="mr-1" />
-                            {booking.review ? "Edit" : "Review"}
-                          </button>
-                        )}
-                        {isPending(booking.status) && (
-                          <>
-                            {booking.payment?.status !== "paid" && (
-                              <button
-                                className="btn btn-sm btn-primary flex-1"
-                                onClick={() => openPaymentModal(booking)}
-                              >
-                                Pay Now
-                              </button>
-                            )}
-                            <button
-                              className="btn btn-sm btn-outline btn-error flex-1"
-                              onClick={() => handleCancel(booking._id)}
-                              disabled={cancellingId === booking._id}
-                            >
-                              {cancellingId === booking._id ? (
-                                <Loader className="animate-spin" size={16} />
-                              ) : (
-                                "Cancel"
-                              )}
-                            </button>
-                          </>
-                        )}
-                      </div>
+            <div className="space-y-4 p-4 md:hidden">
+              {bookings.map((booking) => (
+                <div
+                  key={booking._id}
+                  className="space-y-2 rounded-2xl border border-base-200 bg-base-100 p-4 shadow-sm"
+                >
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="font-semibold text-base-content">
+                        {booking.title || "Untitled Wedding"}
+                      </p>
+                      <p className="text-xs uppercase tracking-wide text-base-content/50 font-mono">
+                        {booking._id.slice(-8).toUpperCase()}
+                      </p>
                     </div>
-                  </ScrollReveal>
-                ))}
-              </div>
+                    <div className="ml-4">{getStatusBadge(booking.status)}</div>
+                  </div>
+                  <div className="space-y-1 text-sm text-base-content/70 mt-2">
+                    <p>
+                      <span className="font-medium text-base-content">
+                        Event date:
+                      </span>{" "}
+                      {formatDate(booking.weddingDate)}
+                    </p>
+                    <p>
+                      <span className="font-medium text-base-content">
+                        Venue:
+                      </span>{" "}
+                      {booking.venue || "N/A"}
+                    </p>
+                    <p>
+                      <span className="font-medium text-base-content">
+                        Suppliers:
+                      </span>{" "}
+                      {formatSuppliers(booking.suppliers)}
+                    </p>
+                  </div>
+                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mt-3">
+                     {canEdit(booking.status) && (
+                       <button
+                         className="btn btn-sm btn-outline btn-primary"
+                         onClick={() => handleEdit(booking)}
+                       >
+                         <Edit2 size={16} className="mr-1" />
+                         Edit
+                       </button>
+                     )}
+                     {canReview(booking) && (
+                       <button
+                         className="btn btn-sm btn-secondary"
+                         onClick={() => openReviewModal(booking)}
+                       >
+                         <Star size={16} className="mr-1" />
+                         {booking.review ? "Edit" : "Review"}
+                       </button>
+                     )}
+                     {isPending(booking.status) && (
+                       <>
+                         {booking.payment?.status !== "paid" && (
+                           <button
+                             className="btn btn-sm btn-primary"
+                             onClick={() => openPaymentModal(booking)}
+                           >
+                             Pay Now
+                           </button>
+                         )}
+                         <button
+                           className="btn btn-sm btn-outline btn-error"
+                           onClick={() => handleCancel(booking._id)}
+                           disabled={cancellingId === booking._id}
+                         >
+                           {cancellingId === booking._id ? (
+                             <Loader className="animate-spin" size={16} />
+                           ) : (
+                             "Cancel"
+                           )}
+                         </button>
+                       </>
+                     )}
+                   </div>
+                </div>
+              ))}
             </div>
-          </ScrollReveal>
+          </div>
         )}
       </div>
 
       {!isLoading && (
-        <div className="w-full max-w-6xl mt-10">
-          <ScrollReveal animation="fade" delay={0.4}>
-            <div className="card bg-base-100 shadow-lg border border-base-200">
-              <div className="card-body space-y-4">
-                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-                  <div>
-                    <h2 className="text-xl font-semibold flex items-center gap-2">
-                      <Star className="text-warning" />
-                      Share Your Experience
-                    </h2>
-                    <p className="text-sm text-base-content/70">
-                      Completed weddings appear here once the event date has
-                      passed. Drop a quick review for the HJ Wedding Events team.
-                    </p>
-                  </div>
+        <div className="w-full max-w-[90rem] mt-10">
+          <div className="card bg-base-100 shadow-lg border border-base-200">
+            <div className="card-body space-y-4">
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                <div>
+                  <h2 className="text-xl font-semibold flex items-center gap-2">
+                    <Star className="text-warning" />
+                    Share Your Experience
+                  </h2>
+                  <p className="text-sm text-base-content/70">
+                    Completed weddings appear here once the event date has
+                    passed. Drop a quick review for the HJ Wedding Events team.
+                  </p>
                 </div>
+              </div>
 
                 {reviewEligibleBookings.length === 0 ? (
                   <p className="text-sm text-base-content/60">

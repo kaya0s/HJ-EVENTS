@@ -51,8 +51,9 @@ export const useAuthStore = create((set, get) => ({
       return res.data;
     } catch (error) {
       toast.error(
-        "account creation failed: " + error.response?.data?.message ||
-          error.message
+        error.response?.data?.message ||
+          error.message ||
+          "Account creation failed"
       );
       throw error;
     } finally {

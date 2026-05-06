@@ -49,11 +49,6 @@ const AdminSidebar = () => {
       icon: Package,
     },
     {
-      path: "/admin/reports",
-      label: "Reports & Analytics",
-      icon: FileText,
-    },
-    {
       path: "/admin/faqs",
       label: "FAQs",
       icon: HelpCircle,

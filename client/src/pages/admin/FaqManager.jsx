@@ -5,6 +5,7 @@ import useFaqStore from "../../store/useFaqStore";
 import { Loader, Edit2, Trash2, Plus } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { confirmDialog } from "../../utils/confirmDialog";
+import toast from "react-hot-toast";
 
 const emptyForm = {
   question: "",
@@ -41,7 +42,14 @@ const FaqManager = () => {
 
   const handleSubmit = async (event) => {
     event.preventDefault();
-    if (!form.question.trim() || !form.answer.trim()) return;
+    if (!form.question.trim()) {
+      toast.error("Question is required");
+      return;
+    }
+    if (!form.answer.trim()) {
+      toast.error("Answer is required");
+      return;
+    }
     if (editingId) {
       await updateFaq(editingId, form);
     } else {
@@ -57,7 +65,6 @@ const FaqManager = () => {
       question: faq.question,
       answer: faq.answer,
       order: faq.order || 0,
-      isPublished: faq.isPublished ?? true,
     });
   };
 
@@ -112,53 +119,35 @@ const FaqManager = () => {
                     required
                   />
                 </div>
+                 <div className="form-control">
+                   <label className="label">
+                     <span className="label-text font-medium">Answer <span className="text-error">*</span></span>
+                   </label>
+                   <textarea
+                     className="textarea textarea-bordered min-h-24 w-full focus:outline-none focus:border-primary"
+                     placeholder="Share the details..."
+                     value={form.answer}
+                     onChange={(e) =>
+                       setForm((prev) => ({ ...prev, answer: e.target.value }))
+                     }
+                     required
+                   />
+                </div>
                 <div className="form-control">
                   <label className="label">
-                    <span className="label-text font-medium">Answer</span>
+                    <span className="label-text font-medium">Sort Order</span>
                   </label>
-                  <textarea
-                    className="textarea textarea-bordered min-h-24 w-full"
-                    placeholder="Share the details..."
-                    value={form.answer}
+                  <input
+                    type="number"
+                    className="input input-bordered w-full"
+                    value={form.order}
                     onChange={(e) =>
-                      setForm((prev) => ({ ...prev, answer: e.target.value }))
+                      setForm((prev) => ({
+                        ...prev,
+                        order: Number(e.target.value),
+                      }))
                     }
-                    required
                   />
-                </div>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="form-control">
-                    <label className="label">
-                      <span className="label-text font-medium">Sort Order</span>
-                    </label>
-                    <input
-                      type="number"
-                      className="input input-bordered w-full"
-                      value={form.order}
-                      onChange={(e) =>
-                        setForm((prev) => ({
-                          ...prev,
-                          order: Number(e.target.value),
-                        }))
-                      }
-                    />
-                  </div>
-                  <div className="form-control justify-end">
-                    <label className="label cursor-pointer justify-start gap-4">
-                      <span className="label-text font-medium">Published</span>
-                      <input
-                        type="checkbox"
-                        className="toggle toggle-primary"
-                        checked={form.isPublished ?? true}
-                        onChange={(e) =>
-                          setForm((prev) => ({
-                            ...prev,
-                            isPublished: e.target.checked,
-                          }))
-                        }
-                      />
-                    </label>
-                  </div>
                 </div>
                 <div className="flex gap-3 justify-end pt-2">
                   {editingId && (
@@ -221,10 +210,9 @@ const FaqManager = () => {
                           <p className="text-sm text-base-content/70 mt-1">
                             {faq.answer}
                           </p>
-                          <p className="text-xs text-base-content/50 mt-2">
-                            Order: {faq.order ?? 0} •{" "}
-                            {faq.isPublished ? "Published" : "Hidden"}
-                          </p>
+                           <p className="text-xs text-base-content/50 mt-2">
+                             Order: {faq.order ?? 0}
+                           </p>
                         </div>
                         <div className="flex gap-2 shrink-0">
                           <button

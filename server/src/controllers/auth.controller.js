@@ -119,11 +119,17 @@ export const googleAuthCallback = async (req, res, next) => {
 //register
 export const Register = async (req, res) => {
   const { firstName, lastName, email, password, recaptchaToken, phone, address } = req.body;
+  const normalizedEmail = email?.toLowerCase().trim();
   try {
     if (!firstName || !lastName || !email || !password || !phone || !address) {
       return res.status(400).json({
         message: 'First name, last name, email, phone, address, and password are required',
       });
+    }
+
+    const nameRegex = /^[a-zA-Z\s'-]+$/;
+    if (!nameRegex.test(firstName.trim()) || !nameRegex.test(lastName.trim())) {
+      return res.status(400).json({ message: 'Name must contain only letters' });
     }
 
     const normalizedPhone = String(phone).trim();
@@ -151,7 +157,7 @@ export const Register = async (req, res) => {
       return res.status(400).json({ message: 'Password must be at least 6 characters' });
     }
 
-    const user = await User.findOne({ email });
+    const user = await User.findOne({ email: normalizedEmail });
 
     if (user) return res.status(400).json({ message: 'Email already exists' });
 
@@ -160,7 +166,7 @@ export const Register = async (req, res) => {
 
     const newUser = new User({
       fullName: firstName + ' ' + lastName,
-      email,
+      email: normalizedEmail,
       password: hashedPassword,
       phone: normalizedPhone,
       address: normalizedAddress,
@@ -175,7 +181,7 @@ export const Register = async (req, res) => {
     newUser.emailVerificationExpires = new Date(Date.now() + 15 * 60 * 1000); // 15 minutes
 
     await newUser.save();
-    await sendEmailVerificationEmail(email, newUser.fullName, verificationCode);
+    await sendEmailVerificationEmail(normalizedEmail, newUser.fullName, verificationCode);
 
     res.status(201).json({
       message: 'Please verify your email to finish creating your account.',
@@ -270,6 +276,7 @@ export const verifyEmailCode = async (req, res) => {
 //Login
 export const Login = async (req, res) => {
   const { email, password, recaptchaToken } = req.body;
+  const normalizedEmail = email?.toLowerCase().trim();
 
   if (!email || !password) return res.status(400).json({ message: 'Invalid Credentials' });
 
@@ -284,7 +291,7 @@ export const Login = async (req, res) => {
       }
     }
     // Find user by email
-    const user = await User.findOne({ email });
+    const user = await User.findOne({ email: normalizedEmail });
 
     if (!user) {
       return res.status(400).json({ message: 'Invalid credentials' });
@@ -336,11 +343,9 @@ export const ForgotPassword = async (req, res) => {
     const resetToken = generateResetToken();
 
     // Save reset token and expiry (15 minutes)
-    user.resetPasswordToken = hashResetToken(resetToken);
-    user.resetPasswordExpires = new Date(Date.now() + 15 * 60 * 1000); // 15 minutes
-
-    user.resetCode = resetCode;
     user.resetPasswordToken = resetToken;
+    user.resetPasswordExpires = new Date(Date.now() + 15 * 60 * 1000); // 15 minutes
+    user.resetCode = resetCode;
     await user.save();
 
     // Send email with reset code
@@ -349,10 +354,8 @@ export const ForgotPassword = async (req, res) => {
     if (emailResult.success) {
       res.status(200).json({
         message: 'Reset code sent to your email',
-        resetToken, // Send token to client for verification
+        resetToken, // Send token to client for the multi-step reset flow
       });
-      console.log('Reset Token (for testing):', resetToken);
-      console.log('Reset Code (for testing):', resetCode);
     } else {
       res.status(500).json({ message: 'Failed to send reset email' });
     }

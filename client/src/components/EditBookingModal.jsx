@@ -1,15 +1,35 @@
 import { useState, useEffect } from "react";
 import { X, Calendar, MapPin, Tag, Users } from "lucide-react";
 import dayjs from "dayjs";
+import axiosInstance from "../lib/axios";
 
 const EditBookingModal = ({ booking, isOpen, onClose, onSave, isSaving }) => {
   const [title, setTitle] = useState("");
   const [venue, setVenue] = useState("");
+  const [weddingDate, setWeddingDate] = useState("");
+  const [packages, setPackages] = useState([]);
+  const [selectedPackage, setSelectedPackage] = useState("");
+  const [suppliers, setSuppliers] = useState([]);
+  const [selectedSuppliers, setSelectedSuppliers] = useState([]);
 
   useEffect(() => {
     if (isOpen && booking) {
       setTitle(booking.title || "");
       setVenue(booking.venue || "");
+      setWeddingDate(
+        booking.weddingDate
+          ? dayjs(booking.weddingDate).format("YYYY-MM-DD")
+          : ""
+      );
+      setSelectedPackage(booking.package?._id || booking.package || "");
+      setSelectedSuppliers(booking.suppliers?.map((s) => s._id || s) || []);
+
+      axiosInstance.get("/packages").then((res) =>
+        setPackages(res.data.packages || [])
+      );
+      axiosInstance.get("/suppliers").then((res) =>
+        setSuppliers(res.data.suppliers || [])
+      );
     }
   }, [isOpen, booking]);
 
@@ -24,6 +44,11 @@ const EditBookingModal = ({ booking, isOpen, onClose, onSave, isSaving }) => {
     onSave({
       title: title.trim(),
       venue: venue.trim(),
+      weddingDate,
+      ...(canEdit && {
+        packageId: selectedPackage,
+        suppliers: selectedSuppliers,
+      }),
       lastKnownUpdatedAt: booking.updatedAt,
     });
   };
@@ -95,20 +120,23 @@ const EditBookingModal = ({ booking, isOpen, onClose, onSave, isSaving }) => {
             </p>
           </div>
 
-          {/* Event Date - Read Only */}
+          {/* Event Date */}
           <div className="form-control w-full">
             <label className="label">
               <div className="flex items-center gap-2">
                 <Calendar className="w-4 h-4 text-base-content/60" />
                 <span className="label-text font-medium">Event Date</span>
-                <span className="text-xs text-base-content/50">
-                  (Cannot be changed)
-                </span>
               </div>
             </label>
-            <div className="input input-bordered w-full bg-base-200 cursor-not-allowed">
-              {dayjs(booking.weddingDate).format("MMMM DD, YYYY")}
-            </div>
+            <input
+              type="date"
+              className="input input-bordered w-full"
+              value={weddingDate}
+              min={dayjs().add(1, "day").format("YYYY-MM-DD")}
+              onChange={(e) => setWeddingDate(e.target.value)}
+              disabled={isSaving}
+              required
+            />
           </div>
 
           {/* Wedding Title - Editable */}
@@ -150,7 +178,43 @@ const EditBookingModal = ({ booking, isOpen, onClose, onSave, isSaving }) => {
             />
           </div>
 
-          {/* Assigned Suppliers - Read Only */}
+          {/* Package Selector (editable for pending) */}
+          {canEdit ? (
+            <div className="form-control w-full">
+              <label className="label">
+                <div className="flex items-center gap-2">
+                  <Tag className="w-4 h-4 text-base-content/60" />
+                  <span className="label-text font-medium">Package</span>
+                </div>
+              </label>
+              <select
+                className="select select-bordered w-full"
+                value={selectedPackage}
+                onChange={(e) => setSelectedPackage(e.target.value)}
+                disabled={isSaving}
+              >
+                <option value="">Select a package</option>
+                {packages.map((pkg) => (
+                  <option key={pkg._id} value={pkg._id}>
+                    {pkg.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+          ) : (
+            booking.package && (
+              <div className="bg-base-200 rounded-lg p-4">
+                <p className="text-xs uppercase tracking-wide text-base-content/50 font-mono mb-1">
+                  Package
+                </p>
+                <p className="font-semibold text-lg">
+                  {booking.package.name || "N/A"}
+                </p>
+              </div>
+            )
+          )}
+
+          {/* Suppliers — editable for pending, read-only otherwise */}
           <div className="form-control w-full">
             <label className="label">
               <div className="flex items-center gap-2">
@@ -158,14 +222,56 @@ const EditBookingModal = ({ booking, isOpen, onClose, onSave, isSaving }) => {
                 <span className="label-text font-medium">
                   Assigned Suppliers
                 </span>
-                <span className="text-xs text-base-content/50">
-                  (Assigned by admin)
-                </span>
+                {!canEdit && (
+                  <span className="text-xs text-base-content/50">
+                    (Assigned by admin)
+                  </span>
+                )}
               </div>
             </label>
-            <div className="bg-base-100 border border-base-300 rounded-lg p-4">
-              {formatSuppliers(booking.suppliers)}
-            </div>
+            {canEdit ? (
+              <div className="bg-base-100 border border-base-300 rounded-lg p-4 space-y-2 max-h-48 overflow-y-auto">
+                {suppliers.length === 0 ? (
+                  <p className="text-sm text-base-content/60 italic">
+                    No suppliers available
+                  </p>
+                ) : (
+                  suppliers.map((supplier) => (
+                    <label
+                      key={supplier._id}
+                      className="flex items-center gap-2 cursor-pointer"
+                    >
+                      <input
+                        type="checkbox"
+                        className="checkbox checkbox-sm checkbox-primary"
+                        checked={selectedSuppliers.includes(supplier._id)}
+                        disabled={isSaving}
+                        onChange={(e) => {
+                          setSelectedSuppliers((prev) =>
+                            e.target.checked
+                              ? [...prev, supplier._id]
+                              : prev.filter((id) => id !== supplier._id)
+                          );
+                        }}
+                      />
+                      <span className="text-sm">
+                        {supplier.name}
+                        {supplier.category && (
+                          <span className="text-base-content/50 capitalize">
+                            {" "}
+                            — {supplier.category}
+                          </span>
+                        )}
+                      </span>
+                    </label>
+                  ))
+                )}
+              </div>
+            ) : (
+              <div className="bg-base-100 border border-base-300 rounded-lg p-4">
+                {formatSuppliers(booking.suppliers)}
+              </div>
+            )}
           </div>
 
           {/* Status Badge */}
@@ -193,34 +299,38 @@ const EditBookingModal = ({ booking, isOpen, onClose, onSave, isSaving }) => {
           </div>
 
           {/* Action Buttons */}
-          <div className="modal-action">
-            <button
-              type="button"
-              className="btn btn-ghost"
-              onClick={onClose}
-              disabled={isSaving}
-            >
-              Cancel
-            </button>
-            <button
-              type="submit"
-              className="btn btn-primary"
-              disabled={isSaving || !title.trim() || !venue.trim() || !canEdit}
-            >
-              {isSaving ? (
-                <>
-                  <span className="loading loading-spinner loading-sm"></span>
-                  Saving...
-                </>
-              ) : (
-                "Save Changes"
+          <div className="flex flex-col-reverse sm:flex-row sm:items-center sm:justify-between gap-4 mt-6 pt-6 border-t border-base-200">
+            <div>
+              {!canEdit && (
+                <p className="text-sm text-base-content/60">
+                  Booking cannot be edited unless it is pending.
+                </p>
               )}
-            </button>
-            {!canEdit && (
-              <p className="text-sm text-base-content/60">
-                Booking cannot be edited unless it is pending.
-              </p>
-            )}
+            </div>
+            <div className="flex justify-end gap-2">
+              <button
+                type="button"
+                className="btn btn-ghost"
+                onClick={onClose}
+                disabled={isSaving}
+              >
+                Cancel
+              </button>
+              <button
+                type="submit"
+                className="btn btn-primary"
+                disabled={isSaving || !title.trim() || !venue.trim() || !weddingDate || !canEdit}
+              >
+                {isSaving ? (
+                  <>
+                    <span className="loading loading-spinner loading-sm"></span>
+                    Saving...
+                  </>
+                ) : (
+                  "Save Changes"
+                )}
+              </button>
+            </div>
           </div>
         </form>
       </div>
