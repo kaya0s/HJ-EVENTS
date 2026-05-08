@@ -54,8 +54,6 @@ const MyBookings = () => {
         const data = await fetchMyBookings();
         setBookings(data);
       } catch (error) {
-        // Error is already shown as toast in the store
-        // Extract the error message for UI display
         const errorMessage =
           error?.response?.data?.message ||
           error?.message ||
@@ -119,8 +117,8 @@ const MyBookings = () => {
         prev.map((booking) =>
           booking._id === bookingId
             ? { ...booking, status: updated?.status || "cancelled" }
-            : booking
-        )
+            : booking,
+        ),
       );
     } catch {
       // toast handled in store
@@ -156,8 +154,8 @@ const MyBookings = () => {
         prev.map((booking) =>
           booking._id === editingBooking._id
             ? { ...booking, ...updated }
-            : booking
-        )
+            : booking,
+        ),
       );
       setEditingBooking(null);
     } catch (error) {
@@ -165,8 +163,8 @@ const MyBookings = () => {
         const serverBooking = error.response.data.booking;
         setBookings((prev) =>
           prev.map((booking) =>
-            booking._id === serverBooking._id ? serverBooking : booking
-          )
+            booking._id === serverBooking._id ? serverBooking : booking,
+          ),
         );
         setEditingBooking(serverBooking);
       }
@@ -226,16 +224,16 @@ const MyBookings = () => {
         prev.map((booking) =>
           booking._id === reviewBooking._id
             ? { ...booking, review: normalizedReview }
-            : booking
-        )
+            : booking,
+        ),
       );
       setReviewBooking((prev) =>
-        prev ? { ...prev, review: normalizedReview } : prev
+        prev ? { ...prev, review: normalizedReview } : prev,
       );
       toast.success(
         existingReviewId
           ? "Your review has been updated."
-          : "Thank you for reviewing HJ Wedding Events!"
+          : "Thank you for reviewing HJ Wedding Events!",
       );
       refetchReviews();
       closeReviewModal();
@@ -251,7 +249,7 @@ const MyBookings = () => {
   };
 
   const reviewEligibleBookings = bookings.filter(
-    (booking) => canReview(booking) && !booking.review
+    (booking) => canReview(booking) && !booking.review,
   );
 
   const formatSuppliers = (suppliers) => {
@@ -329,22 +327,33 @@ const MyBookings = () => {
           </ScrollReveal>
         ) : (
           <div className="overflow-x-auto rounded-3xl border border-base-300 bg-base-100 shadow-lg">
+            {/* ── Desktop table ── */}
             <table className="hidden min-w-full table-auto text-left text-sm md:table">
               <thead className="bg-base-200 text-xs uppercase text-base-content/60">
                 <tr>
-                  <th className="px-4 py-4 font-semibold whitespace-nowrap">Booking ID</th>
-                  <th className="px-4 py-4 font-semibold whitespace-nowrap">Event Date</th>
+                  <th className="px-4 py-4 font-semibold whitespace-nowrap">
+                    Booking ID
+                  </th>
+                  <th className="px-4 py-4 font-semibold whitespace-nowrap">
+                    Event Date
+                  </th>
                   <th className="px-4 py-4 font-semibold">Wedding Title</th>
                   <th className="px-4 py-4 font-semibold">Venue</th>
                   <th className="px-4 py-4 font-semibold">
                     Assigned Suppliers
                   </th>
-                  <th className="px-4 py-4 font-semibold whitespace-nowrap">Status</th>
-                  <th className="px-4 py-4 font-semibold text-right">Actions</th>
+                  <th className="px-4 py-4 font-semibold whitespace-nowrap">
+                    Status
+                  </th>
+                  <th className="px-4 py-4 font-semibold text-right">
+                    Actions
+                  </th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-base-300">
                 {bookings.map((booking) => (
+                  // FIX: ScrollReveal renders a <div>, which is invalid inside <tbody>.
+                  // Removed ScrollReveal wrapper here to keep valid HTML table structure.
                   <tr key={booking._id} className="hover:bg-base-200/40">
                     <td className="px-6 py-4 font-medium text-base-content font-mono text-sm">
                       {booking._id.slice(-8).toUpperCase()}
@@ -369,8 +378,8 @@ const MyBookings = () => {
                         )}
                       </div>
                     </td>
-                     <td className="px-4 py-4 align-middle">
-                        <div className="flex items-center justify-end gap-2">
+                    <td className="px-4 py-4 align-middle">
+                      <div className="flex items-center justify-end gap-2">
                         {canEdit(booking.status) && (
                           <button
                             className="btn btn-sm btn-outline btn-primary"
@@ -408,28 +417,28 @@ const MyBookings = () => {
                                 Pay Now
                               </button>
                             )}
+                            <button
+                              className="btn btn-sm btn-outline btn-error"
+                              onClick={() => handleCancel(booking._id)}
+                              disabled={cancellingId === booking._id}
+                              title="Cancel Booking"
+                            >
+                              {cancellingId === booking._id ? (
+                                <Loader className="animate-spin" size={16} />
+                              ) : (
+                                "Cancel"
+                              )}
+                            </button>
+                          </>
+                        )}
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
 
-                              <button
-                                className="btn btn-sm btn-outline btn-error"
-                                onClick={() => handleCancel(booking._id)}
-                                disabled={cancellingId === booking._id}
-                                title="Cancel Booking"
-                              >
-                                {cancellingId === booking._id ? (
-                                  <Loader className="animate-spin" size={16} />
-                                ) : (
-                                  "Cancel"
-                                )}
-                              </button>
-                            </>
-                          )}
-                        </div>
-                      </td>
-                    </ScrollReveal>
-                  ))}
-                </tbody>
-              </table>
-
+            {/* ── Mobile cards ── */}
             <div className="space-y-4 p-4 md:hidden">
               {bookings.map((booking) => (
                 <div
@@ -467,49 +476,49 @@ const MyBookings = () => {
                       {formatSuppliers(booking.suppliers)}
                     </p>
                   </div>
-                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mt-3">
-                     {canEdit(booking.status) && (
-                       <button
-                         className="btn btn-sm btn-outline btn-primary"
-                         onClick={() => handleEdit(booking)}
-                       >
-                         <Edit2 size={16} className="mr-1" />
-                         Edit
-                       </button>
-                     )}
-                     {canReview(booking) && (
-                       <button
-                         className="btn btn-sm btn-secondary"
-                         onClick={() => openReviewModal(booking)}
-                       >
-                         <Star size={16} className="mr-1" />
-                         {booking.review ? "Edit" : "Review"}
-                       </button>
-                     )}
-                     {isPending(booking.status) && (
-                       <>
-                         {booking.payment?.status !== "paid" && (
-                           <button
-                             className="btn btn-sm btn-primary"
-                             onClick={() => openPaymentModal(booking)}
-                           >
-                             Pay Now
-                           </button>
-                         )}
-                         <button
-                           className="btn btn-sm btn-outline btn-error"
-                           onClick={() => handleCancel(booking._id)}
-                           disabled={cancellingId === booking._id}
-                         >
-                           {cancellingId === booking._id ? (
-                             <Loader className="animate-spin" size={16} />
-                           ) : (
-                             "Cancel"
-                           )}
-                         </button>
-                       </>
-                     )}
-                   </div>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mt-3">
+                    {canEdit(booking.status) && (
+                      <button
+                        className="btn btn-sm btn-outline btn-primary"
+                        onClick={() => handleEdit(booking)}
+                      >
+                        <Edit2 size={16} className="mr-1" />
+                        Edit
+                      </button>
+                    )}
+                    {canReview(booking) && (
+                      <button
+                        className="btn btn-sm btn-secondary"
+                        onClick={() => openReviewModal(booking)}
+                      >
+                        <Star size={16} className="mr-1" />
+                        {booking.review ? "Edit" : "Review"}
+                      </button>
+                    )}
+                    {isPending(booking.status) && (
+                      <>
+                        {booking.payment?.status !== "paid" && (
+                          <button
+                            className="btn btn-sm btn-primary"
+                            onClick={() => openPaymentModal(booking)}
+                          >
+                            Pay Now
+                          </button>
+                        )}
+                        <button
+                          className="btn btn-sm btn-outline btn-error"
+                          onClick={() => handleCancel(booking._id)}
+                          disabled={cancellingId === booking._id}
+                        >
+                          {cancellingId === booking._id ? (
+                            <Loader className="animate-spin" size={16} />
+                          ) : (
+                            "Cancel"
+                          )}
+                        </button>
+                      </>
+                    )}
+                  </div>
                 </div>
               ))}
             </div>
@@ -517,22 +526,26 @@ const MyBookings = () => {
         )}
       </div>
 
+      {/* ── Share Your Experience ── */}
       {!isLoading && (
         <div className="w-full max-w-[90rem] mt-10">
-          <div className="card bg-base-100 shadow-lg border border-base-200">
-            <div className="card-body space-y-4">
-              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-                <div>
-                  <h2 className="text-xl font-semibold flex items-center gap-2">
-                    <Star className="text-warning" />
-                    Share Your Experience
-                  </h2>
-                  <p className="text-sm text-base-content/70">
-                    Completed weddings appear here once the event date has
-                    passed. Drop a quick review for the HJ Wedding Events team.
-                  </p>
+          {/* FIX: Removed stray </ScrollReveal> closing tag that had no matching opener */}
+          <ScrollReveal animation="fade">
+            <div className="card bg-base-100 shadow-lg border border-base-200">
+              <div className="card-body space-y-4">
+                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                  <div>
+                    <h2 className="text-xl font-semibold flex items-center gap-2">
+                      <Star className="text-warning" />
+                      Share Your Experience
+                    </h2>
+                    <p className="text-sm text-base-content/70">
+                      Completed weddings appear here once the event date has
+                      passed. Drop a quick review for the HJ Wedding Events
+                      team.
+                    </p>
+                  </div>
                 </div>
-              </div>
 
                 {reviewEligibleBookings.length === 0 ? (
                   <p className="text-sm text-base-content/60">
@@ -571,7 +584,7 @@ const MyBookings = () => {
         </div>
       )}
 
-      {/* Edit Booking Modal */}
+      {/* ── Edit Booking Modal ── */}
       <EditBookingModal
         booking={editingBooking}
         isOpen={!!editingBooking}
@@ -580,7 +593,7 @@ const MyBookings = () => {
         isSaving={isSaving}
       />
 
-      {/* Review Modal */}
+      {/* ── Review Modal ── */}
       {reviewBooking && (
         <dialog className="modal modal-open">
           <div className="modal-box max-w-md">
@@ -608,7 +621,7 @@ const MyBookings = () => {
                       ...prev,
                       rating: Math.min(
                         5,
-                        Math.max(1, Number(e.target.value) || 5)
+                        Math.max(1, Number(e.target.value) || 5),
                       ),
                     }))
                   }
@@ -661,23 +674,19 @@ const MyBookings = () => {
         </dialog>
       )}
 
+      {/* ── Payment Modal ── */}
       {payBooking && (
         <dialog className="modal modal-open">
           <div className="modal-box max-w-md space-y-4">
             <h3 className="font-semibold text-xl">Payment Method</h3>
-
-            {/* ========= DESCRIPTION ========= */}
             <p className="text-sm text-base-content/70">
               Paying for{" "}
               <span className="font-medium">
                 {payBooking.title || "your booking"}
               </span>
             </p>
-
-            {/* ========= OTHER DETAILS ========= */}
             <div className="bg-base-200/40 rounded-lg p-4 space-y-2 border border-base-300">
               <h4 className="font-semibold text-base">Booking Details</h4>
-
               <div className="text-sm text-base-content/70">
                 <p>
                   <span className="font-medium text-base-content">
@@ -685,19 +694,16 @@ const MyBookings = () => {
                   </span>{" "}
                   {dayjs(payBooking.weddingDate).format("MMMM DD, YYYY")}
                 </p>
-
                 <p>
                   <span className="font-medium text-base-content">Venue:</span>{" "}
                   {payBooking.venue || "N/A"}
                 </p>
-
                 <p>
                   <span className="font-medium text-base-content">
                     Package:
                   </span>{" "}
                   {payBooking.packageName || "N/A"}
                 </p>
-
                 <p>
                   <span className="font-medium text-base-content">
                     Amount Due:
@@ -705,42 +711,37 @@ const MyBookings = () => {
                   <span className="font-bold text-primary">
                     ₱
                     {Number(
-                      payBooking.totalAmount || payBooking.amount || 0
+                      payBooking.totalAmount || payBooking.amount || 0,
                     ).toLocaleString()}
                   </span>
                 </p>
               </div>
             </div>
-
-            {/* ========= PAYPAL ========= */}
             <div>
               <PayPalButton
                 booking={payBooking}
                 onSuccess={(updated) => {
                   setBookings((prev) =>
-                    prev.map((b) => (b._id === updated._id ? updated : b))
+                    prev.map((b) => (b._id === updated._id ? updated : b)),
                   );
                   closePaymentModal();
                 }}
                 onOrderCreated={(updatedBooking) => {
                   setBookings((prev) =>
                     prev.map((b) =>
-                      b._id === updatedBooking._id ? updatedBooking : b
-                    )
+                      b._id === updatedBooking._id ? updatedBooking : b,
+                    ),
                   );
                 }}
                 onError={(err) => console.error("Payment error", err)}
               />
             </div>
-
-            {/* ========= FOOTER ========= */}
             <div className="modal-action">
               <button className="btn btn-ghost" onClick={closePaymentModal}>
                 Close
               </button>
             </div>
           </div>
-
           <form method="dialog" className="modal-backdrop">
             <button onClick={closePaymentModal}>close</button>
           </form>

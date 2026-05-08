@@ -24,6 +24,8 @@ import { dirname } from 'path';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
+import multer from 'multer';
+
 // Load environment variables from server root directory
 dotenv.config({ path: path.resolve(__dirname, '../.env') });
 
@@ -31,7 +33,7 @@ dotenv.config({ path: path.resolve(__dirname, '../.env') });
 connectDB();
 
 const app = express();
-const PORT = process.env.PORT || 5001;
+const PORT = process.env.PORT || 3000;
 
 // Server instance to manage shutdown
 let server = null;
@@ -39,7 +41,7 @@ let server = null;
 // Middleware
 app.use(
   cors({
-    origin: process.env.CLIENT_URL,
+    origin: [process.env.CLIENT_URL, 'http://localhost:5173', 'http://127.0.0.1:5173'],
     credentials: true,
   })
 );
@@ -74,7 +76,7 @@ app.use('/api/webhooks', webhookRoutes);
 app.use('/api/permissions', permissionRoutes);
 // API routes
 app.use('/api/auth', authRoutes);
-
+app.use(multer().any()); // Add multer middleware to handle multipart/form-data for all routes
 // Serve static files
 app.use(express.static(path.join(__dirname, '../../client/dist')));
 
