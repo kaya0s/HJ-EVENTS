@@ -199,7 +199,7 @@ const drawTableRows = (doc, bookings, options) => {
     rowsOnPage = 0;
   };
 
-  bookings.forEach((booking, index) => {
+  bookings.forEach((booking) => {
     const rowData = {
       customer: booking.user?.fullName || booking.user?.id?.fullName || 'Unknown Client',
       date: formatDateTime(booking.weddingDate),

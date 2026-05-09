@@ -1,5 +1,3 @@
-import mongoose from 'mongoose';
-
 /**
  * Update a document using optimistic concurrency based on updatedAt timestamp.
  * Returns the updated document or null if the update failed due to timestamp mismatch.

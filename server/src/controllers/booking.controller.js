@@ -30,16 +30,6 @@ setInterval(
   5 * 60 * 1000
 );
 
-const ensureBookingTitle = (booking) => {
-  if (!booking) return;
-  if (!booking.title) {
-    const fallbackTitle =
-      booking.package?.name ||
-      (booking.user?.fullName ? `${booking.user.fullName}'s Wedding` : 'Untitled Wedding');
-    booking.title = fallbackTitle;
-  }
-};
-
 const autoExpirePendingBookings = async (extraFilter = {}) => {
   const today = new Date();
   today.setHours(0, 0, 0, 0);
@@ -1177,14 +1167,13 @@ export const handlePaypalWebhook = async (req, res) => {
     if (eventType === 'PAYMENT.CAPTURE.COMPLETED' || eventType === 'CHECKOUT.ORDER.APPROVED' || eventType === 'PAYMENT.CAPTURE.REFUNDED') {
       const resource = webhook_event.resource || {};
       // Look up booking using reference_id if available
-      const customId = resource?.custom_id || resource?.invoice_id || resource?.supplementary_data?.related_ids?.order_id || resource?.payment_instruction?.reference_id || resource?.id;
       // Try to extract invoice or reference from resource
       const transactionId = resource?.id || (resource?.payments?.captures?.[0]?.id) || resource?.resource?.id;
       // Try find using reference_id (store booking id in createOrder reference_id)
       let booking = null;
       if (resource?.invoice_id || resource?.custom_id || resource?.reference_id) {
         const possibleId = resource?.invoice_id || resource?.custom_id || resource?.reference_id;
-        try { booking = await Booking.findById(possibleId); } catch (err) { /* ignore */ }
+        try { booking = await Booking.findById(possibleId); } catch { /* ignore */ }
       }
       // fallback: find by transactionId
       if (!booking && transactionId) {

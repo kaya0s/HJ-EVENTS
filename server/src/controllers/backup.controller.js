@@ -461,7 +461,7 @@ export const testGoogleAuth = async () => {
   try {
     const drive = await getDriveClient();
 
-    const result = await drive.files.list({
+    await drive.files.list({
       q: `'${GOOGLE_DRIVE_FOLDER_ID}' in parents`,
       pageSize: 1,
       fields: 'files(id, name)',

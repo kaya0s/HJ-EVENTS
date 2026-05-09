@@ -34,9 +34,17 @@ connectDB();
 
 const app = express();
 const PORT = process.env.PORT || 3000;
+const isProduction = process.env.NODE_ENV === 'production';
+const trustProxy = Number.parseInt(process.env.TRUST_PROXY || '0', 10) || 0;
+const useSecureCookies =
+  process.env.COOKIE_SECURE !== undefined ? process.env.COOKIE_SECURE === 'true' : isProduction;
 
 // Server instance to manage shutdown
 let server = null;
+
+if (trustProxy > 0) {
+  app.set('trust proxy', trustProxy);
+}
 
 // Middleware
 app.use(
@@ -52,8 +60,9 @@ app.use(
     secret: process.env.SESSION_SECRET,
     resave: false,
     saveUninitialized: false,
+    proxy: trustProxy > 0,
     cookie: {
-      secure: process.env.NODE_ENV === 'production',
+      secure: useSecureCookies,
       maxAge: 24 * 60 * 60 * 1000, // 24 hours
     },
   })

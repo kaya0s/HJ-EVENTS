@@ -8,7 +8,7 @@ import {
 } from '../utils/email.js';
 import passport from 'passport';
 import { Strategy as GoogleStrategy } from 'passport-google-oauth20';
-import { generateResetCode, generateResetToken, hashResetToken } from '../utils/passwordReset.js';
+import { generateResetCode, generateResetToken } from '../utils/passwordReset.js';
 import { verifyRecaptcha } from '../utils/recaptcha.js';
 
 // Configure Google OAuth Strategy

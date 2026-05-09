@@ -16,7 +16,7 @@ const brevoLogin = process.env.BREVO_LOGIN; // Your Brevo email
 const brevoSmtpKey = process.env.BREVO_SMTP_KEY; // Your Brevo SMTP key
 
 // Create transporter with Brevo SMTP
-const createTransporter = () => {
+export const createTransporterWithDebug = () => {
   console.log('🔍 DEBUG - Email Configuration:');
   console.log('BREVO_LOGIN:', process.env.BREVO_LOGIN);
   console.log('BREVO_SMTP_KEY exists:', !!process.env.BREVO_SMTP_KEY);
@@ -32,6 +32,17 @@ const createTransporter = () => {
     },
   });
 };
+
+const createTransporter = () =>
+  nodemailer.createTransport({
+    host: 'smtp-relay.brevo.com',
+    port: 2525,
+    secure: false, // Use TLS
+    auth: {
+      user: brevoLogin,
+      pass: brevoSmtpKey,
+    },
+  });
 
 export const sendPasswordResetEmail = async (email, resetCode) => {
   try {
